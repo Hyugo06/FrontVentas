@@ -15,13 +15,9 @@ export interface DetalleVentaDTO {
 
 // DTO Principal de la Venta (Modificado)
 export interface VentaRequestDTO {
-  // ¡ELIMINADO!
-  // idUsuario: number;
-  // idCliente: number;
+  // ¡ELIMINADO! idUsuario e idCliente
 
-  // --- ¡AÑADIDO! ---
-  clienteData: ClienteRequestDTO;
-
+  clienteData: ClienteRequestDTO; // <-- ¡AÑADIDO!
   tipoComprobante: string;
   detalles: DetalleVentaDTO[];
 }

@@ -46,7 +46,7 @@ export class CheckoutComponent implements OnInit {
         apellidos: ['', Validators.required],
         celular: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
         dni: ['', [Validators.required, Validators.pattern('^[0-9]{8}$')]],
-        email: ['', [Validators.email]] // Email es opcional pero validado
+        email: ['', [Validators.email]]
       })
     });
   }
@@ -83,22 +83,20 @@ export class CheckoutComponent implements OnInit {
    * Procesa la compra final
    */
   public procesarCompra(): void {
-    // 1. Validar el formulario del cliente (DNI, nombre, etc.)
     if (this.checkoutForm.invalid || this.cartItems.length === 0) {
-      this.error = 'Por favor, completa los datos y verifica que el carrito no esté vacío.';
+      this.error = 'Por favor, complete correctamente los datos del cliente.';
       return;
     }
-
     this.cargando = true;
     this.error = null;
 
-    // 2. Mapear el carrito a DetalleVentaDTO[]
+    // 2. Mapear el carrito
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
       cantidad: item.cantidad
     }));
 
-    // 3. Construir el objeto final VentaRequestDTO
+    // --- ¡CONSTRUIMOS EL NUEVO DTO! ---
     const ventaData: VentaRequestDTO = {
       // Ya no enviamos idUsuario (el backend lo sabe por el token)
 
@@ -109,22 +107,16 @@ export class CheckoutComponent implements OnInit {
       detalles: detalles
     };
 
-    // 4. Llamada al servicio (POST /api/ventas)
+    // 4. Llamada al servicio (¡esta llamada no cambia!)
     this.ventaService.procesarVenta(ventaData).subscribe({
       next: (response) => {
         this.cartService.clearCart();
-        this.totalMonto = 0;
-
-        // Esto muestra la sección @if (isPurchaseSuccessful) del HTML
-        this.isPurchaseSuccessful = true;
-        this.cargando = false;
-
-
+        this.router.navigate(['/gracias']);
       },
-      error: (err) => {
-        this.error = err.error || 'Error desconocido al procesar la venta.';
+      error: (err: any) => {
+        this.error = 'Error al procesar la venta. Verifique los datos o el stock.';
+        console.error('Error de transacción:', err);
         this.cargando = false;
-        console.error('Error al procesar la venta:', err);
       }
     });
   }
