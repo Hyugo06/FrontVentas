@@ -1,0 +1,80 @@
+<div class="container mx-auto p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Historial de Ventas</h1>
+    <a routerLink="/admin/productos"
+       class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+      &larr; Volver a Productos
+    </a>
+  </div>
+
+  <form [formGroup]="filtroForm" class="bg-white p-4 rounded-lg shadow-md mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+
+    <div>
+      <label for="comprobante" class="block text-sm font-medium text-gray-700">Comprobante</label>
+      <select formControlName="comprobante" id="comprobante" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+        <option value="">Todos</option>
+        <option value="boleta">Boleta</option>
+        <option value="factura">Factura</option>
+        <option value="ticket">Ticket</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="fechaInicio" class="block text-sm font-medium text-gray-700">Desde</label>
+      <input formControlName="fechaInicio" id="fechaInicio" type="date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+    </div>
+
+    <div>
+      <label for="fechaFin" class="block text-sm font-medium text-gray-700">Hasta</label>
+      <input formControlName="fechaFin" id="fechaFin" type="date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+    </div>
+
+    <button (click)="limpiarFiltros()" type="button" class="bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600">
+      Limpiar
+    </button>
+  </form>
+  @if (cargando) {
+    <p class="text-gray-500">Cargando historial de ventas...</p>
+  }
+  @if (error) {
+    <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p>
+  }
+
+  @if (!cargando && !error) {
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+        <tr>
+          <th (click)="ordenarPor('idVenta')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100">
+            ID Venta
+          </th>
+          <th (click)="ordenarPor('fechaVenta')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100">
+            Fecha
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comprobante</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Monto Total</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+
+          @for (venta of ventas; track venta.idVenta) {
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ venta.idVenta }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ venta.fechaVenta | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ venta.cliente?.nombres || 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ venta.usuario?.nombreUsuario || 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ venta.tipoComprobante }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-700">S/ {{ venta.montoTotal | number: '1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-6 py-4 text-center text-gray-500">No se encontraron ventas para los filtros aplicados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

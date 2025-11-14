@@ -1,0 +1,53 @@
+<div class="flex h-screen bg-gray-100">
+
+  <aside class="hidden md:block w-64 flex-shrink-0 bg-gray-800 text-white">
+    <div class="p-4">
+      <h2 class="text-xl font-bold text-blue-300">Admin Panel</h2>
+    </div>
+
+    <nav class="mt-4">
+      <a routerLink="/admin/productos"
+         routerLinkActive="bg-gray-700 text-white"
+         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
+        Productos
+      </a>
+      <a routerLink="/admin/ventas"
+         routerLinkActive="bg-gray-700 text-white"
+         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
+        Ventas
+      </a>
+      <a routerLink="/admin/usuarios"
+         routerLinkActive="bg-gray-700 text-white"
+         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
+        Usuarios
+      </a>
+      <a routerLink="/admin/marcas"
+         routerLinkActive="bg-gray-700 text-white"
+         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
+        Marcas
+      </a>
+    </nav>
+  </aside>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-white shadow-md p-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-800">Tienda Margaríta</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="text-gray-600 text-sm">Hola, {{ currentUsername }}</span>
+        <button (click)="logout()"
+                class="bg-red-600 hover:bg-red-700 py-1 px-3 rounded text-sm font-semibold text-white">
+          Cerrar Sesión
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+
+      <router-outlet></router-outlet>
+
+    </main>
+  </div>
+</div>

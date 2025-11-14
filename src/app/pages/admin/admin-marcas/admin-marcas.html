@@ -1,0 +1,48 @@
+<div class="container mx-auto p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Gestión de Marcas</h1>
+    <a routerLink="/admin/marcas/nuevo"
+       class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+      + Agregar Marca
+    </a>
+  </div>
+
+  @if (cargando) { <p class="text-gray-500">Cargando marcas...</p> }
+  @if (error) { <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p> }
+
+  @if (!cargando && !error) {
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          @for (marca of marcas; track marca.idMarca) {
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ marca.idMarca }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ marca.nombre }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <a [routerLink]="['/admin/marcas/editar', marca.idMarca]"
+                   class="text-indigo-600 hover:text-indigo-900 mr-4">
+                  Editar
+                </a>
+                <button (click)="eliminarMarca(marca.idMarca)"
+                        class="text-red-600 hover:text-red-900">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="px-6 py-4 text-center text-gray-500">No se encontraron marcas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

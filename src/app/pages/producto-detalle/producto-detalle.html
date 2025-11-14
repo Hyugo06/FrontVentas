@@ -1,0 +1,134 @@
+@if (cargando) {
+  <p class="text-center text-gray-500 p-8">Cargando...</p>
+}
+
+@if (producto) {
+  <div class="container mx-auto p-8">
+
+    <a routerLink="/productos" class="text-blue-500 hover:underline mb-4 inline-block">
+      &larr; Volver a la tienda
+    </a>
+
+    <div class="mb-8 border-b pb-4">
+      <span class="text-sm text-gray-500">{{ producto.codigoSku }}</span>
+      <h1 class="text-4xl font-bold mb-2">{{ producto.nombre }}</h1>
+
+      @if (producto.precioRegular) {
+        <p class="text-xl text-gray-500 line-through">
+          S/ {{ producto.precioRegular | number: '1.2-2' }}
+        </p>
+      }
+      <p class="text-5xl font-extrabold text-blue-600">
+        S/ {{ producto.precioVenta | number: '1.2-2' }}
+      </p>
+    </div>
+
+    <div class="border-b mb-6 flex space-x-6">
+
+      <button
+        (click)="activeTab = 'details'"
+        class="pb-2 font-semibold transition-colors"
+        [class.text-blue-600]="activeTab === 'details'"
+        [class.border-b-2]="activeTab === 'details'"
+        [class.border-blue-600]="activeTab === 'details'">
+        Detalles Generales
+      </button>
+
+      <button
+        (click)="activeTab = 'specs'"
+        class="pb-2 font-semibold transition-colors"
+        [class.text-blue-600]="activeTab === 'specs'"
+        [class.border-b-2]="activeTab === 'specs'"
+        [class.border-blue-600]="activeTab === 'specs'">
+        Características
+      </button>
+
+      <button
+        (click)="activeTab = 'media'"
+        class="pb-2 font-semibold transition-colors"
+        [class.text-blue-600]="activeTab === 'media'"
+        [class.border-b-2]="activeTab === 'media'"
+        [class.border-blue-600]="activeTab === 'media'">
+        Imágenes ({{ imagenes.length }})
+      </button>
+    </div>
+
+    @if (activeTab === 'details') {
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <div class="md:col-span-2">
+          <h3 class="text-xl font-semibold mb-3">Descripción</h3>
+          <p class="text-gray-700">{{ producto.descripcion }}</p>
+
+          <div class="mt-6 p-4 border rounded-lg bg-gray-50">
+            <p class="text-lg">
+              Stock disponible:
+              <span class="font-extrabold text-gray-800">{{ producto.stockActual }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="md:col-span-1 flex flex-col justify-center">
+          <button
+            (click)="agregarAlCarrito()"
+            class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+            Añadir al Carrito
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (activeTab === 'specs') {
+      <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Especificaciones</h3>
+
+        <div class="grid grid-cols-2 gap-4">
+          <p class="font-medium text-gray-700">Marca:</p>
+          <p class="font-semibold text-gray-900">{{ producto.marca?.nombre || 'N/A' }}</p>
+
+          <p class="font-medium text-gray-700">Categoría:</p>
+          <p class="font-semibold text-gray-900">{{ producto.categoria?.nombre || 'N/A' }}</p>
+
+          <div class="col-span-2 border-t mt-4 pt-4">
+            <h4 class="font-bold text-lg mb-2">Características Específicas:</h4>
+          </div>
+
+          @if (producto.caracteristicas) {
+            @for (spec of objectEntries(producto.caracteristicas); track spec[0]) {
+              <p class="font-medium text-gray-700 capitalize">{{ spec[0] }}:</p>
+              <p class="font-semibold text-gray-900">{{ spec[1] }}</p>
+            }
+          } @else {
+            <p class="col-span-2 text-gray-500">No hay características específicas definidas.</p>
+          }
+
+        </div>
+      </div>
+    }
+
+    @if (activeTab === 'media') {
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        @for (img of imagenes; track img.idImagen) {
+          <div class="border rounded-lg overflow-hidden shadow-lg">
+            <img [src]="img.urlImagen"
+                 [alt]="img.descripcionAlt"
+                 class="w-full h-48 object-cover">
+            <p class="text-sm text-center p-2 text-gray-600">{{ img.descripcionAlt }}</p>
+          </div>
+        } @empty {
+          <p class="text-gray-400 col-span-4 p-8 text-center">Este producto no tiene imágenes asociadas.</p>
+        }
+      </div>
+    }
+
+  </div>
+}
+
+@if (!producto && !cargando) {
+  <div class="text-center p-8">
+    <h2 class="text-2xl font-bold text-red-600">Producto no encontrado</h2>
+    <a routerLink="/productos" class="text-blue-500 hover:underline mt-4 inline-block">
+      Volver a la tienda
+    </a>
+  </div>
+}

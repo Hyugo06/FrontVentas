@@ -1,0 +1,71 @@
+<div class="flex">
+
+  <aside class="w-64 bg-white p-6 shadow-lg h-screen sticky top-0">
+    <h2 class="text-xl font-bold mb-4">Categorías</h2>
+
+    <nav>
+      <button
+        (click)="setCategoriaFiltro('')"
+        class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 font-semibold"
+        [class.bg-blue-100]="filtroForm.get('categoria')?.value === ''">
+        Todas las Categorías
+      </button>
+
+      @for (cat of categorias; track cat.idCategoria) {
+        <button
+          (click)="setCategoriaFiltro(cat.nombre)"
+          class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100"
+          [class.bg-blue-100]="filtroForm.get('categoria')?.value === cat.nombre">
+          {{ cat.nombre }}
+        </button>
+      }
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-8 bg-gray-50">
+
+    <h1 class="text-3xl font-bold mb-6">Nuestra Tienda</h1>
+
+    <form [formGroup]="filtroForm" class="flex items-center space-x-4 mb-6">
+      <input
+        formControlName="search"
+        type="text"
+        placeholder="Buscar por nombre (ej. Gorra, Sábanas...)"
+        class="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm">
+
+      <button (click)="limpiarFiltros()" type="button" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600">
+        Limpiar
+      </button>
+    </form>
+
+    @if (cargandoProductos) {
+      <p class="text-gray-500">Cargando productos...</p>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      @for (prod of productos; track prod.idProducto) {
+        <a [routerLink]="['/productos', prod.idProducto]"
+           class="border rounded-lg shadow-lg p-4 block hover:shadow-xl transition-shadow bg-white">
+
+          <h2 class="text-xl font-semibold">{{ prod.nombre }}</h2>
+          <p class="text-gray-600">{{ prod.codigoSku }}</p>
+
+          @if (prod.precioRegular && prod.precioRegular > prod.precioVenta) {
+            <p class="text-sm text-gray-500 line-through">
+              S/ {{ prod.precioRegular | number: '1.2-2' }}
+            </p>
+          }
+          <p class="text-2xl font-bold text-blue-600">
+            S/ {{ prod.precioVenta | number: '1.2-2' }}
+          </p>
+        </a>
+      } @empty {
+        @if (!cargandoProductos) {
+          <p class="col-span-3 text-center text-gray-500 p-8">
+            No se encontraron productos que coincidan con los filtros.
+          </p> }
+      }
+    </div>
+  </main>
+</div>

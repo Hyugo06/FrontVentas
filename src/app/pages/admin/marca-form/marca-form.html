@@ -1,0 +1,54 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-3xl font-bold mb-6">
+    @if (esEdicion) {
+      Editar Marca: #{{ marcaId }}
+    } @else {
+      Nueva Marca
+    }
+  </h1>
+
+  <a routerLink="/admin/marcas" class="text-blue-500 hover:underline mb-6 inline-block">
+    &larr; Volver a la lista de Marcas
+  </a>
+
+  @if (cargando) {
+    <p class="text-center text-gray-500 p-10">Cargando datos...</p>
+  }
+
+  @if (error) {
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+      <strong class="font-bold">Error:</strong>
+      <span class="block sm:inline">{{ error }}</span>
+    </div>
+  }
+
+  @if (!cargando) {
+    <form [formGroup]="marcaForm" (ngSubmit)="onSubmit()" class="bg-white p-6 rounded-lg shadow-xl max-w-lg">
+
+      <div class="mb-4">
+        <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre (*)</label>
+        <input id="nombre" type="text" formControlName="nombre"
+               class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
+        @if (marcaForm.get('nombre')?.invalid && marcaForm.get('nombre')?.touched) {
+          <p class="text-xs text-red-500 mt-1">El nombre es obligatorio.</p>
+        }
+      </div>
+
+      <div class="mb-6">
+        <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+        <textarea id="descripcion" formControlName="descripcion" rows="4"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm"></textarea>
+      </div>
+
+      <button type="submit"
+              [disabled]="marcaForm.invalid"
+              class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400">
+        @if (esEdicion) {
+          Guardar Cambios
+        } @else {
+          Crear Marca
+        }
+      </button>
+    </form>
+  }
+</div>

@@ -1,0 +1,79 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-3xl font-bold mb-6">
+    @if (esEdicion) {
+      Editar Usuario: #{{ usuarioId }}
+    } @else {
+      Nuevo Usuario
+    }
+  </h1>
+
+  <a routerLink="/admin/productos" class="text-blue-500 hover:underline mb-6 inline-block">
+    &larr; Volver al Panel
+  </a>
+
+  @if (cargando) {
+    <p class="text-center text-gray-500 p-10">Cargando datos del usuario...</p>
+  }
+
+  @if (error) {
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+      <strong class="font-bold">Error:</strong>
+      <span class="block sm:inline">{{ error }}</span>
+    </div>
+  }
+
+  @if (!cargando) {
+    <form [formGroup]="usuarioForm" (ngSubmit)="onSubmit()" class="bg-white p-6 rounded-lg shadow-xl max-w-lg">
+
+      <div class="mb-4">
+        <label for="nombreUsuario" class="block text-sm font-medium text-gray-700">Nombre de Usuario (*)</label>
+        <input id="nombreUsuario" type="text" formControlName="nombreUsuario"
+               class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+        @if (usuarioForm.get('nombreUsuario')?.invalid && usuarioForm.get('nombreUsuario')?.touched) {
+          <p class="text-xs text-red-500 mt-1">El nombre de usuario es requerido (mínimo 4 caracteres).</p>
+        }
+      </div>
+
+      <div class="mb-4">
+        <label for="rol" class="block text-sm font-medium text-gray-700">Rol (*)</label>
+        <select id="rol" formControlName="rol"
+                class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+          @for (rol of roles; track rol) {
+            <option [value]="rol">{{ rol }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="mb-4 flex items-center">
+        <input id="activo" type="checkbox" formControlName="activo"
+               class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+        <label for="activo" class="ml-2 block text-sm font-medium text-gray-700">
+          Activo (¿Puede iniciar sesión?)
+        </label>
+      </div>
+
+      <div class="mb-6">
+        <label for="password" class="block text-sm font-medium text-gray-700">
+          Contraseña {{ esEdicion ? '(Dejar vacío para no cambiar)' : '(*)' }}
+        </label>
+        <input id="password" type="password" formControlName="hashContrasena"
+               class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+        @if (usuarioForm.get('hashContrasena')?.invalid && usuarioForm.get('hashContrasena')?.touched) {
+          <p class="text-xs text-red-500 mt-1">La contraseña debe tener al menos 6 caracteres.</p>
+        }
+      </div>
+
+
+      <button type="submit"
+              [disabled]="usuarioForm.invalid"
+              class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400">
+        @if (esEdicion) {
+          Guardar Cambios
+        } @else {
+          Crear Usuario
+        }
+      </button>
+
+    </form>
+  }
+</div>
