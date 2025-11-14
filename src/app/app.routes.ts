@@ -13,7 +13,10 @@ import {AdminLayoutComponent} from './layouts/admin-layout/admin-layout';
 import {AdminMarcasComponent} from './pages/admin/admin-marcas/admin-marcas';
 
 // --- ¡¡CORRECCIÓN 1: Importar el nombre de clase correcto!! ---
-import { MarcaForm } from './pages/admin/marca-form/marca-form';
+
+import {AdminCategoriasComponent} from './pages/admin/admin-categorias/admin-categorias';
+import {CategoriaFormComponent} from './pages/admin/categoria-form/categoria-form';
+import {MarcaFormComponent} from './pages/admin/marca-form/marca-form';
 
 
 export const routes: Routes = [
@@ -45,10 +48,12 @@ export const routes: Routes = [
       { path: 'usuarios/editar/:id', component: UsuarioFormComponent },
 
       { path: 'marcas', component: AdminMarcasComponent },
+      { path: 'marcas/nuevo', component: MarcaFormComponent },
+      { path: 'marcas/editar/:id', component: MarcaFormComponent },
 
-      // --- ¡¡CORRECCIÓN 2: Usar el componente correcto!! ---
-      { path: 'marcas/nuevo', component: MarcaForm },
-      { path: 'marcas/editar/:id', component: MarcaForm },
+      { path: 'categorias', component: AdminCategoriasComponent },
+      { path: 'categorias/nuevo', component: CategoriaFormComponent },
+      { path: 'categorias/editar/:id', component: CategoriaFormComponent },
     ]
   },
 

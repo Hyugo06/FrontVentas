@@ -3,9 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-
-// --- ¡¡ESTA ES LA CORRECCIÓN!! ---
-// Necesita subir 3 niveles (../.._.._/) para encontrar la carpeta 'services'
 import { Marca } from '../../../services/marca';
 
 @Component({
@@ -15,7 +12,8 @@ import { Marca } from '../../../services/marca';
   templateUrl: './marca-form.html',
   styleUrl: './marca-form.css',
 })
-export class MarcaForm implements OnInit { // <-- Tu nombre de clase 'MarcaForm' está bien
+// --- ¡¡ESTA ES LA CORRECCIÓN!! ---
+export class MarcaFormComponent implements OnInit { // <-- Cambiado de 'MarcaForm' a 'MarcaFormComponent'
 
   public marcaForm: FormGroup;
   public esEdicion: boolean = false;
@@ -25,7 +23,7 @@ export class MarcaForm implements OnInit { // <-- Tu nombre de clase 'MarcaForm'
 
   constructor(
     private fb: FormBuilder,
-    private marcaService: Marca, // <-- Ahora Angular sabe qué es 'Marca'
+    private marcaService: Marca,
     private router: Router,
     private route: ActivatedRoute
   ) {

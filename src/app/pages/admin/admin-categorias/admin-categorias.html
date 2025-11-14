@@ -1,0 +1,50 @@
+<div class="container mx-auto p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Gestión de Categorías</h1>
+    <a routerLink="/admin/categorias/nuevo"
+       class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+      + Agregar Categoría
+    </a>
+  </div>
+
+  @if (cargando) { <p class="text-gray-500">Cargando categorías...</p> }
+  @if (error) { <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p> }
+
+  @if (!cargando && !error) {
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+        <tr>
+          <th class->ID</th>
+          <th class->Nombre</th>
+          <th class->ID Padre</th>
+          <th class->Acciones</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          @for (cat of categorias; track cat.idCategoria) {
+            <tr>
+              <td class="px-6 py-4">#{{ cat.idCategoria }}</td>
+              <td class="px-6 py-4">{{ cat.nombre }}</td>
+              <td class="px-6 py-4">{{ cat.idCategoriaPadre || 'N/A (Es Padre)' }}</td>
+              <td class="px-6 py-4 text-right">
+                <a [routerLink]="['/admin/categorias/editar', cat.idCategoria]"
+                   class="text-indigo-600 hover:text-indigo-900 mr-4">
+                  Editar
+                </a>
+                <button (click)="eliminarCategoria(cat.idCategoria)"
+                        class="text-red-600 hover:text-red-900">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-gray-500">No se encontraron categorías.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
