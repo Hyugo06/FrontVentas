@@ -10,9 +10,10 @@ export class Producto { // Tu clase 'Producto'
 
   private publicApiUrl = 'http://localhost:8080/api/productos'; // (O 8081)
   private adminApiUrl = 'http://localhost:8080/api/admin/productos'; // (O 8081)
-  private http = inject(HttpClient);
 
-  constructor() { }
+  // ¡CORRECCIÓN! Inyecta HttpClient en el constructor (o usa inject)
+  // private http = inject(HttpClient); // (Si usas inject)
+  constructor(private http: HttpClient) { } // (Si usas constructor)
 
   // --- ¡MÉTODO MODIFICADO! ---
   /**
@@ -25,20 +26,22 @@ export class Producto { // Tu clase 'Producto'
       params = params.append('search', search);
     }
     if (categoria) {
+      // El backend espera 'categoria'
       params = params.append('categoria', categoria);
     }
 
+    // Hacemos la petición GET con los parámetros
     return this.http.get<any[]>(this.publicApiUrl, { params: params });
   }
 
   // --- (El resto de tus métodos: getProductoPublicoPorId, getImagenesPorProducto, getProductosAdmin, etc., se quedan igual) ---
 
-  public getProductoPublicoPorId(id: string): Observable<any> {
-    return this.http.get<any>(`${this.publicApiUrl}/${id}`);
+  public getProductoPublicoPorId(id: string): Observable<any> { //
+    return this.http.get<any>(`${this.publicApiUrl}/${id}`); //
   }
 
-  public getImagenesPorProducto(id: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.publicApiUrl}/${id}/imagenes`);
+  public getImagenesPorProducto(id: string): Observable<any[]> { //
+    return this.http.get<any[]>(`${this.publicApiUrl}/${id}/imagenes`); //
   }
 
   public getProductosAdmin(): Observable<any[]> {

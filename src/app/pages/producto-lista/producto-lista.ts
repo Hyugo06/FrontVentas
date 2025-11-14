@@ -8,7 +8,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 // ¡Añadimos herramientas de RxJS para la búsqueda!
 import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { Observable, forkJoin } from 'rxjs'; // Importa forkJoin
+import { Observable, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-producto-lista',
@@ -42,12 +42,12 @@ export class ProductoListaComponent implements OnInit {
     this.cargarCategorias();
 
     // 2. Cargar los productos iniciales (sin filtros)
-    this.cargarProductos();
+    this.cargarProductosIniciales();
 
     // 3. Escuchar CUALQUIER cambio en el formulario (búsqueda O categoría)
     this.filtroForm.valueChanges.pipe(
-      debounceTime(350), // Espera 350ms después de teclear (evita llamadas API innecesarias)
-      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)), // Solo si el valor es realmente nuevo
+      debounceTime(350), // Espera 350ms después de teclear
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
       tap(() => this.cargandoProductos = true), // Activa el "Cargando..."
       // switchMap cancela la petición anterior si se teclea de nuevo
       switchMap(filtros => {
@@ -68,7 +68,7 @@ export class ProductoListaComponent implements OnInit {
   /**
    * Carga la lista inicial de productos (sin filtros)
    */
-  cargarProductos(): void {
+  cargarProductosIniciales(): void {
     this.cargandoProductos = true;
     this.productoService.getProductosPublicos(null, null).subscribe({
       next: (data: any) => {
@@ -88,9 +88,8 @@ export class ProductoListaComponent implements OnInit {
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
-        // --- ¡CAMBIO AQUÍ! ---
-        // Quitamos el filtro. Ahora mostrará todas las categorías.
-        this.categorias = data;
+        // Filtramos para mostrar solo las sub-categorías (las que tienen padre)
+        this.categorias = data.filter(c => c.idCategoriaPadre != null);
       },
       error: (err: any) => {
         console.error('Error al traer categorías:', err);
@@ -99,10 +98,11 @@ export class ProductoListaComponent implements OnInit {
   }
 
   /**
-   * Limpia todos los filtros (el valueChanges se encargará de recargar)
+   * Limpia todos los filtros
    */
   limpiarFiltros(): void {
-    this.filtroForm.reset({ search: '', categoria: '' });
+    this.filtroForm.reset({ search: '', categoria: '' }, { emitEvent: false });
+    this.cargarProductosIniciales(); // Recarga manual
   }
 
   /**
