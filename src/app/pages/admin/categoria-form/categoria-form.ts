@@ -59,8 +59,13 @@ export class CategoriaFormComponent implements OnInit {
   cargarCategoriasPadre(): void {
     this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
-        // Mostramos todas las categorías como candidatas a ser padre
-        this.listaCategoriasPadre = data;
+
+        // --- ¡¡ESTA ES LA CORRECCIÓN!! ---
+        // Filtramos la lista 'data' para quedarnos solo
+        // con las categorías que NO tienen padre (idCategoriaPadre es null).
+        this.listaCategoriasPadre = data.filter(cat => cat.idCategoriaPadre === null);
+        // ---------------------------------
+
       },
       error: (err: any) => {
         this.error = 'No se pudo cargar la lista de categorías padre.';
