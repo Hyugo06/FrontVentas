@@ -2,18 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Producto } from '../../services/producto';
-// ¡Añadimos ReactiveForms!
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-// ¡Añadimos CategoriaService!
 import { Categoria, CategoriaDTO } from '../../services/categoria';
-// ¡Añadimos herramientas de RxJS para la búsqueda!
 import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { Observable, forkJoin } from 'rxjs';
+
+// --- ¡AÑADE ESTA IMPORTACIÓN! ---
+import { Cart } from '../../services/cart';
 
 @Component({
   selector: 'app-producto-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule], // <-- ¡Añade ReactiveFormsModule!
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './producto-lista.html',
   styleUrl: './producto-lista.css'
 })
@@ -22,36 +22,32 @@ export class ProductoListaComponent implements OnInit {
   public productos: any[] = [];
   public categoriasPadre: CategoriaDTO[] = [];
   public categoriasHijo: CategoriaDTO[] = [];
-  public categorias: CategoriaDTO[] = []; // Para la barra lateral
+  public categorias: CategoriaDTO[] = [];
   public cargandoProductos: boolean = true;
-
   public filtroForm: FormGroup;
 
   constructor(
     private productoService: Producto,
-    private categoriaService: Categoria, // Inyectamos el servicio
-    private fb: FormBuilder
+    private categoriaService: Categoria,
+    private fb: FormBuilder,
+    private cartService: Cart // <-- ¡INYECTA EL SERVICIO DE CARRITO!
   ) {
-    // Creamos el formulario para los filtros
     this.filtroForm = this.fb.group({
-      search: [''],    // Para la barra de búsqueda
-      categoria: [''] // Para el filtro de categoría
+      search: [''],
+      categoria: ['']
     });
   }
 
+  // ... (tu ngOnInit, cargarProductosIniciales, cargarCategorias, limpiarFiltros y setCategoriaFiltro
+  //      están perfectos y se quedan igual) ...
   ngOnInit(): void {
-    // 1. Cargar las categorías para la barra lateral
     this.cargarCategorias();
-
-    // 2. Cargar los productos iniciales (sin filtros)
     this.cargarProductosIniciales();
 
-    // 3. Escuchar CUALQUIER cambio en el formulario (búsqueda O categoría)
     this.filtroForm.valueChanges.pipe(
-      debounceTime(350), // Espera 350ms después de teclear
+      debounceTime(350),
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
-      tap(() => this.cargandoProductos = true), // Activa el "Cargando..."
-      // switchMap cancela la petición anterior si se teclea de nuevo
+      tap(() => this.cargandoProductos = true),
       switchMap(filtros => {
         return this.productoService.getProductosPublicos(filtros.search, filtros.categoria);
       })
@@ -67,9 +63,6 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga la lista inicial de productos (sin filtros)
-   */
   cargarProductosIniciales(): void {
     this.cargandoProductos = true;
     this.productoService.getProductosPublicos(null, null).subscribe({
@@ -84,19 +77,11 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga la lista de categorías para el sidebar
-   */
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
-        // --- ¡NUEVA LÓGICA DE FILTRADO! ---
-        // Separamos las categorías en dos listas
         this.categoriasPadre = data.filter(c => c.idCategoriaPadre == null);
         this.categoriasHijo = data.filter(c => c.idCategoriaPadre != null);
-
-        // (Opcional: puedes dejar solo las hijas si prefieres el filtro simple)
-        // this.categorias = data.filter(c => c.idCategoriaPadre != null);
       },
       error: (err: any) => {
         console.error('Error al traer categorías:', err);
@@ -104,18 +89,27 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  /**
-   * Limpia todos los filtros
-   */
   limpiarFiltros(): void {
     this.filtroForm.reset({ search: '', categoria: '' }, { emitEvent: false });
-    this.cargarProductosIniciales(); // Recarga manual
+    this.cargarProductosIniciales();
   }
 
-  /**
-   * Establece el filtro de categoría (para los botones)
-   */
   setCategoriaFiltro(nombreCategoria: string): void {
     this.filtroForm.get('categoria')?.setValue(nombreCategoria);
+  }
+
+  // --- ¡AÑADE ESTE NUEVO MÉTODO! ---
+  /**
+   * Añade un producto al carrito directamente desde la lista.
+   * 'event.stopPropagation()' evita que el 'routerLink' de la tarjeta se active.
+   */
+  public agregarAlCarrito(event: MouseEvent, producto: any): void {
+    event.stopPropagation(); // <-- ¡Muy importante! Detiene el clic en la tarjeta
+    event.preventDefault(); // <-- Detiene el comportamiento del enlace <a>
+
+    this.cartService.addItem(producto);
+    console.log('Añadido desde la lista:', producto.nombre);
+
+    // (Opcional: podrías añadir una pequeña animación o feedback aquí)
   }
 }
