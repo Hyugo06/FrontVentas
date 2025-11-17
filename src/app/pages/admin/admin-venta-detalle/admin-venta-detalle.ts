@@ -47,30 +47,42 @@ export class AdminVentaDetalleComponent implements OnInit {
       this.cargando = false;
     }
   }
-
   public generarBoletaPDF(): void {
     if (!this.venta) return;
 
     const doc = new jsPDF();
     const venta = this.venta;
 
-    // ... (Tus pasos 1 y 2: Título e Info del Cliente están perfectos) ...
+    // 1. Título (Sin cambios)
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.text('Boleta de Venta', 105, 20, { align: 'center' });
     doc.text(`Venta #${venta.idVenta}`, 105, 30, { align: 'center' });
+
+    // 2. Información del Cliente y Venta (¡Con el cambio!)
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
+
     doc.text('Cliente:', 14, 50);
     doc.text(`${venta.cliente?.nombres || ''} ${venta.cliente?.apellidos || ''}`, 50, 50);
+
     doc.text('DNI:', 14, 56);
     doc.text(venta.cliente?.dni || 'N/A', 50, 56);
+
     doc.text('Fecha:', 14, 62);
     doc.text(new Date(venta.fechaVenta).toLocaleString('es-PE'), 50, 62);
-    doc.text('Vendedor:', 140, 50);
-    doc.text(venta.usuario?.nombreUsuario || 'N/A', 170, 50);
 
-    // 3. Preparar los datos para la Tabla (tu código está perfecto)
+    // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
+    // Combinamos 'nombres' y 'apellidos' del vendedor
+    const nombreVendedor = `${venta.usuario?.nombres || ''} ${venta.usuario?.apellidos || ''}`;
+
+    doc.text('Vendedor:', 120, 50);
+    // Usamos la nueva variable. Si está vacía (ej. para un admin antiguo),
+    // usamos el username como respaldo.
+    doc.text(nombreVendedor.trim() || venta.usuario?.nombreUsuario || 'N/A', 140, 50);
+    // --- FIN DE LA CORRECCIÓN ---
+
+    // 3. Preparar los datos para la Tabla (Sin cambios)
     const head = [['SKU', 'Producto', 'Cant.', 'P. Unit.', 'Subtotal']];
     const body = venta.detalles.map((item: any) => [
       item.producto?.codigoSku || 'N/A',
@@ -80,9 +92,7 @@ export class AdminVentaDetalleComponent implements OnInit {
       `S/ ${item.subtotal.toFixed(2)}`
     ]);
 
-    // --- ¡CORRECCIÓN DE LLAMADA A AUTOTABLE! ---
-    // Ya no usamos (doc as any).autoTable(...)
-    // Ahora llamamos a la función 'autoTable' y le pasamos 'doc'
+    // 4. Dibujar la Tabla (Sin cambios)
     autoTable(doc, {
       startY: 75,
       head: head,
@@ -90,17 +100,15 @@ export class AdminVentaDetalleComponent implements OnInit {
       theme: 'grid',
       headStyles: { fillColor: [22, 160, 133] }
     });
-    // -----------------------------------------
 
-    // 5. Dibujar el Total
-    // Obtenemos la altura final de la tabla para poner el total debajo
-    const finalY = (doc as any).lastAutoTable.finalY; // (esta parte se queda igual)
+    // 5. Dibujar el Total (Sin cambios)
+    const finalY = (doc as any).lastAutoTable.finalY;
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('MONTO TOTAL:', 130, finalY + 15);
     doc.text(`S/ ${venta.montoTotal.toFixed(2)}`, 170, finalY + 15);
 
-    // 6. Guardar el archivo
+    // 6. Guardar el archivo (Sin cambios)
     doc.save(`Boleta_Venta_#${venta.idVenta}.pdf`);
   }
 }
