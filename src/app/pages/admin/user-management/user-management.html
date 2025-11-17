@@ -20,10 +20,12 @@
         <thead class="bg-gray-50">
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario (Login)</th>
+
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Completo</th>
+
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Creación</th>
           <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
         </tr>
         </thead>
@@ -33,6 +35,11 @@
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ usuario.idUsuario }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ usuario.nombreUsuario }}</td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {{ usuario.nombres || '(Sin registrar)' }} {{ usuario.apellidos || '' }}
+              </td>
+
               <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold"
                   [ngClass]="{'text-red-600': usuario.rol === 'ADMIN', 'text-blue-600': usuario.rol === 'VENDEDOR'}">
                 {{ usuario.rol }}
@@ -43,7 +50,6 @@
                   {{ usuario.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ usuario.fechaCreacion | date: 'mediumDate' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <a [routerLink]="['/admin/usuarios/editar', usuario.idUsuario]"
                    class="text-indigo-600 hover:text-indigo-900 mr-4">

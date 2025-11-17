@@ -1,0 +1,77 @@
+<div class="container mx-auto p-8">
+
+  <a routerLink="/admin/ventas" class="text-blue-500 hover:underline mb-6 inline-block">
+    &larr; Volver al Historial de Ventas
+  </a>
+
+  @if (cargando) {
+    <p class="text-gray-500 text-center p-8">Cargando detalles de la venta...</p>
+  }
+
+  @if (error) {
+    <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p>
+  }
+
+  @if (venta) {
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-4xl mx-auto">
+
+      <div class="flex justify-between items-start border-b pb-4 mb-6">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Detalle de Venta #{{ venta.idVenta }}</h1>
+          <p class="text-gray-500">
+            Realizada el: {{ venta.fechaVenta | date: 'dd/MM/yyyy \'a las\' HH:mm' }}
+          </p>
+          <p class="text-gray-500">
+            Comprobante: <span class="font-medium text-gray-800 capitalize">{{ venta.tipoComprobante }}</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-500">Vendedor</p>
+          <p class="font-semibold text-lg">{{ venta.usuario?.nombreUsuario || 'N/A' }}</p>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-3">Cliente</h2>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <p class="font-medium text-gray-800">{{ venta.cliente?.nombres }} {{ venta.cliente?.apellidos }}</p>
+          <p class="text-sm text-gray-600">DNI: {{ venta.cliente?.dni }}</p>
+          <p class="text-sm text-gray-600">Celular: {{ venta.cliente?.celular }}</p>
+        </div>
+      </div>
+
+      <h2 class="text-xl font-semibold mb-3">Productos Incluidos</h2>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+          <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">P. Unitario</th>
+          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+
+          @for (item of venta.detalles; track item.idDetalle) {
+            <tr>
+              <td class="px-4 py-3 text-sm text-gray-500">{{ item.producto?.codigoSku || 'N/A' }}</td>
+              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.producto?.nombre || 'Producto no disponible' }}</td>
+              <td class="px-4 py-3 text-sm text-center text-gray-500">{{ item.cantidad }}</td>
+              <td class="px-4 py-3 text-sm text-right text-gray-500">S/ {{ item.precioUnitario | number: '1.2-2' }}</td>
+              <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900">S/ {{ item.subtotal | number: '1.2-2' }}</td>
+            </tr>
+          }
+
+        </tbody>
+        <tfoot class="bg-gray-50">
+        <tr>
+          <td colspan="4" class="px-4 py-3 text-right text-lg font-bold text-gray-900">MONTO TOTAL:</td>
+          <td class="px-4 py-3 text-right text-xl font-extrabold text-blue-600">S/ {{ venta.montoTotal | number: '1.2-2' }}</td>
+        </tr>
+        </tfoot>
+      </table>
+
+    </div>
+  }
+</div>

@@ -4,18 +4,17 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
-// --- Importa tu servicio de autenticación/usuario ---
-import { Auth } from '../../../services/auth';
-import {Usuario} from '../../../services/usuario';
+// Importa tu servicio de autenticación/usuario
+import { Auth } from '../../../services/auth'; //
 
 @Component({
   selector: 'app-usuario-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink], // <-- Asegúrate de tener RouterLink
+  imports: [CommonModule, ReactiveFormsModule, RouterLink], //
   templateUrl: './usuario-form.html',
   styleUrl: './usuario-form.css'
 })
-export class UsuarioFormComponent implements OnInit {
+export class UsuarioFormComponent implements OnInit { //
 
   public usuarioForm: FormGroup;
   public esEdicion: boolean = false;
@@ -23,61 +22,70 @@ export class UsuarioFormComponent implements OnInit {
   public cargando: boolean = true;
   public error: string | null = null;
 
-  // Roles disponibles para el dropdown
   public roles: string[] = ['ADMIN', 'VENDEDOR'];
 
   constructor(
     private fb: FormBuilder,
-    private usuarioService: Usuario,
-    private authService: Auth, // Usamos Auth para la gestión de usuarios
+    private authService: Auth, // Usamos Auth para todas las llamadas de API de usuario
     private router: Router,
     private route: ActivatedRoute
   ) {
-    // Definición del formulario de usuario
+    // Definición del formulario de usuario con los nuevos campos
     this.usuarioForm = this.fb.group({
-      idUsuario: [null], // Se llena solo en edición
+      idUsuario: [null],
+
+      // --- ¡NUEVOS CAMPOS AÑADIDOS! ---
+      nombres: ['', Validators.required],
+      apellidos: ['', Validators.required],
+      celular: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+      // ---
+
       nombreUsuario: ['', [Validators.required, Validators.minLength(4)]],
-      // NOTA: En edición, la contraseña no es requerida.
-      // Solo se envía si el admin quiere cambiarla.
-      hashContrasena: ['', [Validators.minLength(6)]],
+      hashContrasena: ['', [Validators.minLength(6)]], // Requerido solo al crear
       rol: ['VENDEDOR', Validators.required],
       activo: [true, Validators.required]
     });
   }
 
   ngOnInit(): void {
-    // 1. Verificar si estamos en modo edición
     this.usuarioId = this.route.snapshot.paramMap.get('id');
 
     if (this.usuarioId) {
+      // --- MODO EDICIÓN ---
       this.esEdicion = true;
+      // Hacemos la contraseña opcional en modo edición
+      this.usuarioForm.get('hashContrasena')?.clearValidators();
       this.cargarDatosUsuario(this.usuarioId);
     } else {
+      // --- MODO NUEVO ---
       this.esEdicion = false;
       this.cargando = false;
+      // La contraseña SÍ es requerida (como se definió en el constructor)
     }
   }
 
   /**
-   * Carga los datos del usuario en el formulario para edición.
+   * Carga los datos del usuario en el formulario (Modo Edición)
    */
   cargarDatosUsuario(id: string): void {
-    this.authService.getUsuarioPorId(id).subscribe({
+    this.authService.getUsuarioPorId(id).subscribe({ //
       next: (usuario: any) => {
-        // Mapear los datos de la respuesta al formulario
+        // Mapear TODOS los datos al formulario
         this.usuarioForm.patchValue({
           idUsuario: usuario.idUsuario,
+          nombres: usuario.nombres,
+          apellidos: usuario.apellidos,
+          celular: usuario.celular,
           nombreUsuario: usuario.nombreUsuario,
           rol: usuario.rol,
           activo: usuario.activo
-          // NO cargamos el hashContrasena por seguridad. Se queda vacío.
+          // No cargamos el hashContrasena por seguridad
         });
         this.cargando = false;
       },
-      error: (err: HttpErrorResponse) => {
+      error: (err: any) => {
         this.error = 'Usuario no encontrado o error de conexión.';
         this.cargando = false;
-        console.error('Error cargando datos del usuario:', err);
       }
     });
   }
@@ -86,56 +94,46 @@ export class UsuarioFormComponent implements OnInit {
    * Maneja el envío del formulario (POST o PUT)
    */
   onSubmit(): void {
-    // Si el formulario es inválido y no estamos en edición (donde la contraseña es opcional)
     if (this.usuarioForm.invalid) {
-      this.error = 'Por favor, completa correctamente todos los campos.';
+      this.error = 'Por favor, completa todos los campos requeridos (*).';
       return;
     }
 
     const userData = this.usuarioForm.value;
 
-    // Si la contraseña está vacía, la eliminamos del objeto para no enviarla al backend
+    // Si la contraseña está vacía en modo edición, la eliminamos
+    // para que el backend no intente hashear un string vacío.
     if (this.esEdicion && (!userData.hashContrasena || userData.hashContrasena.length === 0)) {
       delete userData.hashContrasena;
     }
 
-    this.error = null; // Limpiamos el error
+    this.error = null;
+    this.cargando = true;
 
-    // Si es Edición (PUT)
     if (this.esEdicion && this.usuarioId) {
-      const idNumber = parseInt(this.usuarioId, 10);
-      this.actualizarUsuario(idNumber, userData);
+      // --- LÓGICA DE ACTUALIZAR (PUT) ---
+      this.authService.updateUsuario(parseInt(this.usuarioId, 10), userData).subscribe({ //
+        next: (response: any) => {
+          alert(`Usuario ${response.nombreUsuario} actualizado con éxito!`);
+          this.router.navigate(['/admin/usuarios']);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error = `Error al actualizar: ${err.error?.message || err.statusText}`;
+          this.cargando = false;
+        }
+      });
+    } else {
+      // --- LÓGICA DE CREAR (POST) ---
+      this.authService.register(userData).subscribe({ //
+        next: (response: any) => {
+          alert(`Usuario ${response.nombreUsuario} creado con éxito!`);
+          this.router.navigate(['/admin/usuarios']);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error = `Error al crear: ${err.error?.message || 'El usuario ya existe'}`;
+          this.cargando = false;
+        }
+      });
     }
-    // Si es Creación (POST)
-    else {
-      this.crearUsuario(userData);
-    }
-  }
-
-  crearUsuario(data: any): void {
-    this.usuarioService.register(data).subscribe({
-      next: (response: any) => { // <-- Arregla el tipo 'response'
-        alert(`Producto ${response.nombreUsuario} creado con éxito!`);
-        this.router.navigate(['/admin/productos']);
-      },
-      error: (err: HttpErrorResponse) => { // <-- Arregla el tipo 'err'
-        this.error = `Error al crear: ${err.error.message || err.statusText}`;
-        console.error('Error al crear usuario:', err);
-      }
-    });
-  }
-
-  actualizarUsuario(id: number, data: any): void {
-    // ...
-    this.usuarioService.updateUsuario(id, data).subscribe({
-      next: (response: any) => { // <-- Arregla el tipo 'response'
-        alert(`Producto ${response.nombreUsuario} actualizado con éxito!`);
-        this.router.navigate(['/admin/productos']);
-      },
-      error: (err: HttpErrorResponse) => { // <-- Arregla el tipo 'err'
-        this.error = `Error al actualizar: ${err.error.message || err.statusText}`;
-        console.error('Error al actualizar usuario:', err);
-      }
-    });
   }
 }

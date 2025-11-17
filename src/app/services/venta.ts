@@ -46,4 +46,8 @@ export class Venta { // Tu clase 'Venta'
     // Hacemos la petición GET con los parámetros
     return this.http.get<any[]>(this.apiUrl, { params: params });
   }
+
+  public getVentaPorId(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`);
+  }
 }

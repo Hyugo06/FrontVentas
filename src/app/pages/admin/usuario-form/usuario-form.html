@@ -7,8 +7,8 @@
     }
   </h1>
 
-  <a routerLink="/admin/productos" class="text-blue-500 hover:underline mb-6 inline-block">
-    &larr; Volver al Panel
+  <a routerLink="/admin/usuarios" class="text-blue-500 hover:underline mb-6 inline-block">
+    &larr; Volver al Panel de Usuarios
   </a>
 
   @if (cargando) {
@@ -23,44 +23,71 @@
   }
 
   @if (!cargando) {
-    <form [formGroup]="usuarioForm" (ngSubmit)="onSubmit()" class="bg-white p-6 rounded-lg shadow-xl max-w-lg">
+    <form [formGroup]="usuarioForm" (ngSubmit)="onSubmit()" class="bg-white p-6 rounded-lg shadow-xl max-w-lg space-y-6">
 
-      <div class="mb-4">
-        <label for="nombreUsuario" class="block text-sm font-medium text-gray-700">Nombre de Usuario (*)</label>
-        <input id="nombreUsuario" type="text" formControlName="nombreUsuario"
-               class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-        @if (usuarioForm.get('nombreUsuario')?.invalid && usuarioForm.get('nombreUsuario')?.touched) {
-          <p class="text-xs text-red-500 mt-1">El nombre de usuario es requerido (mínimo 4 caracteres).</p>
-        }
-      </div>
-
-      <div class="mb-4">
-        <label for="rol" class="block text-sm font-medium text-gray-700">Rol (*)</label>
-        <select id="rol" formControlName="rol"
-                class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-          @for (rol of roles; track rol) {
-            <option [value]="rol">{{ rol }}</option>
+      <div>
+        <h3 class="text-lg font-semibold mb-3 border-b pb-1 text-gray-800">Datos Personales</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="mb-4">
+            <label for="nombres" class="block text-sm font-medium text-gray-700">Nombres (*)</label>
+            <input id="nombres" type="text" formControlName="nombres"
+                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
+          </div>
+          <div class="mb-4">
+            <label for="apellidos" class="block text-sm font-medium text-gray-700">Apellidos (*)</label>
+            <input id="apellidos" type="text" formControlName="apellidos"
+                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label for="celular" class="block text-sm font-medium text-gray-700">Celular (*)</label>
+          <input id="celular" type="text" formControlName="celular" maxlength="9"
+                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
+          @if (usuarioForm.get('celular')?.invalid && usuarioForm.get('celular')?.touched) {
+            <p class="text-xs text-red-500 mt-1">Debe ser un celular válido de 9 dígitos.</p>
           }
-        </select>
+        </div>
       </div>
 
-      <div class="mb-4 flex items-center">
-        <input id="activo" type="checkbox" formControlName="activo"
-               class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-        <label for="activo" class="ml-2 block text-sm font-medium text-gray-700">
-          Activo (¿Puede iniciar sesión?)
-        </label>
-      </div>
+      <div>
+        <h3 class="text-lg font-semibold mb-3 border-b pb-1 text-gray-800">Datos de Acceso</h3>
+        <div class="mb-4">
+          <label for="nombreUsuario" class="block text-sm font-medium text-gray-700">Nombre de Usuario (Login) (*)</label>
+          <input id="nombreUsuario" type="text" formControlName="nombreUsuario"
+                 class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+          @if (usuarioForm.get('nombreUsuario')?.invalid && usuarioForm.get('nombreUsuario')?.touched) {
+            <p class="text-xs text-red-500 mt-1">Requerido (mín. 4 caracteres).</p>
+          }
+        </div>
 
-      <div class="mb-6">
-        <label for="password" class="block text-sm font-medium text-gray-700">
-          Contraseña {{ esEdicion ? '(Dejar vacío para no cambiar)' : '(*)' }}
-        </label>
-        <input id="password" type="password" formControlName="hashContrasena"
-               class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-        @if (usuarioForm.get('hashContrasena')?.invalid && usuarioForm.get('hashContrasena')?.touched) {
-          <p class="text-xs text-red-500 mt-1">La contraseña debe tener al menos 6 caracteres.</p>
-        }
+        <div class="mb-4">
+          <label for="rol" class="block text-sm font-medium text-gray-700">Rol (*)</label>
+          <select id="rol" formControlName="rol"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+            @for (rol of roles; track rol) {
+              <option [value]="rol">{{ rol }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-4 flex items-center">
+          <input id="activo" type="checkbox" formControlName="activo"
+                 class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+          <label for="activo" class="ml-2 block text-sm font-medium text-gray-700">
+            Activo (¿Puede iniciar sesión?)
+          </label>
+        </div>
+
+        <div class="mb-6">
+          <label for="password" class="block text-sm font-medium text-gray-700">
+            Contraseña {{ esEdicion ? '(Dejar vacío para no cambiar)' : '(*)' }}
+          </label>
+          <input id="password" type="password" formControlName="hashContrasena"
+                 class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+          @if (usuarioForm.get('hashContrasena')?.invalid && usuarioForm.get('hashContrasena')?.touched) {
+            <p class="text-xs text-red-500 mt-1">La contraseña es obligatoria (mín. 6 caracteres).</p>
+          }
+        </div>
       </div>
 
 
