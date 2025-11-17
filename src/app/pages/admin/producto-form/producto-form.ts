@@ -1,15 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+// ¡Añade 'AbstractControl' para el helper!
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
-// --- Importa los servicios y las interfaces ---
 import { Producto } from '../../../services/producto';
 import { Marca, MarcaDTO } from '../../../services/marca';
 import { Categoria, CategoriaDTO } from '../../../services/categoria';
 import {Router, ActivatedRoute, RouterLink} from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http'; // ¡Esto ya está correcto!
-
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-producto-form',
@@ -23,12 +21,26 @@ export class ProductoFormComponent implements OnInit {
   public productoForm: FormGroup;
   public esEdicion: boolean = false;
   public productoId: number | null = null;
-
   public listaMarcas: MarcaDTO[] = [];
   public listaCategorias: CategoriaDTO[] = [];
-
   public cargando: boolean = true;
   public error: string | null = null;
+
+  // --- ¡AQUÍ ESTÁ LA LÓGICA DE PLANTILLAS! ---
+  // Mapea el ID de la Categoría (de tu BD) a los campos que debe tener.
+  private caracteristicasTemplates: { [key: number]: string[] } = {
+    3: ['talla', 'color', 'material'],  // Gorras
+    4: ['talla', 'color', 'material'],  // Polos
+    5: ['talla', 'color', 'tela'],      // Pantalones
+    6: ['talla', 'color', 'material'],  // Casacas
+    7: ['medidas', 'color', 'material'],// Cortinas
+    8: ['tamaño', 'hilos', 'material'], // Sábanas
+    9: ['medidas', 'firmeza', 'material'],// Almohadas
+    10: ['medidas', 'color', 'gramaje'], // Toallas
+    11: ['talla', 'color', 'material'],  // Calzado
+    12: ['color', 'material', 'estilo'], // Decoración
+    13: ['material', 'piezas']           // Utensilios de Cocina
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -47,58 +59,63 @@ export class ProductoFormComponent implements OnInit {
       precioVenta: [0, [Validators.required, Validators.min(0)]],
       precioCompra: [0, [Validators.required, Validators.min(0)]],
       stockActual: [0, [Validators.required, Validators.min(0)]],
-      // Inicializamos los select con null para que el 'required' de la BD se respete
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
+
+      // ¡AÑADIDO! Un sub-formulario vacío para las características
+      caracteristicas: this.fb.group({})
     });
   }
 
   ngOnInit(): void {
-    // 1. Cargar las Marcas y Categorías al mismo tiempo
-    this.cargarDropdowns();
+    this.cargarDropdowns(); // Carga Marcas y Categorías
 
-    // 2. Verificar si es modo edición
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.esEdicion = true;
-        this.productoId = +id;
-        this.cargarDatosProducto(this.productoId);
-      } else {
-        this.cargando = false;
+    // --- ¡AÑADIDO! Escucha los cambios del dropdown de Categoría ---
+    this.productoForm.get('idCategoria')?.valueChanges.subscribe(idCategoria => {
+      if (idCategoria) {
+        this.actualizarCamposCaracteristicas(idCategoria);
       }
     });
+
+    // 2. Verificar si es modo edición
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.esEdicion = true;
+      this.productoId = +id;
+      this.cargarDatosProducto(this.productoId);
+    } else {
+      this.cargando = false;
+    }
   }
 
   /**
-   * Carga las listas de Marcas y Categorías (LIMPIEZA DE CÓDIGO)
+   * Carga las listas de Marcas y Categorías
    */
   cargarDropdowns(): void {
     forkJoin([
       this.marcaService.getMarcas(),
-      this.categoriaService.getCategorias()
+      this.categoriaService.getCategorias() // Carga todas
     ]).subscribe({
       next: ([marcas, categorias]) => {
         this.listaMarcas = marcas;
-        this.listaCategorias = categorias;
-        this.error = null;
+        // Filtramos para que en el dropdown solo se vean las "hijas"
+        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre != null);
       },
-      // --- ¡BLOQUE ERROR CORREGIDO! ---
-      error: (err: any) => { // Un solo bloque error con :any
-        this.error = 'Error al cargar Marcas y Categorías. ¿Están funcionando sus endpoints?';
-        console.error('Error cargando listas:', err);
+      error: (err: any) => {
+        this.error = 'Error al cargar Marcas y Categorías.';
         this.cargando = false;
       }
     });
   }
 
   /**
-   * Carga los datos del producto existente en modo edición (CORRECCIÓN DE SINTAXIS)
+   * Carga los datos del producto (para Edición)
    */
   cargarDatosProducto(id: number): void {
     this.productoService.getProductoAdminPorId(id.toString()).subscribe({
       next: (producto: any) => {
-        // Mapear los datos de la respuesta al formulario
+
+        // 1. Rellena los campos principales
         this.productoForm.patchValue({
           idProducto: producto.idProducto,
           codigoSku: producto.codigoSku,
@@ -108,70 +125,95 @@ export class ProductoFormComponent implements OnInit {
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
           stockActual: producto.stockActual,
-          // Usamos 'idMarca' y 'idCategoria' de los objetos anidados
           idMarca: producto.marca.idMarca,
           idCategoria: producto.categoria.idCategoria
         });
+
+        // 2. Rellena las características dinámicas
+        if (producto.caracteristicas) {
+          // Genera los campos (basado en la categoría)
+          this.actualizarCamposCaracteristicas(producto.categoria.idCategoria);
+          // Rellena los valores que vienen del JSONB
+          this.productoForm.get('caracteristicas')?.patchValue(producto.caracteristicas);
+        }
+
         this.cargando = false;
       },
-      // --- ¡CORRECCIÓN DE SINTAXIS! ---
       error: (err: any) => {
-        this.error = 'Producto no encontrado o error de conexión.';
+        this.error = 'Producto no encontrado.';
         this.cargando = false;
-        console.error('Error cargando datos del producto:', err);
       }
     });
+  }
+
+  /**
+   * ¡NUEVO! Esta función añade/quita campos del formulario dinámicamente
+   */
+  actualizarCamposCaracteristicas(idCategoria: number): void {
+    const caracteristicasGroup = this.productoForm.get('caracteristicas') as FormGroup;
+
+    // 1. Borra todos los controles (campos) anteriores
+    Object.keys(caracteristicasGroup.controls).forEach(key => {
+      caracteristicasGroup.removeControl(key);
+    });
+
+    // 2. Obtiene la nueva plantilla de campos (ej. ['talla', 'color'])
+    const template = this.caracteristicasTemplates[idCategoria] || [];
+
+    // 3. Añade los nuevos controles (campos) al formulario
+    template.forEach(field => {
+      caracteristicasGroup.addControl(field, this.fb.control('', Validators.required));
+    });
+  }
+
+  /**
+   * ¡NUEVO! Helper para que el HTML pueda iterar sobre los campos dinámicos
+   */
+  get caracteristicasControls(): AbstractControl[] {
+    const group = this.productoForm.get('caracteristicas') as FormGroup;
+    return Object.values(group.controls);
+  }
+
+  get caracteristicasKeys(): string[] {
+    const group = this.productoForm.get('caracteristicas') as FormGroup;
+    return Object.keys(group.controls);
   }
 
 
   /**
-   * Lógica para el envío del formulario
+   * Lógica para el envío del formulario (¡ya funciona con el sub-formulario!)
    */
   onSubmit(): void {
     if (this.productoForm.invalid) {
-      this.error = 'Por favor, completa todos los campos requeridos y revisa los números.';
+      this.error = 'Por favor, completa todos los campos requeridos (incluyendo características).';
       return;
     }
+    this.cargando = true;
+    this.error = null;
 
+    // productoData ahora incluye el objeto 'caracteristicas' anidado
     const productoData = this.productoForm.value;
 
-    // --- LÓGICA DE POST vs. PUT ---
+    console.log('Enviando:', productoData); // ¡Revisa la consola para ver el JSON!
 
     if (this.esEdicion && this.productoId) {
-      this.actualizarProducto(this.productoId, productoData);
+      // --- LÓGICA DE ACTUALIZAR (PUT) ---
+      this.productoService.updateProducto(this.productoId, productoData).subscribe({
+        next: () => this.router.navigate(['/admin/productos']),
+        error: (err: HttpErrorResponse) => {
+          this.error = err.error?.message || 'Error al actualizar.';
+          this.cargando = false;
+        }
+      });
+    } else {
+      // --- LÓGICA DE CREAR (POST) ---
+      this.productoService.createProducto(productoData).subscribe({
+        next: () => this.router.navigate(['/admin/productos']),
+        error: (err: HttpErrorResponse) => {
+          this.error = err.error?.message || 'Error al crear.';
+          this.cargando = false;
+        }
+      });
     }
-    // Si es Creación (POST)
-    else {
-      this.crearProducto(productoData);
-    }
-  }
-
-  crearProducto(data: any): void {
-    this.productoService.createProducto(data).subscribe({ // Asumo que el servicio tendrá un createProducto
-      next: (response) => {
-        alert(`Producto ${response.nombre} creado con éxito!`);
-        this.router.navigate(['/admin/productos']); // Redirigir al dashboard
-      },
-      error: (err: HttpErrorResponse) => { // Usamos HttpErrorResponse para más detalle
-        this.error = `Error al crear: ${err.error.message || err.statusText}`;
-        console.error('Error al crear producto:', err);
-      }
-    });
-  }
-
-  actualizarProducto(id: number, data: any): void {
-    // 1. Añadimos el id al objeto de datos
-    data.idProducto = id;
-
-    this.productoService.updateProducto(id, data).subscribe({ // Asumo que el servicio tendrá un updateProducto
-      next: (response) => {
-        alert(`Producto ${response.nombre} actualizado con éxito!`);
-        this.router.navigate(['/admin/productos']); // Redirigir al dashboard
-      },
-      error: (err: HttpErrorResponse) => {
-        this.error = `Error al actualizar: ${err.error.message || err.statusText}`;
-        console.error('Error al actualizar producto:', err);
-      }
-    });
   }
 }

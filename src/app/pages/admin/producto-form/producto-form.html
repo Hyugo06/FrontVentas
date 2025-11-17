@@ -15,112 +15,126 @@
     <p class="text-red-600 bg-red-100 p-3 rounded-lg my-4">{{ error }}</p>
   }
 
-  <form [formGroup]="productoForm" (ngSubmit)="onSubmit()" class="space-y-6 bg-white p-6 shadow-xl rounded-lg">
+  @if (cargando) {
+    <p class="text-gray-500 text-center p-8">Cargando datos del producto...</p>
+  }
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  @if (!cargando) {
+    <form [formGroup]="productoForm" (ngSubmit)="onSubmit()" class="space-y-6 bg-white p-6 shadow-xl rounded-lg">
 
-      <div>
-        <label for="codigoSku" class="block text-sm font-medium text-gray-700">SKU (Código)</label>
-        <input id="codigoSku" formControlName="codigoSku" type="text" placeholder="Ej: GOR-001-AZ"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        @if (productoForm.get('codigoSku')?.invalid && (productoForm.get('codigoSku')?.dirty || productoForm.get('codigoSku')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">El SKU es obligatorio.</p>
-        }
-      </div>
-
-      <div>
-        <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-        <input id="nombre" formControlName="nombre" type="text" placeholder="Ej: Gorra Trucker Azul"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        @if (productoForm.get('nombre')?.invalid && (productoForm.get('nombre')?.dirty || productoForm.get('nombre')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">El Nombre es obligatorio.</p>
-        }
-      </div>
-    </div>
-
-    <div>
-      <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
-      <textarea id="descripcion" formControlName="descripcion" rows="3"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
-    </div>
-
-    <div class="grid grid-cols-3 md:grid-cols-5 gap-6">
-
-      <div>
-        <label for="precioRegular" class="block text-sm font-medium text-gray-700">P. Regular</label>
-        <input id="precioRegular" formControlName="precioRegular" type="number" step="0.01"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-      </div>
-
-      <div>
-        <label for="precioVenta" class="block text-sm font-medium text-gray-700">P. Venta (*)</label>
-        <input id="precioVenta" formControlName="precioVenta" type="number" step="0.01"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        @if (productoForm.get('precioVenta')?.invalid && (productoForm.get('precioVenta')?.dirty || productoForm.get('precioVenta')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">Requerido y debe ser positivo.</p>
-        }
-      </div>
-
-      <div>
-        <label for="precioCompra" class="block text-sm font-medium text-gray-700">P. Compra (*)</label>
-        <input id="precioCompra" formControlName="precioCompra" type="number" step="0.01"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        @if (productoForm.get('precioCompra')?.invalid && (productoForm.get('precioCompra')?.dirty || productoForm.get('precioCompra')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">Requerido y positivo.</p>
-        }
-      </div>
-
-      <div>
-        <label for="stockActual" class="block text-sm font-medium text-gray-700">Stock (*)</label>
-        <input id="stockActual" formControlName="stockActual" type="number"
-               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        @if (productoForm.get('stockActual')?.invalid && (productoForm.get('stockActual')?.dirty || productoForm.get('stockActual')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">Requerido y ≥ 0.</p>
-        }
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      <div>
-        <label for="idMarca" class="block text-sm font-medium text-gray-700">Marca (*)</label>
-        <select id="idMarca" formControlName="idMarca"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
-          <option [ngValue]="null" disabled>-- Seleccione una Marca --</option>
-          @for (marca of listaMarcas; track marca.idMarca) {
-            <option [ngValue]="marca.idMarca">{{ marca.nombre }}</option>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="codigoSku" class="block text-sm font-medium text-gray-700">SKU (Código) (*)</label>
+          <input id="codigoSku" formControlName="codigoSku" type="text" placeholder="Ej: GOR-001-AZ"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+          @if (productoForm.get('codigoSku')?.invalid && (productoForm.get('codigoSku')?.dirty || productoForm.get('codigoSku')?.touched)) {
+            <p class="text-xs text-red-500 mt-1">El SKU es obligatorio.</p>
           }
-        </select>
-        @if (productoForm.get('idMarca')?.invalid && (productoForm.get('idMarca')?.dirty || productoForm.get('idMarca')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">La Marca es obligatoria.</p>
-        }
+        </div>
+        <div>
+          <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre (*)</label>
+          <input id="nombre" formControlName="nombre" type="text" placeholder="Ej: Gorra Trucker Azul"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+          @if (productoForm.get('nombre')?.invalid && (productoForm.get('nombre')?.dirty || productoForm.get('nombre')?.touched)) {
+            <p class="text-xs text-red-500 mt-1">El Nombre es obligatorio.</p>
+          }
+        </div>
       </div>
 
       <div>
-        <label for="idCategoria" class="block text-sm font-medium text-gray-700">Categoría (*)</label>
-        <select id="idCategoria" formControlName="idCategoria"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
-          <option [ngValue]="null" disabled>-- Seleccione una Categoría --</option>
-          @for (categoria of listaCategorias; track categoria.idCategoria) {
-            <option [ngValue]="categoria.idCategoria">{{ categoria.nombre }}</option>
-          }
-        </select>
-        @if (productoForm.get('idCategoria')?.invalid && (productoForm.get('idCategoria')?.dirty || productoForm.get('idCategoria')?.touched)) {
-          <p class="text-xs text-red-500 mt-1">La Categoría es obligatoria.</p>
-        }
+        <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+        <textarea id="descripcion" formControlName="descripcion" rows="3"
+                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
       </div>
-    </div>
 
-    <div class="pt-4 border-t mt-6">
-      <button type="submit" [disabled]="productoForm.invalid"
-              class="w-full py-3 px-4 rounded-lg font-semibold transition-colors
-                     bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400">
-        @if (esEdicion) {
-          Guardar Cambios
-        } @else {
-          Crear Producto
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div>
+          <label for="precioRegular" class="block text-sm font-medium text-gray-700">P. Regular</label>
+          <input id="precioRegular" formControlName="precioRegular" type="number" step="0.01"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+        </div>
+        <div>
+          <label for="precioVenta" class="block text-sm font-medium text-gray-700">P. Venta (*)</label>
+          <input id="precioVenta" formControlName="precioVenta" type="number" step="0.01"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+        </div>
+        <div>
+          <label for="precioCompra" class="block text-sm font-medium text-gray-700">P. Compra (*)</label>
+          <input id="precioCompra" formControlName="precioCompra" type="number" step="0.01"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+        </div>
+        <div>
+          <label for="stockActual" class="block text-sm font-medium text-gray-700">Stock (*)</label>
+          <input id="stockActual" formControlName="stockActual" type="number"
+                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="idMarca" class="block text-sm font-medium text-gray-700">Marca (*)</label>
+          <select id="idMarca" formControlName="idMarca"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <option [ngValue]="null" disabled>-- Seleccione una Marca --</option>
+            @for (marca of listaMarcas; track marca.idMarca) {
+              <option [ngValue]="marca.idMarca">{{ marca.nombre }}</option>
+            }
+          </select>
+          @if (productoForm.get('idMarca')?.invalid && (productoForm.get('idMarca')?.dirty || productoForm.get('idMarca')?.touched)) {
+            <p class="text-xs text-red-500 mt-1">La Marca es obligatoria.</p>
+          }
+        </div>
+        <div>
+          <label for="idCategoria" class="block text-sm font-medium text-gray-700">Categoría (*)</label>
+          <select id="idCategoria" formControlName="idCategoria"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <option [ngValue]="null" disabled>-- Seleccione una Categoría --</option>
+            @for (categoria of listaCategorias; track categoria.idCategoria) {
+              <option [ngValue]="categoria.idCategoria">{{ categoria.nombre }}</option>
+            }
+          </select>
+          @if (productoForm.get('idCategoria')?.invalid && (productoForm.get('idCategoria')?.dirty || productoForm.get('idCategoria')?.touched)) {
+            <p class="text-xs text-red-500 mt-1">La Categoría es obligatoria.</p>
+          }
+        </div>
+      </div>
+
+
+      <div class="mt-6 pt-6 border-t" formGroupName="caracteristicas">
+        <h3 class="text-lg font-semibold mb-3 text-gray-800">Características Específicas</h3>
+
+        @if(caracteristicasKeys.length === 0) {
+          <p class="text-sm text-gray-500">Seleccione una categoría para añadir sus características (ej. Talla, Color, Medidas).</p>
         }
-      </button>
-    </div>
-  </form>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          @for (key of caracteristicasKeys; track key; let i = $index) {
+            <div>
+              <label [for]="key" class="block text-sm font-medium text-gray-700 capitalize">
+                {{ key }} (*)
+              </label>
+              <input [id]="key" [formControlName]="key" type="text"
+                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+
+              @if (caracteristicasControls[i].invalid && caracteristicasControls[i].touched) {
+                <p class="text-xs text-red-500 mt-1">Este campo es obligatorio.</p>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      <div class="pt-4 border-t mt-6">
+        <button type="submit" [disabled]="productoForm.invalid"
+                class="w-full py-3 px-4 rounded-lg font-semibold transition-colors
+                       bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400">
+          @if (esEdicion) {
+            Guardar Cambios
+          } @else {
+            Crear Producto
+          }
+        </button>
+      </div>
+    </form>
+  }
 </div>
