@@ -17,28 +17,54 @@
 
   @if (!cargando && !error) {
     <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+
       <table class="min-w-full divide-y divide-gray-200">
+
         <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P. Compra</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P. Venta</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Color</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Talla/Medida</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">P. Venta</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
         </tr>
         </thead>
+
         <tbody class="bg-white divide-y divide-gray-200">
 
           @for (prod of productos; track prod.idProducto) {
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ prod.codigoSku }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ prod.nombre }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">S/ {{ prod.precioCompra | number: '1.2-2' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">S/ {{ prod.precioVenta | number: '1.2-2' }}</td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="text-blue-600 hover:underline">
+                  {{ prod.nombre }}
+                </a>
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ prod.marca?.nombre || 'N/A' }}
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                {{ prod.caracteristicas?.color || 'N/A' }}
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                {{ prod.caracteristicas?.talla || prod.caracteristicas?.medidas || prod.caracteristicas?.tamano || 'N/A' }}
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                S/ {{ prod.precioVenta | number: '1.2-2' }}
+              </td>
+
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ prod.stockActual }}</td>
+
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a routerLink="/admin/productos/editar/{{prod.idProducto}}"
+                <a [routerLink]="['/admin/productos/editar', prod.idProducto]"
                    class="text-indigo-600 hover:text-indigo-900 mr-4">
                   Editar
                 </a>
@@ -50,7 +76,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="6" class="px-6 py-4 text-center text-gray-500">No se encontraron productos.</td>
+              <td colspan="8" class="px-6 py-4 text-center text-gray-500">No se encontraron productos.</td>
             </tr>
           }
 

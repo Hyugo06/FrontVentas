@@ -17,6 +17,7 @@ import {AdminMarcasComponent} from './pages/admin/admin-marcas/admin-marcas';
 import {AdminCategoriasComponent} from './pages/admin/admin-categorias/admin-categorias';
 import {CategoriaFormComponent} from './pages/admin/categoria-form/categoria-form';
 import {MarcaFormComponent} from './pages/admin/marca-form/marca-form';
+import {AdminProductoDetalleComponent} from './pages/admin/admin-producto-detalle/admin-producto-detalle';
 
 
 export const routes: Routes = [
@@ -54,6 +55,9 @@ export const routes: Routes = [
       { path: 'categorias', component: AdminCategoriasComponent },
       { path: 'categorias/nuevo', component: CategoriaFormComponent },
       { path: 'categorias/editar/:id', component: CategoriaFormComponent },
+
+      { path: 'productos/ver/:id', component: AdminProductoDetalleComponent },
+
     ]
   },
 
