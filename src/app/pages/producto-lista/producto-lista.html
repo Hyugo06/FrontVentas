@@ -1,25 +1,31 @@
 <div class="flex">
 
-  <aside class="w-64 bg-white p-6 shadow-lg h-screen sticky top-0">
-    <h2 class="text-xl font-bold mb-4">Categorías</h2>
+  <aside class="w-64 bg-white p-6 shadow-lg h-screen sticky top-0 overflow-y-auto">
 
-    <nav>
-      <button
-        (click)="setCategoriaFiltro('')"
-        class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 font-semibold"
-        [class.bg-blue-100]="filtroForm.get('categoria')?.value === ''">
-        Todas las Categorías
-      </button>
+    <button
+      (click)="setCategoriaFiltro('')"
+      class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 font-extrabold text-blue-600"
+      [class.bg-blue-100]="filtroForm.get('categoria')?.value === ''">
+      Todas las Categorías
+    </button>
 
-      @for (cat of categorias; track cat.idCategoria) {
-        <button
-          (click)="setCategoriaFiltro(cat.nombre)"
-          class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100"
-          [class.bg-blue-100]="filtroForm.get('categoria')?.value === cat.nombre">
-          {{ cat.nombre }}
-        </button>
-      }
-    </nav>
+    @for (padre of categoriasPadre; track padre.idCategoria) {
+      <div class="mt-4">
+        <h3 class="text-sm font-bold text-gray-500 uppercase mb-2">{{ padre.nombre }}</h3>
+
+        @for (hijo of categoriasHijo; track hijo.idCategoria) {
+          @if (hijo.idCategoriaPadre === padre.idCategoria) {
+            <button
+              (click)="setCategoriaFiltro(hijo.nombre)"
+              class="block w-full text-left py-1.5 px-3 rounded hover:bg-gray-100 text-gray-700"
+              [class.bg-blue-100]="filtroForm.get('categoria')?.value === hijo.nombre"
+              [class.font-semibold]="filtroForm.get('categoria')?.value === hijo.nombre">
+              {{ hijo.nombre }}
+            </button>
+          }
+        }
+      </div>
+    }
   </aside>
 
   <main class="flex-1 p-8 bg-gray-50">
@@ -45,26 +51,33 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
       @for (prod of productos; track prod.idProducto) {
+
         <a [routerLink]="['/productos', prod.idProducto]"
-           class="border rounded-lg shadow-lg p-4 block hover:shadow-xl transition-shadow bg-white">
+           class="group bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl">
 
-          <h2 class="text-xl font-semibold">{{ prod.nombre }}</h2>
-          <p class="text-gray-600">{{ prod.codigoSku }}</p>
+          <div class="p-5">
+            <span class="text-sm font-semibold text-gray-500 uppercase">{{ prod.marca?.nombre || 'Genérico' }}</span>
 
-          @if (prod.precioRegular && prod.precioRegular > prod.precioVenta) {
-            <p class="text-sm text-gray-500 line-through">
-              S/ {{ prod.precioRegular | number: '1.2-2' }}
-            </p>
-          }
-          <p class="text-2xl font-bold text-blue-600">
-            S/ {{ prod.precioVenta | number: '1.2-2' }}
-          </p>
+            <h2 class="text-lg font-bold text-gray-900 truncate mt-1 group-hover:text-blue-600">
+              {{ prod.nombre }}
+            </h2>
+
+            <div class="flex items-baseline space-x-2 mt-2">
+              <p class="text-2xl font-extrabold text-blue-600">
+                S/ {{ prod.precioVenta | number: '1.2-2' }}
+              </p>
+              @if (prod.precioRegular && prod.precioRegular > prod.precioVenta) {
+                <p class="text-md text-gray-400 line-through">
+                  S/ {{ prod.precioRegular | number: '1.2-2' }}
+                </p>
+              }
+            </div>
+
+
+          </div>
         </a>
+
       } @empty {
-        @if (!cargandoProductos) {
-          <p class="col-span-3 text-center text-gray-500 p-8">
-            No se encontraron productos que coincidan con los filtros.
-          </p> }
       }
     </div>
   </main>

@@ -1,4 +1,5 @@
 <div class="container mx-auto p-8">
+
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Panel de Administración</h1>
     <a routerLink="/admin/productos/nuevo"
@@ -7,10 +8,20 @@
     </a>
   </div>
 
+  <form [formGroup]="searchForm" class="flex items-center space-x-4 mb-6">
+    <input
+      formControlName="search"
+      type="text"
+      placeholder="Buscar por SKU, Nombre, Marca, Color o Talla..."
+      class="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm">
+
+    <button (click)="limpiarBusqueda()" type="button" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600">
+      Limpiar
+    </button>
+  </form>
   @if (cargando) {
     <p class="text-gray-500">Cargando productos de admin...</p>
   }
-
   @if (error) {
     <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p>
   }
@@ -19,64 +30,43 @@
     <div class="bg-white shadow-md rounded-lg overflow-x-auto">
 
       <table class="min-w-full divide-y divide-gray-200">
-
         <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Color</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Talla/Medida</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">P. Venta</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+          <th class->SKU</th>
+          <th class->Nombre</th>
+          <th class->Marca</th>
+          <th class->Color</th>
+          <th class->Talla/Medida</th>
+          <th class->P. Venta</th>
+          <th class->Stock</th>
+          <th class->Acciones</th>
         </tr>
         </thead>
-
         <tbody class="bg-white divide-y divide-gray-200">
 
           @for (prod of productos; track prod.idProducto) {
             <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ prod.codigoSku }}</td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <td class="px-6 py-4">{{ prod.codigoSku }}</td>
+              <td class="px-6 py-4">
                 <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="text-blue-600 hover:underline">
                   {{ prod.nombre }}
                 </a>
               </td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ prod.marca?.nombre || 'N/A' }}
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                {{ prod.caracteristicas?.color || 'N/A' }}
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                {{ prod.caracteristicas?.talla || prod.caracteristicas?.medidas || prod.caracteristicas?.tamano || 'N/A' }}
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                S/ {{ prod.precioVenta | number: '1.2-2' }}
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ prod.stockActual }}</td>
-
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a [routerLink]="['/admin/productos/editar', prod.idProducto]"
-                   class="text-indigo-600 hover:text-indigo-900 mr-4">
-                  Editar
-                </a>
-                <button (click)="eliminarProducto(prod.idProducto)"
-                        class="text-red-600 hover:text-red-900">
-                  Eliminar
-                </button>
+              <td class="px-6 py-4">{{ prod.marca?.nombre || 'N/A' }}</td>
+              <td class="px-6 py-4 capitalize">{{ prod.caracteristicas?.color || 'N/A' }}</td>
+              <td class="px-6 py-4 capitalize">{{ prod.caracteristicas?.talla || prod.caracteristicas?.medidas || prod.caracteristicas?.tamano || 'N/A' }}</td>
+              <td class="px-6 py-4 font-semibold text-green-600">S/ {{ prod.precioVenta | number: '1.2-2' }}</td>
+              <td class="px-6 py-4">{{ prod.stockActual }}</td>
+              <td class="px-6 py-4 text-right">
+                <a [routerLink]="['/admin/productos/editar', prod.idProducto]" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</a>
+                <button (click)="eliminarProducto(prod.idProducto)" class="text-red-600 hover:text-red-900">Eliminar</button>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="px-6 py-4 text-center text-gray-500">No se encontraron productos.</td>
+              <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                No se encontraron productos que coincidan con la búsqueda.
+              </td>
             </tr>
           }
 

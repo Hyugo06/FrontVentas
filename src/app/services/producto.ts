@@ -44,8 +44,13 @@ export class Producto { // Tu clase 'Producto'
     return this.http.get<any[]>(`${this.publicApiUrl}/${id}/imagenes`); //
   }
 
-  public getProductosAdmin(): Observable<any[]> {
-    return this.http.get<any[]>(this.adminApiUrl);
+  public getProductosAdmin(search: string | null): Observable<any[]> {
+    let params = new HttpParams();
+    if (search) {
+      params = params.append('search', search);
+    }
+
+    return this.http.get<any[]>(this.adminApiUrl, { params: params });
   }
 
   public getProductoAdminPorId(id: string): Observable<any> {

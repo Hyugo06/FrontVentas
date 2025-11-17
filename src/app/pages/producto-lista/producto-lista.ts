@@ -20,6 +20,8 @@ import { Observable, forkJoin } from 'rxjs';
 export class ProductoListaComponent implements OnInit {
 
   public productos: any[] = [];
+  public categoriasPadre: CategoriaDTO[] = [];
+  public categoriasHijo: CategoriaDTO[] = [];
   public categorias: CategoriaDTO[] = []; // Para la barra lateral
   public cargandoProductos: boolean = true;
 
@@ -88,8 +90,13 @@ export class ProductoListaComponent implements OnInit {
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
-        // Filtramos para mostrar solo las sub-categorías (las que tienen padre)
-        this.categorias = data.filter(c => c.idCategoriaPadre != null);
+        // --- ¡NUEVA LÓGICA DE FILTRADO! ---
+        // Separamos las categorías en dos listas
+        this.categoriasPadre = data.filter(c => c.idCategoriaPadre == null);
+        this.categoriasHijo = data.filter(c => c.idCategoriaPadre != null);
+
+        // (Opcional: puedes dejar solo las hijas si prefieres el filtro simple)
+        // this.categorias = data.filter(c => c.idCategoriaPadre != null);
       },
       error: (err: any) => {
         console.error('Error al traer categorías:', err);

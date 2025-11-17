@@ -1,12 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router'; // Para los botones de "Editar"
-import { Producto } from '../../services/producto'; // Tu servicio de Producto
+import { RouterLink } from '@angular/router';
+
+// --- ¡IMPORTACIONES AÑADIDAS! ---
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import {Producto} from '../../services/producto';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink], // ¡Importa RouterLink!
+  // --- ¡AÑADE ReactiveFormsModule! ---
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
@@ -16,46 +21,58 @@ export class AdminDashboardComponent implements OnInit {
   public cargando: boolean = true;
   public error: string | null = null;
 
-  constructor(private productoService: Producto) {}
+  public searchForm: FormGroup; // <-- Formulario para la búsqueda
 
-  ngOnInit(): void {
-    this.cargarProductos();
+  constructor(
+    private productoService: Producto,
+    private fb: FormBuilder // <-- Inyecta FormBuilder
+  ) {
+    this.searchForm = this.fb.group({
+      search: ['']
+    });
   }
 
-  cargarProductos(): void {
-    this.cargando = true;
-    this.error = null;
-
-    this.productoService.getProductosAdmin().subscribe({
+  ngOnInit(): void {
+    // Escuchamos los cambios en la barra de búsqueda
+    this.searchForm.get('search')!.valueChanges.pipe(
+      debounceTime(350), // Espera 350ms después de teclear
+      distinctUntilChanged(), // Solo busca si el texto cambió
+      tap(() => this.cargando = true), // Muestra "Cargando..."
+      // switchMap cancela la búsqueda anterior y lanza la nueva
+      switchMap(searchTerm => {
+        return this.productoService.getProductosAdmin(searchTerm);
+      })
+    ).subscribe({
       next: (data: any) => {
         this.productos = data;
         this.cargando = false;
       },
       error: (err: any) => {
-        console.error('Error cargando productos admin:', err);
-        this.error = 'No se pudieron cargar los productos. ¿Estás seguro de que eres Admin?';
+        this.error = 'No se pudieron cargar los productos.';
         this.cargando = false;
       }
     });
+
+    // Disparamos una búsqueda inicial (vacía) al cargar
+    this.searchForm.get('search')!.setValue('');
   }
 
-  /**
-   * Llama al servicio para eliminar un producto
-   */
   eliminarProducto(id: number): void {
-    // Pedimos confirmación
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
       this.productoService.deleteProducto(id).subscribe({
         next: () => {
-          console.log('Producto eliminado con ID:', id);
-          // Recargamos la lista de productos
-          this.cargarProductos();
+          // Recargamos la lista actual (con el filtro de búsqueda)
+          const currentSearch = this.searchForm.get('search')!.value;
+          this.searchForm.get('search')!.setValue(currentSearch); // Dispara el valueChanges
         },
         error: (err: any) => {
-          console.error('Error al eliminar producto:', err);
           this.error = 'No se pudo eliminar el producto.';
         }
       });
     }
+  }
+
+  limpiarBusqueda(): void {
+    this.searchForm.get('search')?.setValue('');
   }
 }
