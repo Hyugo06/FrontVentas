@@ -1,55 +1,91 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs'; // Importamos BehaviorSubject
+import { BehaviorSubject, Observable } from 'rxjs';
+// ¡Añadimos 'map' para el contador!
+import { map } from 'rxjs/operators';
 
-// Definimos cómo se verá un item en el carrito
 export interface CartItem {
-  producto: any; // Usamos 'any' por ahora para el producto
+  producto: any;
   cantidad: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
-export class Cart { // Tu CLI crea la clase 'Cart'
+export class Cart { // Tu clase 'Cart'
 
-  // 1. El "estado" privado: una lista de items
-  // BehaviorSubject guarda la lista actual y la emite a los suscriptores
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
-
-  // 2. El "Observable" público: los componentes se suscriben a esto
   public items$ = this.itemsSubject.asObservable();
+
+  // --- ¡NUEVO OBSERVABLE PARA EL CONTADOR! ---
+  /**
+   * Un observable que solo emite la *cantidad total* de items en el carrito.
+   * Ej: 2 polos + 1 gorra = 3 items.
+   */
+  public totalItems$: Observable<number> = this.items$.pipe(
+    map(items => {
+      // Suma la 'cantidad' de cada item
+      return items.reduce((total, item) => total + item.cantidad, 0);
+    })
+  );
 
   constructor() { }
 
   /**
-   * Lógica para añadir un producto al carrito
+   * Añade 1 unidad de un producto.
    */
   public addItem(producto: any): void {
-    // Obtenemos la lista actual de items del BehaviorSubject
     const itemsActuales = this.itemsSubject.getValue();
-
-    // Buscamos si el producto ya está en el carrito
     const itemEnCarrito = itemsActuales.find(item =>
       item.producto.idProducto === producto.idProducto
     );
+
     if (itemEnCarrito) {
-      // Si ya está, solo aumentamos la cantidad
       itemEnCarrito.cantidad++;
     } else {
-      // Si es nuevo, lo añadimos a la lista con cantidad 1
       itemsActuales.push({
         producto: producto,
         cantidad: 1
       });
     }
-
-    // Emitimos la nueva lista (actualizada) a todos los suscriptores
     this.itemsSubject.next(itemsActuales);
   }
 
+  // --- ¡NUEVO MÉTODO! ---
+  /**
+   * Disminuye 1 unidad de un producto.
+   * Si la cantidad llega a 0, lo elimina de la lista.
+   */
+  public decrementItem(producto: any): void {
+    let itemsActuales = this.itemsSubject.getValue();
+    const itemEnCarrito = itemsActuales.find(item =>
+      item.producto.idProducto === producto.idProducto
+    );
+
+    if (itemEnCarrito && itemEnCarrito.cantidad > 1) {
+      // Si hay más de 1, solo resta
+      itemEnCarrito.cantidad--;
+    } else if (itemEnCarrito && itemEnCarrito.cantidad === 1) {
+      // Si solo queda 1, elimina el item del array
+      itemsActuales = itemsActuales.filter(item => item.producto.idProducto !== producto.idProducto);
+    }
+
+    this.itemsSubject.next(itemsActuales);
+  }
+
+  // --- ¡NUEVO MÉTODO! ---
+  /**
+   * Elimina un producto del carrito, sin importar la cantidad.
+   */
+  public removeItem(producto: any): void {
+    const itemsActuales = this.itemsSubject.getValue();
+    const itemsFiltrados = itemsActuales.filter(item =>
+      item.producto.idProducto !== producto.idProducto
+    );
+    this.itemsSubject.next(itemsFiltrados);
+  }
+
+  // --- (Tu método clearCart() se queda igual) ---
   public clearCart(): void {
-    // Emite una lista vacía
     this.itemsSubject.next([]);
   }
-  // (Aquí irían otros métodos como: eliminarItem(), vaciarCarrito(), etc.)
 }

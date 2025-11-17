@@ -1,21 +1,14 @@
-<div class="bg-gray-100 p-4 rounded-lg shadow-md my-8">
-  <h3 class="text-xl font-semibold mb-4">🛒 Mi Carrito</h3>
+<a routerLink="/carrito" class="relative text-gray-300 hover:text-white transition-colors">
 
-  @for (item of (cartItems$ | async); track item.producto.idProducto) {
-    <div class="flex justify-between items-center border-b py-2">
-      <span>{{ item.producto.nombre }}</span>
-      <span class="font-medium">x {{ item.cantidad }}</span>
-    </div>
-  } @empty {
-    <p class="text-gray-500">El carrito está vacío.</p>
-  }
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+  </svg>
 
-  @if ((cartItems$ | async)?.length) {
-    <div class="mt-4 pt-3 border-t">
-      <a routerLink="/checkout"
-         class="w-full text-center inline-block bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-        Finalizar Compra
-      </a>
-    </div>
+  @if ((totalItems$ | async) ?? 0; as total) {
+    @if (total > 0) {
+      <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+        {{ total }}
+      </span>
+    }
   }
-</div>
+</a>

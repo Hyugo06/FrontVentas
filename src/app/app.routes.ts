@@ -19,6 +19,7 @@ import {CategoriaFormComponent} from './pages/admin/categoria-form/categoria-for
 import {MarcaFormComponent} from './pages/admin/marca-form/marca-form';
 import {AdminProductoDetalleComponent} from './pages/admin/admin-producto-detalle/admin-producto-detalle';
 import {AdminVentaDetalleComponent} from './pages/admin/admin-venta-detalle/admin-venta-detalle';
+import {CartPageComponent} from './pages/cart-page/cart-page';
 
 
 export const routes: Routes = [
@@ -30,6 +31,7 @@ export const routes: Routes = [
   { path: 'productos/:id', component: ProductoDetalleComponent },
   { path: 'checkout', component: CheckoutComponent },
   { path: 'gracias', component: CheckoutComponent },
+  { path: 'carrito', component: CartPageComponent },
 
 
   // --- 2. RUTAS DE ADMINISTRACIÓN (Anidadas) ---
@@ -60,6 +62,8 @@ export const routes: Routes = [
       { path: 'productos/ver/:id', component: AdminProductoDetalleComponent },
 
       { path: 'ventas/:id', component: AdminVentaDetalleComponent },
+
+
 
     ]
   },

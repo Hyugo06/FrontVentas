@@ -1,25 +1,23 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; // ¡Necesario para el | async!
+import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { Cart, CartItem } from '../../services/cart';
-import {RouterLink} from '@angular/router'; // ¡Importamos el servicio y la interface!
+import { RouterLink } from '@angular/router'; // <-- ¡AÑADE RouterLink!
 
 @Component({
-  selector: 'app-cart-status', // Este es el tag HTML: <app-cart-status>
+  selector: 'app-cart-status',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink], // <-- ¡AÑADE RouterLink!
   templateUrl: './cart-status.html',
   styleUrl: './cart-status.css'
 })
 export class CartStatusComponent {
 
-  // Creamos un Observable para los items del carrito
-  public cartItems$: Observable<CartItem[]>;
+  // ¡MODIFICADO! Ya no necesitamos la lista de items, solo el CONTEO
+  public totalItems$: Observable<number>;
 
   constructor(private cartService: Cart) {
-    // Nos suscribimos al observable público del servicio
-    this.cartItems$ = this.cartService.items$;
+    // Nos suscribimos al nuevo observable de conteo total
+    this.totalItems$ = this.cartService.totalItems$;
   }
-
-  // (En el futuro, podríamos añadir aquí un método para calcular el total)
 }
