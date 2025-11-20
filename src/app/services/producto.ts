@@ -8,8 +8,12 @@ import { Observable, tap } from 'rxjs';
 })
 export class Producto { // Tu clase 'Producto'
 
-  private publicApiUrl = 'http://localhost:8080/api/productos'; // (O 8081)
-  private adminApiUrl = 'http://localhost:8080/api/admin/productos'; // (O 8081)
+  private publicApiUrl = 'http://192.168.1.34:8080/api/productos'; // (O 8081)
+  private adminApiUrl = 'http://192.168.1.34:8080/api/admin/productos'; // (O 8081)
+
+
+  //private publicApiUrl = 'http://localhost:8080/api/productos'; // (O 8081)
+  //private adminApiUrl = 'http://localhost:8080/api/admin/productos'; // (O 8081)
 
   // ¡CORRECCIÓN! Inyecta HttpClient en el constructor (o usa inject)
   // private http = inject(HttpClient); // (Si usas inject)

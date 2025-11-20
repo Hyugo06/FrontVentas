@@ -25,6 +25,7 @@ export class ProductoListaComponent implements OnInit {
   public categorias: CategoriaDTO[] = [];
   public cargandoProductos: boolean = true;
   public filtroForm: FormGroup;
+  public showMobileMenu: boolean = false;
 
   constructor(
     private productoService: Producto,
@@ -36,6 +37,10 @@ export class ProductoListaComponent implements OnInit {
       search: [''],
       categoria: ['']
     });
+  }
+
+  public toggleMobileMenu(): void {
+    this.showMobileMenu = !this.showMobileMenu;
   }
 
   // ... (tu ngOnInit, cargarProductosIniciales, cargarCategorias, limpiarFiltros y setCategoriaFiltro
@@ -80,8 +85,21 @@ export class ProductoListaComponent implements OnInit {
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
+
+        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+        // Ahora que el backend envía 'idCategoriaPadre', podemos filtrar:
+
+        // 1. Categorías Padre (las que tienen idCategoriaPadre == null)
+        // (Ej: Ropa, Hogar)
         this.categoriasPadre = data.filter(c => c.idCategoriaPadre == null);
+
+        // 2. Categorías Hija (las que tienen idCategoriaPadre != null)
+        // (Ej: Gorras, Polos, Sábanas)
         this.categoriasHijo = data.filter(c => c.idCategoriaPadre != null);
+
+        // (La lista completa 'categorias' ya no se usa para el bucle principal,
+        // pero la dejamos por si acaso la necesitas para otra cosa)
+        this.categorias = data;
       },
       error: (err: any) => {
         console.error('Error al traer categorías:', err);

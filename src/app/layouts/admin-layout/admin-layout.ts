@@ -14,6 +14,7 @@ import { Auth } from '../../services/auth'; // Tu servicio de Auth
 export class AdminLayoutComponent implements OnInit {
 
   public currentUsername: string | null = null;
+  public isMobileMenuOpen: boolean = false;
 
   constructor(
     private authService: Auth,
@@ -28,5 +29,9 @@ export class AdminLayoutComponent implements OnInit {
   public logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']); // Al cerrar sesión, lo mandamos al login
+  }
+
+  public toggleMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 }

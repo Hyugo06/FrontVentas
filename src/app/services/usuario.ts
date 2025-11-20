@@ -7,7 +7,9 @@ import { Observable } from 'rxjs';
 })
 export class Usuario { // Tu CLI usa el nombre 'Usuario'
 
-  private apiUrl = 'http://localhost:8080/api/usuarios'; // O 8081
+  private apiUrl = 'http://192.168.1.34:8080/api/usuarios';
+
+  //private apiUrl = 'http://localhost:8080/api/usuarios'; // O 8081
 
   constructor(private http: HttpClient) { }
 

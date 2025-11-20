@@ -13,8 +13,10 @@ export interface MarcaDTO {
 })
 export class Marca { // Tu clase 'Marca'
 
+  //private publicApiUrl = 'http://192.168.1.34:8080/api/marcas';
+  //private adminApiUrl = 'http://192.168.1.34:8080/api/admin/marcas';
+
   private publicApiUrl = 'http://localhost:8080/api/marcas';
-  // --- ¡AÑADE LA URL DE ADMIN! ---
   private adminApiUrl = 'http://localhost:8080/api/admin/marcas';
 
   private http = inject(HttpClient);

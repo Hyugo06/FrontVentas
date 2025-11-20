@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http'; // Asegúrate de que esto est
 })
 export class Auth { // Tu clase 'Auth'
 
+  //private apiUrl = 'http://192.168.1.34:8080/api/usuarios';
   private apiUrl = 'http://localhost:8080/api/usuarios'; // (O 8081)
 
   // Inicializa el BehaviorSubject leyendo el estado actual del token

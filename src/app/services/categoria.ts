@@ -13,8 +13,10 @@ export interface CategoriaDTO {
 })
 export class Categoria { // Tu clase 'Categoria'
 
+  //private publicApiUrl = 'http://192.168.1.34:8080/api/categorias';
+  //private adminApiUrl = 'http://192.168.1.34:8080/api/admin/categorias';
+
   private publicApiUrl = 'http://localhost:8080/api/categorias';
-  // --- ¡AÑADE LA URL DE ADMIN! ---
   private adminApiUrl = 'http://localhost:8080/api/admin/categorias';
 
   private http = inject(HttpClient);
