@@ -49,6 +49,10 @@ export class Venta { // Tu clase 'Venta'
     return this.http.get<any[]>(this.apiUrl, { params: params });
   }
 
+  public getMetricas(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/metricas`);
+  }
+
   public getVentaPorId(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }

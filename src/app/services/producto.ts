@@ -57,6 +57,10 @@ export class Producto { // Tu clase 'Producto'
     return this.http.get<any[]>(this.adminApiUrl, { params: params });
   }
 
+  public agregarImagen(idProducto: number, imagenData: { urlImagen: string, descripcionAlt: string, orden: number }): Observable<any> {
+    return this.http.post<any>(`${this.adminApiUrl}/${idProducto}/imagenes`, imagenData);
+  }
+
   public getProductoAdminPorId(id: string): Observable<any> {
     return this.http.get<any>(`${this.adminApiUrl}/${id}`);
   }

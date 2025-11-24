@@ -5,9 +5,11 @@ import { CommonModule } from '@angular/common';
 import { Producto } from '../../../services/producto';
 import { Marca, MarcaDTO } from '../../../services/marca';
 import { Categoria, CategoriaDTO } from '../../../services/categoria';
-import {Router, ActivatedRoute, RouterLink} from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+// --- ¡IMPORTA EL SERVICIO DE MEDIA! ---
+import { Media } from '../../../services/media';
 
 @Component({
   selector: 'app-producto-form',
@@ -26,8 +28,12 @@ export class ProductoFormComponent implements OnInit {
   public cargando: boolean = true;
   public error: string | null = null;
 
-  // --- ¡AQUÍ ESTÁ LA LÓGICA DE PLANTILLAS! ---
-  // Mapea el ID de la Categoría (de tu BD) a los campos que debe tener.
+  // Variables para IMÁGENES
+  public selectedFile: File | null = null;
+  public uploading: boolean = false;
+  public imagenesProducto: any[] = [];
+
+  // --- LÓGICA DE PLANTILLAS DE CARACTERÍSTICAS ---
   private caracteristicasTemplates: { [key: number]: string[] } = {
     3: ['talla', 'color', 'material'],  // Gorras
     4: ['talla', 'color', 'material'],  // Polos
@@ -48,7 +54,8 @@ export class ProductoFormComponent implements OnInit {
     private marcaService: Marca,
     private categoriaService: Categoria,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private mediaService: Media // <-- INYECTA EL SERVICIO DE MEDIA
   ) {
     this.productoForm = this.fb.group({
       idProducto: [null],
@@ -62,39 +69,94 @@ export class ProductoFormComponent implements OnInit {
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
 
-      // ¡AÑADIDO! Un sub-formulario vacío para las características
       caracteristicas: this.fb.group({})
     });
   }
 
   ngOnInit(): void {
-    this.cargarDropdowns(); // Carga Marcas y Categorías
+    this.cargarDropdowns();
 
-    // --- ¡AÑADIDO! Escucha los cambios del dropdown de Categoría ---
+    // Escucha cambios en la categoría para actualizar campos dinámicos
     this.productoForm.get('idCategoria')?.valueChanges.subscribe(idCategoria => {
       if (idCategoria) {
         this.actualizarCamposCaracteristicas(idCategoria);
       }
     });
 
-    // 2. Verificar si es modo edición
+    // Verificar si es modo edición
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.esEdicion = true;
       this.productoId = +id;
       this.cargarDatosProducto(this.productoId);
+
+      // Cargar las imágenes existentes
+      this.cargarImagenes(this.productoId);
     } else {
       this.cargando = false;
     }
   }
 
-  /**
-   * Carga las listas de Marcas y Categorías
-   */
+  // --- MÉTODOS DE IMÁGENES ---
+
+  cargarImagenes(id: number): void {
+    this.productoService.getImagenesPorProducto(id.toString()).subscribe({
+      next: (imgs) => this.imagenesProducto = imgs,
+      error: (err) => console.error('Error cargando imágenes', err)
+    });
+  }
+
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
+  subirImagen(): void {
+    if (!this.selectedFile || !this.productoId) return;
+
+    this.uploading = true;
+
+    // 1. Subir el archivo físico al servidor
+    this.mediaService.uploadFile(this.selectedFile).subscribe({
+      next: (response) => {
+        const url = response.url; // La URL que nos devuelve el backend
+
+        // 2. Guardar la referencia en la base de datos
+        const imagenData = {
+          urlImagen: url,
+          descripcionAlt: this.productoForm.get('nombre')?.value || 'Imagen de producto',
+          orden: this.imagenesProducto.length + 1
+        };
+
+        this.productoService.agregarImagen(this.productoId!, imagenData).subscribe({
+          next: (nuevaImg) => {
+            alert('Imagen subida con éxito');
+            this.imagenesProducto.push(nuevaImg); // Actualizar la vista
+            this.selectedFile = null;
+            this.uploading = false;
+          },
+          error: (err) => {
+            console.error('Error guardando en BD:', err);
+            this.uploading = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error subiendo archivo:', err);
+        alert('Error al subir el archivo. Asegúrate de que el backend permite /api/media/upload.');
+        this.uploading = false;
+      }
+    });
+  }
+
+  // --- MÉTODOS DEL FORMULARIO ---
+
   cargarDropdowns(): void {
     forkJoin([
       this.marcaService.getMarcas(),
-      this.categoriaService.getCategorias() // Carga todas
+      this.categoriaService.getCategorias()
     ]).subscribe({
       next: ([marcas, categorias]) => {
         this.listaMarcas = marcas;
@@ -108,14 +170,9 @@ export class ProductoFormComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga los datos del producto (para Edición)
-   */
   cargarDatosProducto(id: number): void {
     this.productoService.getProductoAdminPorId(id.toString()).subscribe({
       next: (producto: any) => {
-
-        // 1. Rellena los campos principales
         this.productoForm.patchValue({
           idProducto: producto.idProducto,
           codigoSku: producto.codigoSku,
@@ -129,11 +186,8 @@ export class ProductoFormComponent implements OnInit {
           idCategoria: producto.categoria.idCategoria
         });
 
-        // 2. Rellena las características dinámicas
         if (producto.caracteristicas) {
-          // Genera los campos (basado en la categoría)
           this.actualizarCamposCaracteristicas(producto.categoria.idCategoria);
-          // Rellena los valores que vienen del JSONB
           this.productoForm.get('caracteristicas')?.patchValue(producto.caracteristicas);
         }
 
@@ -146,29 +200,20 @@ export class ProductoFormComponent implements OnInit {
     });
   }
 
-  /**
-   * ¡NUEVO! Esta función añade/quita campos del formulario dinámicamente
-   */
   actualizarCamposCaracteristicas(idCategoria: number): void {
     const caracteristicasGroup = this.productoForm.get('caracteristicas') as FormGroup;
 
-    // 1. Borra todos los controles (campos) anteriores
     Object.keys(caracteristicasGroup.controls).forEach(key => {
       caracteristicasGroup.removeControl(key);
     });
 
-    // 2. Obtiene la nueva plantilla de campos (ej. ['talla', 'color'])
     const template = this.caracteristicasTemplates[idCategoria] || [];
 
-    // 3. Añade los nuevos controles (campos) al formulario
     template.forEach(field => {
       caracteristicasGroup.addControl(field, this.fb.control('', Validators.required));
     });
   }
 
-  /**
-   * ¡NUEVO! Helper para que el HTML pueda iterar sobre los campos dinámicos
-   */
   get caracteristicasControls(): AbstractControl[] {
     const group = this.productoForm.get('caracteristicas') as FormGroup;
     return Object.values(group.controls);
@@ -180,24 +225,17 @@ export class ProductoFormComponent implements OnInit {
   }
 
 
-  /**
-   * Lógica para el envío del formulario (¡ya funciona con el sub-formulario!)
-   */
   onSubmit(): void {
     if (this.productoForm.invalid) {
-      this.error = 'Por favor, completa todos los campos requeridos (incluyendo características).';
+      this.error = 'Por favor, completa todos los campos requeridos.';
       return;
     }
     this.cargando = true;
     this.error = null;
 
-    // productoData ahora incluye el objeto 'caracteristicas' anidado
     const productoData = this.productoForm.value;
 
-    console.log('Enviando:', productoData); // ¡Revisa la consola para ver el JSON!
-
     if (this.esEdicion && this.productoId) {
-      // --- LÓGICA DE ACTUALIZAR (PUT) ---
       this.productoService.updateProducto(this.productoId, productoData).subscribe({
         next: () => this.router.navigate(['/admin/productos']),
         error: (err: HttpErrorResponse) => {
@@ -206,7 +244,6 @@ export class ProductoFormComponent implements OnInit {
         }
       });
     } else {
-      // --- LÓGICA DE CREAR (POST) ---
       this.productoService.createProducto(productoData).subscribe({
         next: () => this.router.navigate(['/admin/productos']),
         error: (err: HttpErrorResponse) => {
