@@ -21,6 +21,7 @@ import {AdminProductoDetalleComponent} from './pages/admin/admin-producto-detall
 import {AdminVentaDetalleComponent} from './pages/admin/admin-venta-detalle/admin-venta-detalle';
 import {CartPageComponent} from './pages/cart-page/cart-page';
 import {AdminMetricsComponent} from './pages/admin/admin-metrics/admin-metrics';
+import {AdminClientesComponent} from './pages/admin/admin-clientes/admin-clientes';
 
 
 export const routes: Routes = [
@@ -46,6 +47,7 @@ export const routes: Routes = [
       { path: 'productos', component: AdminDashboardComponent },
       { path: 'productos/nuevo', component: ProductoFormComponent },
       { path: 'productos/editar/:id', component: ProductoFormComponent },
+      { path: 'clientes', component: AdminClientesComponent },
 
       { path: 'ventas', component: AdminVentasComponent },
 
