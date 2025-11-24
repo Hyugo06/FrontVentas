@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 import { Venta } from '../../../services/venta';
 import {FormBuilder, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {RouterLink} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-admin-ventas',
@@ -25,7 +25,8 @@ export class AdminVentasComponent implements OnInit {
 
   constructor(
     private ventaService: Venta,
-    private fb: FormBuilder // Inyectamos FormBuilder
+    private fb: FormBuilder, // Inyectamos FormBuilder
+    private route: ActivatedRoute
   ) {
     // Creamos el formulario reactivo para los filtros
     this.filtroForm = this.fb.group({
@@ -36,11 +37,30 @@ export class AdminVentasComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.cargarVentas();
-
-    // Opcional: Recargar ventas cada vez que el formulario de filtro cambie
+    // 1. Suscribirse a los cambios del formulario (para el uso manual)
     this.filtroForm.valueChanges.subscribe(() => {
       this.cargarVentas();
+    });
+
+    // 2. Leer parámetros de la URL (para cuando vienes del Dashboard)
+    this.route.queryParams.subscribe(params => {
+      if (params['fechaInicio'] && params['fechaFin']) {
+
+        console.log("Filtros desde URL detectados:", params); // Para depurar
+
+        // Actualizamos el formulario visualmente
+        // emitEvent: false evita que se dispare el valueChanges de arriba y cargue doble
+        this.filtroForm.patchValue({
+          fechaInicio: params['fechaInicio'],
+          fechaFin: params['fechaFin']
+        }, { emitEvent: false });
+
+        // Forzamos la carga inmediata con estos datos
+        this.cargarVentas();
+      } else {
+        // Si no hay params, carga inicial normal
+        this.cargarVentas();
+      }
     });
   }
 
