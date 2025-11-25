@@ -1,90 +1,81 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-// ¡Añadimos 'map' para el contador!
 import { map } from 'rxjs/operators';
+import { ProductoVariante } from './producto'; // Importamos la interfaz de variante
 
 export interface CartItem {
   producto: any;
   cantidad: number;
+  variante?: ProductoVariante | null; // <--- ¡NUEVO CAMPO!
 }
 
 @Injectable({
   providedIn: 'root'
 })
-export class Cart { // Tu clase 'Cart'
+export class Cart {
 
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   public items$ = this.itemsSubject.asObservable();
 
-  // --- ¡NUEVO OBSERVABLE PARA EL CONTADOR! ---
-  /**
-   * Un observable que solo emite la *cantidad total* de items en el carrito.
-   * Ej: 2 polos + 1 gorra = 3 items.
-   */
   public totalItems$: Observable<number> = this.items$.pipe(
-    map(items => {
-      // Suma la 'cantidad' de cada item
-      return items.reduce((total, item) => total + item.cantidad, 0);
-    })
+    map(items => items.reduce((total, item) => total + item.cantidad, 0))
   );
 
   constructor() { }
 
   /**
-   * Añade 1 unidad de un producto.
+   * Añade un producto (con o sin variante) al carrito.
    */
-  public addItem(producto: any): void {
+  public addItem(producto: any, variante: ProductoVariante | null = null): void {
     const itemsActuales = this.itemsSubject.getValue();
-    const itemEnCarrito = itemsActuales.find(item =>
-      item.producto.idProducto === producto.idProducto
-    );
+
+    // Buscamos si ya existe este producto CON ESTA MISMA variante
+    const itemEnCarrito = itemsActuales.find(item => {
+      const mismoProducto = item.producto.idProducto === producto.idProducto;
+      const mismaVariante = item.variante?.idVariante === variante?.idVariante;
+      return mismoProducto && mismaVariante;
+    });
 
     if (itemEnCarrito) {
       itemEnCarrito.cantidad++;
     } else {
       itemsActuales.push({
         producto: producto,
-        cantidad: 1
+        cantidad: 1,
+        variante: variante
       });
     }
     this.itemsSubject.next(itemsActuales);
   }
 
-  // --- ¡NUEVO MÉTODO! ---
-  /**
-   * Disminuye 1 unidad de un producto.
-   * Si la cantidad llega a 0, lo elimina de la lista.
-   */
-  public decrementItem(producto: any): void {
+  public decrementItem(item: CartItem): void {
     let itemsActuales = this.itemsSubject.getValue();
-    const itemEnCarrito = itemsActuales.find(item =>
-      item.producto.idProducto === producto.idProducto
+    // Buscamos el item exacto (producto + variante)
+    const targetItem = itemsActuales.find(i =>
+      i.producto.idProducto === item.producto.idProducto &&
+      i.variante?.idVariante === item.variante?.idVariante
     );
 
-    if (itemEnCarrito && itemEnCarrito.cantidad > 1) {
-      // Si hay más de 1, solo resta
-      itemEnCarrito.cantidad--;
-    } else if (itemEnCarrito && itemEnCarrito.cantidad === 1) {
-      // Si solo queda 1, elimina el item del array
-      itemsActuales = itemsActuales.filter(item => item.producto.idProducto !== producto.idProducto);
+    if (targetItem) {
+      if (targetItem.cantidad > 1) {
+        targetItem.cantidad--;
+      } else {
+        // Eliminar si llega a 0
+        this.removeItem(item);
+        return; // Salimos para no emitir dos veces
+      }
     }
-
     this.itemsSubject.next(itemsActuales);
   }
 
-  // --- ¡NUEVO MÉTODO! ---
-  /**
-   * Elimina un producto del carrito, sin importar la cantidad.
-   */
-  public removeItem(producto: any): void {
+  public removeItem(item: CartItem): void {
     const itemsActuales = this.itemsSubject.getValue();
-    const itemsFiltrados = itemsActuales.filter(item =>
-      item.producto.idProducto !== producto.idProducto
+    const itemsFiltrados = itemsActuales.filter(i =>
+      !(i.producto.idProducto === item.producto.idProducto && i.variante?.idVariante === item.variante?.idVariante)
     );
     this.itemsSubject.next(itemsFiltrados);
   }
 
-  // --- (Tu método clearCart() se queda igual) ---
   public clearCart(): void {
     this.itemsSubject.next([]);
   }

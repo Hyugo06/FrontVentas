@@ -1,64 +1,46 @@
 import { Injectable, inject } from '@angular/core';
-// ¡Añade HttpParams!
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
+
+// --- ¡NUEVA INTERFAZ PARA VARIANTES! ---
+export interface ProductoVariante {
+  idVariante?: number;
+  color: string;
+  talla: string;
+  skuVariante?: string;
+  stockActual: number;
+}
+// ---------------------------------------
 
 @Injectable({
   providedIn: 'root'
 })
-export class Producto { // Tu clase 'Producto'
+export class Producto {
 
-  private publicApiUrl = 'http://192.168.1.34:8080/api/productos'; // (O 8081)
-  private adminApiUrl = 'http://192.168.1.34:8080/api/admin/productos'; // (O 8081)
+  private publicApiUrl = 'http://localhost:8080/api/productos';
+  private adminApiUrl = 'http://localhost:8080/api/admin/productos';
 
+  constructor(private http: HttpClient) { }
 
-  //private publicApiUrl = 'http://localhost:8080/api/productos'; // (O 8081)
-  //private adminApiUrl = 'http://localhost:8080/api/admin/productos'; // (O 8081)
-
-  // ¡CORRECCIÓN! Inyecta HttpClient en el constructor (o usa inject)
-  // private http = inject(HttpClient); // (Si usas inject)
-  constructor(private http: HttpClient) { } // (Si usas constructor)
-
-  // --- ¡MÉTODO MODIFICADO! ---
-  /**
-   * Obtiene la lista pública de productos, aplicando filtros.
-   */
   public getProductosPublicos(search: string | null, categoria: string | null): Observable<any[]> {
-
     let params = new HttpParams();
-    if (search) {
-      params = params.append('search', search);
-    }
-    if (categoria) {
-      // El backend espera 'categoria'
-      params = params.append('categoria', categoria);
-    }
-
-    // Hacemos la petición GET con los parámetros
+    if (search) params = params.append('search', search);
+    if (categoria) params = params.append('categoria', categoria);
     return this.http.get<any[]>(this.publicApiUrl, { params: params });
   }
 
-  // --- (El resto de tus métodos: getProductoPublicoPorId, getImagenesPorProducto, getProductosAdmin, etc., se quedan igual) ---
-
-  public getProductoPublicoPorId(id: string): Observable<any> { //
-    return this.http.get<any>(`${this.publicApiUrl}/${id}`); //
+  public getProductoPublicoPorId(id: string): Observable<any> {
+    return this.http.get<any>(`${this.publicApiUrl}/${id}`);
   }
 
-  public getImagenesPorProducto(id: string): Observable<any[]> { //
-    return this.http.get<any[]>(`${this.publicApiUrl}/${id}/imagenes`); //
+  public getImagenesPorProducto(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.publicApiUrl}/${id}/imagenes`);
   }
 
   public getProductosAdmin(search: string | null): Observable<any[]> {
     let params = new HttpParams();
-    if (search) {
-      params = params.append('search', search);
-    }
-
+    if (search) params = params.append('search', search);
     return this.http.get<any[]>(this.adminApiUrl, { params: params });
-  }
-
-  public agregarImagen(idProducto: number, imagenData: { urlImagen: string, descripcionAlt: string, orden: number }): Observable<any> {
-    return this.http.post<any>(`${this.adminApiUrl}/${idProducto}/imagenes`, imagenData);
   }
 
   public getProductoAdminPorId(id: string): Observable<any> {
@@ -75,5 +57,9 @@ export class Producto { // Tu clase 'Producto'
 
   public deleteProducto(id: number): Observable<any> {
     return this.http.delete<any>(`${this.adminApiUrl}/${id}`);
+  }
+
+  public agregarImagen(idProducto: number, imagenData: any): Observable<any> {
+    return this.http.post<any>(`${this.adminApiUrl}/${idProducto}/imagenes`, imagenData);
   }
 }

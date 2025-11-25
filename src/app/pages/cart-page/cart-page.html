@@ -21,6 +21,11 @@
               <div class="flex-grow">
                 <span class="text-xs text-gray-500">{{ item.producto.marca?.nombre }}</span>
                 <h3 class="font-semibold text-lg">{{ item.producto.nombre }}</h3>
+                @if (item.variante) {
+                  <p class="text-sm text-gray-600">
+                    Opción: <span class="font-medium">{{ item.variante.color }} / {{ item.variante.talla }}</span>
+                  </p>
+                }
                 <p class="text-blue-600 font-bold">S/ {{ item.producto.precioVenta | number: '1.2-2' }}</p>
               </div>
 

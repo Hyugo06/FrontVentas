@@ -50,6 +50,22 @@
           <span class="font-semibold">{{ producto.stockActual }}</span>
         </p>
 
+        @if (producto.variantes && producto.variantes.length > 0) {
+          <div class="mt-4 p-4 bg-gray-50 rounded-lg border">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Elige tu opción:</label>
+
+            <select [(ngModel)]="varianteSeleccionada"
+                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+              <option [ngValue]="null" disabled selected>-- Seleccionar Color / Talla --</option>
+              @for (v of producto.variantes; track v.idVariante) {
+                <option [ngValue]="v" [disabled]="v.stockActual === 0">
+                  {{ v.color }} - {{ v.talla }}
+                  ({{ v.stockActual > 0 ? v.stockActual + ' disp.' : 'Agotado' }})
+                </option>
+              }
+            </select>
+          </div>
+        }
         <button
           (click)="agregarAlCarrito()"
           class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">

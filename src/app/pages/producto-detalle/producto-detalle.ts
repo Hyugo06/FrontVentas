@@ -1,18 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-// --- ¡CORRECCIÓN 1! ---
-// Importamos la clase 'Producto' (que es tu servicio) desde el archivo 'producto'
-import { Producto } from '../../services/producto';
+import { Producto, ProductoVariante } from '../../services/producto';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
-import {Cart} from '../../services/cart';
+import { Cart } from '../../services/cart'; // Inyectamos el carrito
+import { FormsModule } from '@angular/forms'; // Necesario para [(ngModel)]
 
 @Component({
   selector: 'app-producto-detalle',
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  // --- ¡CORRECCIÓN 2! ---
-  // Apuntamos a los nombres de archivo correctos (sin .component)
+  imports: [CommonModule, RouterLink, FormsModule], // Añade FormsModule
   templateUrl: './producto-detalle.html',
   styleUrl: './producto-detalle.css'
 })
@@ -22,48 +19,57 @@ export class ProductoDetalleComponent implements OnInit {
   public imagenes: any[] = [];
   public cargando: boolean = true;
 
-  public activeTab: 'details' | 'specs' | 'media' = 'details';
+  public activeTab: string = 'details';
 
-
-  public objectEntries(obj: any): [string, any][] {
-    if (!obj) return [];
-    return Object.entries(obj);
-  }
+  // --- ¡NUEVO! Para manejar la selección ---
+  public varianteSeleccionada: ProductoVariante | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private productoService: Producto,
-    private cartService: Cart // <-- ¡INYECTA EL SERVICIO!
+    private cartService: Cart
   ) {}
-
-  public agregarAlCarrito(): void {
-    if (this.producto) {
-      this.cartService.addItem(this.producto);
-      console.log('Producto añadido:', this.producto.nombre);
-    }
-  }
-
-
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-
     if (id) {
       forkJoin({
         producto: this.productoService.getProductoPublicoPorId(id),
         imagenes: this.productoService.getImagenesPorProducto(id)
       }).subscribe({
-        // --- ¡CORRECCIÓN 4! (Tipos 'any' para evitar errores) ---
         next: (resultado: any) => {
           this.producto = resultado.producto;
           this.imagenes = resultado.imagenes;
           this.cargando = false;
+
+          // Si el producto tiene variantes, seleccionamos la primera por defecto (opcional)
+          if (this.producto.variantes && this.producto.variantes.length > 0) {
+            // this.varianteSeleccionada = this.producto.variantes[0];
+          }
         },
-        error: (err: any) => {
-          console.error('Error al cargar detalles:', err);
+        error: (err) => {
+          console.error(err);
           this.cargando = false;
         }
       });
     }
+  }
+
+  // Helper para JSONB
+  public objectEntries(obj: any): [string, any][] {
+    if (!obj) return [];
+    return Object.entries(obj);
+  }
+
+  // --- ¡MÉTODO MODIFICADO! ---
+  public agregarAlCarrito(): void {
+    // Validación: Si el producto tiene variantes, debe seleccionar una
+    if (this.producto.variantes && this.producto.variantes.length > 0 && !this.varianteSeleccionada) {
+      alert("Por favor, selecciona una opción (Color/Talla).");
+      return;
+    }
+
+    this.cartService.addItem(this.producto, this.varianteSeleccionada);
+    alert("Producto añadido al carrito");
   }
 }

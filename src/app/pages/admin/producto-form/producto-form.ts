@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-// ¡Añade 'AbstractControl' para el helper!
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+// ¡IMPORTANTE: Añade FormArray a las importaciones!
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Producto } from '../../../services/producto';
 import { Marca, MarcaDTO } from '../../../services/marca';
@@ -8,7 +8,6 @@ import { Categoria, CategoriaDTO } from '../../../services/categoria';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-// --- ¡IMPORTA EL SERVICIO DE MEDIA! ---
 import { Media } from '../../../services/media';
 
 @Component({
@@ -28,25 +27,20 @@ export class ProductoFormComponent implements OnInit {
   public cargando: boolean = true;
   public error: string | null = null;
 
-  // Variables para IMÁGENES
-  public selectedFile: File | null = null;
-  public uploading: boolean = false;
-  public imagenesProducto: any[] = [];
+  // Imagen
   public previewUrl: string | null = null;
+  public uploading: boolean = false;
 
-  // --- LÓGICA DE PLANTILLAS DE CARACTERÍSTICAS ---
+  // Plantillas (Ya no pedimos Talla/Color aquí porque van en Variantes)
   private caracteristicasTemplates: { [key: number]: string[] } = {
-    3: ['talla', 'color', 'material'],  // Gorras
-    4: ['talla', 'color', 'material'],  // Polos
-    5: ['talla', 'color', 'tela'],      // Pantalones
-    6: ['talla', 'color', 'material'],  // Casacas
-    7: ['medidas', 'color', 'material'],// Cortinas
-    8: ['tamaño', 'hilos', 'material'], // Sábanas
-    9: ['medidas', 'firmeza', 'material'],// Almohadas
-    10: ['medidas', 'color', 'gramaje'], // Toallas
-    11: ['talla', 'color', 'material'],  // Calzado
-    12: ['color', 'material', 'estilo'], // Decoración
-    13: ['material', 'piezas']           // Utensilios de Cocina
+    3: ['material'],
+    4: ['material'],
+    5: ['tela', 'corte'],
+    6: ['material', 'impermeable'],
+    7: ['material'],
+    8: ['hilos', 'material'],
+    11: ['material', 'suela']
+    // ... ajusta según tus necesidades
   };
 
   constructor(
@@ -56,7 +50,7 @@ export class ProductoFormComponent implements OnInit {
     private categoriaService: Categoria,
     private router: Router,
     private route: ActivatedRoute,
-    private mediaService: Media // <-- INYECTA EL SERVICIO DE MEDIA
+    private mediaService: Media
   ) {
     this.productoForm = this.fb.group({
       idProducto: [null],
@@ -66,122 +60,76 @@ export class ProductoFormComponent implements OnInit {
       precioRegular: [0, [Validators.required, Validators.min(0)]],
       precioVenta: [0, [Validators.required, Validators.min(0)]],
       precioCompra: [0, [Validators.required, Validators.min(0)]],
+
+      // Stock Total (Calculado, solo lectura)
       stockActual: [0, [Validators.required, Validators.min(0)]],
+
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
       urlImagen: [''],
 
-      caracteristicas: this.fb.group({})
+      caracteristicas: this.fb.group({}),
+
+      // --- ¡NUEVO: ARRAY DE VARIANTES! ---
+      variantes: this.fb.array([])
     });
+  }
+
+  // Getter para usar en el HTML
+  get variantes(): FormArray {
+    return this.productoForm.get('variantes') as FormArray;
   }
 
   ngOnInit(): void {
     this.cargarDropdowns();
 
-    // Escucha cambios en la categoría para actualizar campos dinámicos
-    this.productoForm.get('idCategoria')?.valueChanges.subscribe(idCategoria => {
-      if (idCategoria) {
-        this.actualizarCamposCaracteristicas(idCategoria);
-      }
+    this.productoForm.get('idCategoria')?.valueChanges.subscribe(id => {
+      if (id) this.actualizarCamposCaracteristicas(id);
     });
 
-    // Verificar si es modo edición
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.esEdicion = true;
       this.productoId = +id;
       this.cargarDatosProducto(this.productoId);
-
-      // Cargar las imágenes existentes
-      this.cargarImagenes(this.productoId);
     } else {
       this.cargando = false;
+      // Si es nuevo, añadimos una variante vacía por defecto
+      this.agregarVariante();
     }
   }
 
-  // --- MÉTODOS DE IMÁGENES ---
+  // --- LÓGICA DE VARIANTES ---
 
-  cargarImagenes(id: number): void {
-    this.productoService.getImagenesPorProducto(id.toString()).subscribe({
-      next: (imgs) => this.imagenesProducto = imgs,
-      error: (err) => console.error('Error cargando imágenes', err)
+  crearVarianteGroup(): FormGroup {
+    return this.fb.group({
+      idVariante: [null], // Para saber si es update
+      color: ['', Validators.required],
+      talla: ['', Validators.required],
+      skuVariante: [''],
+      stockActual: [0, [Validators.required, Validators.min(0)]]
     });
   }
 
-  onFileSelected(event: any): void {
-    const file: File = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-
-      // Subir inmediatamente para obtener la URL
-      this.mediaService.uploadFile(file).subscribe({
-        next: (resp) => {
-          // 1. Guardamos la URL que nos dio el backend en el formulario
-          this.productoForm.patchValue({ urlImagen: resp.url });
-          // 2. Actualizamos la vista previa
-          this.previewUrl = 'http://localhost:8080' + resp.url;
-        },
-        error: () => alert('Error al subir imagen')
-      });
-    }
+  agregarVariante(): void {
+    this.variantes.push(this.crearVarianteGroup());
+    this.actualizarStockTotal();
   }
 
-  subirImagen(): void {
-    if (!this.selectedFile || !this.productoId) return;
-
-    this.uploading = true;
-
-    // 1. Subir el archivo físico al servidor
-    this.mediaService.uploadFile(this.selectedFile).subscribe({
-      next: (response) => {
-        const url = response.url; // La URL que nos devuelve el backend
-
-        // 2. Guardar la referencia en la base de datos
-        const imagenData = {
-          urlImagen: url,
-          descripcionAlt: this.productoForm.get('nombre')?.value || 'Imagen de producto',
-          orden: this.imagenesProducto.length + 1
-        };
-
-        this.productoService.agregarImagen(this.productoId!, imagenData).subscribe({
-          next: (nuevaImg) => {
-            alert('Imagen subida con éxito');
-            this.imagenesProducto.push(nuevaImg); // Actualizar la vista
-            this.selectedFile = null;
-            this.uploading = false;
-          },
-          error: (err) => {
-            console.error('Error guardando en BD:', err);
-            this.uploading = false;
-          }
-        });
-      },
-      error: (err) => {
-        console.error('Error subiendo archivo:', err);
-        alert('Error al subir el archivo. Asegúrate de que el backend permite /api/media/upload.');
-        this.uploading = false;
-      }
-    });
+  eliminarVariante(index: number): void {
+    this.variantes.removeAt(index);
+    this.actualizarStockTotal();
   }
 
-  // --- MÉTODOS DEL FORMULARIO ---
-
-  cargarDropdowns(): void {
-    forkJoin([
-      this.marcaService.getMarcas(),
-      this.categoriaService.getCategorias()
-    ]).subscribe({
-      next: ([marcas, categorias]) => {
-        this.listaMarcas = marcas;
-        // Filtramos para que en el dropdown solo se vean las "hijas"
-        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre != null);
-      },
-      error: (err: any) => {
-        this.error = 'Error al cargar Marcas y Categorías.';
-        this.cargando = false;
-      }
-    });
+  // Suma el stock de todas las filas y actualiza el campo principal
+  actualizarStockTotal(): void {
+    const total = this.variantes.controls.reduce((sum, control) => {
+      return sum + (control.get('stockActual')?.value || 0);
+    }, 0);
+    this.productoForm.patchValue({ stockActual: total });
   }
+
+  // ---------------------------
 
   cargarDatosProducto(id: number): void {
     this.productoService.getProductoAdminPorId(id.toString()).subscribe({
@@ -195,38 +143,84 @@ export class ProductoFormComponent implements OnInit {
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
           stockActual: producto.stockActual,
-          idMarca: producto.marca.idMarca,
-          idCategoria: producto.categoria.idCategoria,
+          idMarca: producto.marca?.idMarca,
+          idCategoria: producto.categoria?.idCategoria,
           urlImagen: producto.urlImagen
         });
 
+        // Cargar Imagen
+        if (producto.urlImagen) {
+          this.previewUrl = 'http://localhost:8080' + producto.urlImagen;
+        }
+
+        // Cargar Variantes
+        this.variantes.clear();
+        if (producto.variantes && producto.variantes.length > 0) {
+          producto.variantes.forEach((v: any) => {
+            const g = this.crearVarianteGroup();
+            g.patchValue(v);
+            this.variantes.push(g);
+          });
+        } else {
+          this.agregarVariante(); // Al menos una
+        }
+
+        // Cargar Características
         if (producto.caracteristicas) {
           this.actualizarCamposCaracteristicas(producto.categoria.idCategoria);
           this.productoForm.get('caracteristicas')?.patchValue(producto.caracteristicas);
-          this.previewUrl = producto.urlImagen ? 'http://localhost:8080' + producto.urlImagen : null;
         }
 
         this.cargando = false;
       },
-      error: (err: any) => {
+      error: () => {
         this.error = 'Producto no encontrado.';
         this.cargando = false;
       }
     });
   }
 
+  // --- Resto de métodos (igual que antes) ---
+
+  cargarDropdowns(): void {
+    forkJoin([
+      this.marcaService.getMarcas(),
+      this.categoriaService.getCategorias()
+    ]).subscribe({
+      next: ([marcas, categorias]) => {
+        this.listaMarcas = marcas;
+        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre != null);
+      },
+      error: () => {
+        this.error = 'Error al cargar listas.';
+        this.cargando = false;
+      }
+    });
+  }
+
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.uploading = true;
+      this.mediaService.uploadFile(file).subscribe({
+        next: (resp) => {
+          this.productoForm.patchValue({ urlImagen: resp.url });
+          this.previewUrl = 'http://localhost:8080' + resp.url;
+          this.uploading = false;
+        },
+        error: () => {
+          alert('Error al subir imagen');
+          this.uploading = false;
+        }
+      });
+    }
+  }
+
   actualizarCamposCaracteristicas(idCategoria: number): void {
     const caracteristicasGroup = this.productoForm.get('caracteristicas') as FormGroup;
-
-    Object.keys(caracteristicasGroup.controls).forEach(key => {
-      caracteristicasGroup.removeControl(key);
-    });
-
+    Object.keys(caracteristicasGroup.controls).forEach(key => caracteristicasGroup.removeControl(key));
     const template = this.caracteristicasTemplates[idCategoria] || [];
-
-    template.forEach(field => {
-      caracteristicasGroup.addControl(field, this.fb.control('', Validators.required));
-    });
+    template.forEach(field => caracteristicasGroup.addControl(field, this.fb.control('', Validators.required)));
   }
 
   get caracteristicasControls(): AbstractControl[] {
@@ -239,15 +233,12 @@ export class ProductoFormComponent implements OnInit {
     return Object.keys(group.controls);
   }
 
-
   onSubmit(): void {
     if (this.productoForm.invalid) {
       this.error = 'Por favor, completa todos los campos requeridos.';
       return;
     }
     this.cargando = true;
-    this.error = null;
-
     const productoData = this.productoForm.value;
 
     if (this.esEdicion && this.productoId) {
