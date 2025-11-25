@@ -1,67 +1,102 @@
-<div class="flex h-screen bg-gray-100">
+<div class="flex h-screen bg-gray-100 overflow-hidden">
 
-  <aside class="hidden md:block w-64 flex-shrink-0 bg-gray-800 text-white">
-    <div class="p-4">
-      <h2 class="text-xl font-bold text-blue-300">Admin Panel</h2>
+  <aside class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white transition duration-300 transform md:relative md:translate-x-0 flex flex-col"
+         [class.-translate-x-full]="!isMobileMenuOpen"
+         [class.translate-x-0]="isMobileMenuOpen">
+
+    <div class="flex items-center justify-between p-4 h-16 bg-gray-900 border-b border-gray-700">
+      <h2 class="text-xl font-bold text-blue-400">Admin Panel</h2>
+      <button (click)="toggleMenu()" class="md:hidden text-gray-400 hover:text-white focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
     </div>
 
-    <nav class="mt-4">
-      <a routerLink="/admin/dashboard"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Resumen
-      </a>
-
-      <a routerLink="/admin/productos"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Productos
-      </a>
-      <a routerLink="/admin/ventas"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Ventas
-      </a>
-      <a routerLink="/admin/usuarios"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Usuarios
-      </a>
-      <a routerLink="/admin/marcas"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Marcas
-      </a>
-      <a routerLink="/admin/categorias"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Categorías
-      </a>
-      <a routerLink="/admin/clientes"
-         routerLinkActive="bg-gray-700 text-white"
-         class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Clientes
-      </a>
+    <nav class="flex-1 overflow-y-auto py-4">
+      <ul class="space-y-1 px-2">
+        <li>
+          <a routerLink="/admin/dashboard" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">📊</span> Resumen
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/productos" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">📦</span> Productos
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/ventas" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">💰</span> Ventas
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/usuarios" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">👥</span> Usuarios
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/marcas" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">🏷️</span> Marcas
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/categorias" routerLinkActive="bg-gray-800 text-white"
+             (click)="isMobileMenuOpen = false"
+             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
+            <span class="mr-3">📂</span> Categorías
+          </a>
+        </li>
+      </ul>
     </nav>
+
+    <div class="p-4 border-t border-gray-700 md:hidden">
+      <button (click)="logout()" class="flex items-center w-full px-4 py-2 text-red-400 hover:text-red-300 transition-colors">
+        <span class="mr-3">🚪</span> Cerrar Sesión
+      </button>
+    </div>
   </aside>
 
-  <div class="flex-1 flex flex-col overflow-hidden">
+  @if (isMobileMenuOpen) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" (click)="toggleMenu()"></div>
+  }
 
-    <header class="bg-white shadow-md p-4 flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-semibold text-gray-800">Tienda Margaríta</h1>
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <header class="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10">
+
+      <button (click)="toggleMenu()" class="text-gray-500 focus:outline-none md:hidden p-2 rounded-md hover:bg-gray-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+
+      <div class="flex items-center">
+        <h1 class="text-lg sm:text-xl font-bold text-gray-800 truncate ml-2 md:ml-0">Tienda Margaríta</h1>
       </div>
+
       <div class="flex items-center space-x-4">
-        <span class="text-gray-600 text-sm">Hola, {{ currentUsername }}</span>
+        <div class="hidden sm:flex flex-col items-end mr-2">
+          <span class="text-sm font-medium text-gray-700">Hola, {{ currentUsername }}</span>
+          <span class="text-xs text-gray-500">Administrador</span>
+        </div>
         <button (click)="logout()"
-                class="bg-red-600 hover:bg-red-700 py-1 px-3 rounded text-sm font-semibold text-white">
+                class="hidden sm:inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
           Cerrar Sesión
         </button>
       </div>
     </header>
 
-    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
-      <router-outlet></router-outlet>
+    <main class="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </div>
 </div>
