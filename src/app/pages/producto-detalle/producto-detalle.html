@@ -51,24 +51,58 @@
         </p>
 
         @if (producto.variantes && producto.variantes.length > 0) {
-          <div class="mt-4 p-4 bg-gray-50 rounded-lg border">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Elige tu opción:</label>
+          <div class="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-100">
 
-            <select [(ngModel)]="varianteSeleccionada"
-                    class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-              <option [ngValue]="null" disabled selected>-- Seleccionar Color / Talla --</option>
-              @for (v of producto.variantes; track v.idVariante) {
-                <option [ngValue]="v" [disabled]="v.stockActual === 0">
-                  {{ v.color }} - {{ v.talla }}
-                  ({{ v.stockActual > 0 ? v.stockActual + ' disp.' : 'Agotado' }})
-                </option>
+            <div class="mb-4">
+              <p class="text-sm font-bold text-gray-700 mb-2">Color: <span class="text-gray-900">{{ colorSeleccionado }}</span></p>
+              <div class="flex gap-3 flex-wrap">
+                @for (color of getColoresUnicos(); track color) {
+                  <button (click)="seleccionarColor(color)"
+                          class="w-8 h-8 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all hover:scale-110"
+                          [style.background-color]="color"
+                          [class.ring-2]="colorSeleccionado === color"
+                          [class.ring-offset-2]="colorSeleccionado === color"
+                          [title]="color">
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <p class="text-sm font-bold text-gray-700 mb-2">Talla:</p>
+              <div class="flex gap-3 flex-wrap">
+                @if (colorSeleccionado) {
+                  @for (v of getTallasPorColor(colorSeleccionado); track v.idVariante) {
+                    <button (click)="seleccionarTalla(v)"
+                            [disabled]="v.stockActual === 0"
+                            class="px-4 py-2 text-sm font-medium border rounded-md transition-all shadow-sm"
+                            [class.bg-gray-900]="varianteSeleccionada?.idVariante === v.idVariante"
+                            [class.text-white]="varianteSeleccionada?.idVariante === v.idVariante"
+                            [class.bg-white]="varianteSeleccionada?.idVariante !== v.idVariante"
+                            [class.text-gray-700]="varianteSeleccionada?.idVariante !== v.idVariante"
+                            [class.hover:bg-gray-100]="varianteSeleccionada?.idVariante !== v.idVariante"
+                            [class.opacity-50]="v.stockActual === 0"
+                            [class.cursor-not-allowed]="v.stockActual === 0">
+                      {{ v.talla }}
+                    </button>
+                  }
+                } @else {
+                  <p class="text-sm text-gray-400 italic">Selecciona un color primero.</p>
+                }
+              </div>
+            </div>
+
+            <p class="text-sm text-green-600 font-semibold h-5">
+              @if (varianteSeleccionada) {
+                {{ varianteSeleccionada.stockActual }} unidades disponibles
               }
-            </select>
+            </p>
           </div>
         }
         <button
           (click)="agregarAlCarrito()"
-          class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+          [disabled]="producto.variantes?.length > 0 && !varianteSeleccionada"
+          class="mt-6 w-full bg-blue-600 text-white text-lg font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition-colors transform hover:-translate-y-1 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
           Añadir al Carrito
         </button>
       </div>
