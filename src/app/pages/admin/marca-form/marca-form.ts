@@ -12,8 +12,8 @@ import { Marca } from '../../../services/marca';
   templateUrl: './marca-form.html',
   styleUrl: './marca-form.css',
 })
-// --- ¡¡ESTA ES LA CORRECCIÓN!! ---
-export class MarcaFormComponent implements OnInit { // <-- Cambiado de 'MarcaForm' a 'MarcaFormComponent'
+
+export class MarcaFormComponent implements OnInit {
 
   public marcaForm: FormGroup;
   public esEdicion: boolean = false;
