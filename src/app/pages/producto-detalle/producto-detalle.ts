@@ -16,13 +16,17 @@ import { FormsModule } from '@angular/forms';
 export class ProductoDetalleComponent implements OnInit {
 
   public producto: any = null;
-  public imagenes: any[] = []; // (Mantener por compatibilidad)
+  public imagenes: any[] = [];
   public cargando: boolean = true;
   public activeTab: string = 'details';
 
-  // --- VARIABLES DE SELECCIÓN ---
+  // --- VARIABLES DE SELECCIÓN DE VARIANTES ---
   public colorSeleccionado: string | null = null;
   public varianteSeleccionada: ProductoVariante | null = null;
+
+  // --- ¡NUEVAS VARIABLES PARA GALERÍA! ---
+  public imagenActual: string | null = null;
+  public baseUrl = 'http://localhost:8080'; // O tu IP si usas móvil (ej. 192.168.1.X)
 
   constructor(
     private route: ActivatedRoute,
@@ -42,18 +46,34 @@ export class ProductoDetalleComponent implements OnInit {
           this.imagenes = resultado.imagenes;
           this.cargando = false;
 
-          // Pre-seleccionar el primer color disponible
+          // --- LÓGICA DE IMAGEN INICIAL ---
+          if (this.producto.urlImagen) {
+            // Si hay imagen principal, la usamos
+            this.imagenActual = this.baseUrl + this.producto.urlImagen;
+          } else if (this.imagenes.length > 0) {
+            // Si no, usamos la primera de la galería
+            this.imagenActual = this.baseUrl + this.imagenes[0].urlImagen;
+          }
+
+          // --- LÓGICA DE VARIANTE INICIAL ---
           if (this.producto.variantes && this.producto.variantes.length > 0) {
             this.colorSeleccionado = this.producto.variantes[0].color;
           }
         },
-        error: (err) => { console.error(err); this.cargando = false; }
+        error: (err) => {
+          console.error(err);
+          this.cargando = false;
+        }
       });
     }
   }
 
-  // --- LÓGICA DE SELECTORES (Igual que en la lista) ---
+  // --- MÉTODO PARA CAMBIAR LA IMAGEN GRANDE ---
+  cambiarImagen(urlRelativa: string): void {
+    this.imagenActual = this.baseUrl + urlRelativa;
+  }
 
+  // --- LÓGICA DE SELECTORES ---
   getColoresUnicos(): string[] {
     if (!this.producto?.variantes) return [];
     const colores = this.producto.variantes.map((v: any) => v.color);
@@ -67,7 +87,7 @@ export class ProductoDetalleComponent implements OnInit {
 
   seleccionarColor(color: string): void {
     this.colorSeleccionado = color;
-    this.varianteSeleccionada = null; // Resetea talla
+    this.varianteSeleccionada = null;
   }
 
   seleccionarTalla(variante: any): void {
@@ -75,14 +95,12 @@ export class ProductoDetalleComponent implements OnInit {
   }
 
   // --- CARRITO ---
-
   public agregarAlCarrito(): void {
     if (this.producto.variantes?.length > 0 && !this.varianteSeleccionada) {
       alert("Por favor, selecciona una Talla.");
       return;
     }
     this.cartService.addItem(this.producto, this.varianteSeleccionada);
-    // (Opcional: feedback visual)
   }
 
   public objectEntries(obj: any): [string, any][] {

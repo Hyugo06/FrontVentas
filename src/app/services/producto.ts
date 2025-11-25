@@ -62,4 +62,11 @@ export class Producto {
   public agregarImagen(idProducto: number, imagenData: any): Observable<any> {
     return this.http.post<any>(`${this.adminApiUrl}/${idProducto}/imagenes`, imagenData);
   }
+
+  public eliminarImagen(idImagen: number): Observable<void> {
+    // Construimos la URL: http://.../api/admin/imagenes/{id}
+    // (Usamos adminApiUrl que es .../admin/productos, le quitamos 'productos' y añadimos 'imagenes')
+    const urlBase = this.adminApiUrl.replace('/productos', '');
+    return this.http.delete<void>(`${urlBase}/imagenes/${idImagen}`);
+  }
 }

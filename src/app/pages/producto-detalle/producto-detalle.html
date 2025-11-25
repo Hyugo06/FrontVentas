@@ -12,25 +12,42 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
       <div>
-        <div class="aspect-square w-full bg-white rounded-xl shadow-sm border overflow-hidden flex items-center justify-center">
-
-          @if (producto.urlImagen) {
-            <img [src]="'http://localhost:8080' + producto.urlImagen"
+        <div class="aspect-square w-full bg-white rounded-xl shadow-sm border overflow-hidden flex items-center justify-center mb-4">
+          @if (imagenActual) {
+            <img [src]="imagenActual"
                  [alt]="producto.nombre"
-                 class="w-full h-full object-contain p-4">
+                 class="w-full h-full object-contain p-4 transition-opacity duration-300">
           } @else {
-            @if (imagenes.length > 0) {
-              <img [src]="imagenes[0].urlImagen" class="w-full h-full object-contain">
-            } @else {
-              <div class="text-gray-400 flex flex-col items-center">
-                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <span>Sin imagen disponible</span>
-              </div>
-            }
+            <div class="text-gray-400 flex flex-col items-center">
+              <span class="text-sm">Sin imagen</span>
+            </div>
           }
-
         </div>
+
+        @if (producto.urlImagen || imagenes.length > 0) {
+          <div class="flex gap-3 overflow-x-auto pb-2">
+
+            @if (producto.urlImagen) {
+              <button (click)="cambiarImagen(producto.urlImagen)"
+                      class="w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
+                      [class.border-blue-600]="imagenActual === (baseUrl + producto.urlImagen)"
+                      [class.border-gray-200]="imagenActual !== (baseUrl + producto.urlImagen)">
+                <img [src]="baseUrl + producto.urlImagen" class="w-full h-full object-cover">
+              </button>
+            }
+
+            @for (img of imagenes; track img.idImagen) {
+              <button (click)="cambiarImagen(img.urlImagen)"
+                      class="w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
+                      [class.border-blue-600]="imagenActual === (baseUrl + img.urlImagen)"
+                      [class.border-gray-200]="imagenActual !== (baseUrl + img.urlImagen)">
+                <img [src]="baseUrl + img.urlImagen" class="w-full h-full object-cover">
+              </button>
+            }
+          </div>
+        }
       </div>
+
       <div>
         <span class="text-sm text-gray-500">{{ producto.codigoSku }}</span>
         <h1 class="text-4xl font-bold mb-4">{{ producto.nombre }}</h1>
@@ -99,6 +116,7 @@
             </p>
           </div>
         }
+
         <button
           (click)="agregarAlCarrito()"
           [disabled]="producto.variantes?.length > 0 && !varianteSeleccionada"
