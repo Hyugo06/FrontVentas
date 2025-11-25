@@ -19,7 +19,9 @@
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold">Categorías</h2>
-        <button (click)="toggleMobileMenu()" class="md:hidden text-gray-500">X</button>
+        <button (click)="toggleMobileMenu()" class="md:hidden text-gray-500">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
 
       <nav>
@@ -82,10 +84,18 @@
         <div class="group bg-white rounded-lg shadow-md overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl">
 
           <a [routerLink]="['/productos', prod.idProducto]" class="block p-4 md:p-5">
-            <div class="h-40 bg-gray-200 rounded-md mb-4 flex items-center justify-center">
-              <span class="text-gray-400">Imagen</span>
-            </div>
 
+            <div class="h-48 w-full mb-4 bg-white flex items-center justify-center overflow-hidden rounded-md">
+              @if (prod.urlImagen) {
+                <img [src]="'http://localhost:8080' + prod.urlImagen"
+                     [alt]="prod.nombre"
+                     class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105">
+              } @else {
+                <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+                  <span class="text-gray-400 text-sm font-medium">Sin imagen</span>
+                </div>
+              }
+            </div>
             <span class="text-xs font-semibold text-gray-500 uppercase">{{ prod.marca?.nombre || 'Genérico' }}</span>
 
             <h2 class="text-base md:text-lg font-bold text-gray-900 truncate mt-1 group-hover:text-blue-600">
@@ -116,7 +126,7 @@
       } @empty {
         @if (!cargandoProductos) {
           <p class="col-span-1 sm:col-span-2 lg:col-span-3 text-center text-gray-500 p-8 bg-white rounded-lg">
-            No se encontraron productos.
+            No se encontraron productos que coincidan con los filtros.
           </p>
         }
       }

@@ -32,6 +32,7 @@ export class ProductoFormComponent implements OnInit {
   public selectedFile: File | null = null;
   public uploading: boolean = false;
   public imagenesProducto: any[] = [];
+  public previewUrl: string | null = null;
 
   // --- LÓGICA DE PLANTILLAS DE CARACTERÍSTICAS ---
   private caracteristicasTemplates: { [key: number]: string[] } = {
@@ -68,6 +69,7 @@ export class ProductoFormComponent implements OnInit {
       stockActual: [0, [Validators.required, Validators.min(0)]],
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
+      urlImagen: [''],
 
       caracteristicas: this.fb.group({})
     });
@@ -110,6 +112,17 @@ export class ProductoFormComponent implements OnInit {
     const file: File = event.target.files[0];
     if (file) {
       this.selectedFile = file;
+
+      // Subir inmediatamente para obtener la URL
+      this.mediaService.uploadFile(file).subscribe({
+        next: (resp) => {
+          // 1. Guardamos la URL que nos dio el backend en el formulario
+          this.productoForm.patchValue({ urlImagen: resp.url });
+          // 2. Actualizamos la vista previa
+          this.previewUrl = 'http://localhost:8080' + resp.url;
+        },
+        error: () => alert('Error al subir imagen')
+      });
     }
   }
 
@@ -183,12 +196,14 @@ export class ProductoFormComponent implements OnInit {
           precioCompra: producto.precioCompra,
           stockActual: producto.stockActual,
           idMarca: producto.marca.idMarca,
-          idCategoria: producto.categoria.idCategoria
+          idCategoria: producto.categoria.idCategoria,
+          urlImagen: producto.urlImagen
         });
 
         if (producto.caracteristicas) {
           this.actualizarCamposCaracteristicas(producto.categoria.idCategoria);
           this.productoForm.get('caracteristicas')?.patchValue(producto.caracteristicas);
+          this.previewUrl = producto.urlImagen ? 'http://localhost:8080' + producto.urlImagen : null;
         }
 
         this.cargando = false;

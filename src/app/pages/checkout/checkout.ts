@@ -1,22 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-// --- Importa tus servicios y modelos ---
-import { Cart, CartItem } from '../../services/cart'; // De tu servicio de carrito
-import { Cliente } from '../../services/cliente'; // Asumo que crearás este servicio
-import { Venta } from '../../services/venta'; // Asumo que crearás este servicio
+// --- IMPORTACIONES CORREGIDAS ---
+import { Cart, CartItem } from '../../services/cart';
+import { Venta } from '../../services/venta';
 import { Auth } from '../../services/auth';
-// Importa el DTO de Venta (para el POST final)
-import { DetalleVentaDTO, VentaRequestDTO } from '../../model/venta-request.dto'; // Asumo que crearás este archivo
+// Importamos tanto la interfaz como el servicio (con alias si quieres, pero mejor explícito)
+import { ClienteService } from '../../services/cliente';
+import { DetalleVentaDTO, VentaRequestDTO, ClienteRequestDTO } from '../../model/venta-request.dto';
 
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './checkout.html',
   styleUrl: './checkout.css'
 })
@@ -35,13 +35,15 @@ export class CheckoutComponent implements OnInit {
     private cartService: Cart,
     private authService: Auth,
     private router: Router,
-    private clienteService: Cliente,
-    private ventaService: Venta // <-- ¡Asegúrate de que esté aquí!
+    // --- ¡CORRECCIÓN AQUÍ! ---
+    private clienteService: ClienteService, // Inyecta el SERVICIO, no la interfaz
+    private ventaService: Venta
   ) {
-    // Definición del formulario de checkout
+    // ... (Tu definición del formulario es correcta) ...
     this.checkoutForm = this.fb.group({
       tipoComprobante: ['boleta', Validators.required],
-      cliente: this.fb.group({ // <-- Grupo anidado
+
+      cliente: this.fb.group({
         nombres: ['', Validators.required],
         apellidos: ['', Validators.required],
         celular: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
@@ -52,73 +54,56 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // 1. Obtener items del carrito
     this.cartService.items$.subscribe(items => {
       this.cartItems = items;
       this.totalMonto = this.calcularTotal();
       if (items.length === 0) {
-        // 🛑 CORRECCIÓN: Si el carrito está vacío,
-        // no lo envíes a '/', envíalo a '/productos'.
         this.router.navigate(['/productos']);
       }
     });
 
-    // 2. Intentar cargar datos del usuario logueado (vendedor)
     this.usuarioLogueado = this.authService.getUsername();
 
-    // 3. Lógica de /gracias (Esto está bien)
     if (this.router.url === '/gracias') {
       this.isPurchaseSuccessful = true;
     }
   }
 
   calcularTotal(): number {
-    // Implementación simple del cálculo total
     return this.cartItems.reduce((sum, item) =>
       sum + (item.producto.precioVenta * item.cantidad), 0
     );
   }
 
-  /**
-   * Procesa la compra final
-   */
   public procesarCompra(): void {
     if (this.checkoutForm.invalid || this.cartItems.length === 0) {
-      this.error = 'Por favor, complete correctamente los datos del cliente.';
+      this.error = 'Por favor, completa los datos correctamente.';
       return;
     }
     this.cargando = true;
     this.error = null;
 
-    // 2. Mapear el carrito
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
       cantidad: item.cantidad
     }));
 
-    // --- ¡CONSTRUIMOS EL NUEVO DTO! ---
     const ventaData: VentaRequestDTO = {
-      // Ya no enviamos idUsuario (el backend lo sabe por el token)
-
-      // Enviamos el objeto anidado del formulario
       clienteData: this.checkoutForm.get('cliente')?.value,
-
       tipoComprobante: this.checkoutForm.get('tipoComprobante')?.value,
       detalles: detalles
     };
 
-    // 4. Llamada al servicio (¡esta llamada no cambia!)
     this.ventaService.procesarVenta(ventaData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.cartService.clearCart();
         this.router.navigate(['/gracias']);
       },
       error: (err: any) => {
-        this.error = 'Error al procesar la venta. Verifique los datos o el stock.';
+        this.error = 'Error al procesar la venta. ' + (err.error || err.message);
         console.error('Error de transacción:', err);
         this.cargando = false;
       }
     });
   }
 }
-
