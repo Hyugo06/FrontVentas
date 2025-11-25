@@ -2,8 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
-import { Cart, CartItem } from '../../services/cart'; // Importa el servicio y la interfaz
+// ¡Importa CartItem!
+import { Cart, CartItem } from '../../services/cart';
 import { map } from 'rxjs/operators';
+import {Modal} from '../../services/modal';
+// ¡Importa Modal (la clase)!
+
 
 @Component({
   selector: 'app-cart-page',
@@ -17,9 +21,11 @@ export class CartPageComponent {
   public items$: Observable<CartItem[]>;
   public total$: Observable<number>;
 
-  constructor(private cartService: Cart) {
+  constructor(
+    private cartService: Cart,
+    private modalService: Modal // Inyecta Modal
+  ) {
     this.items$ = this.cartService.items$;
-
     this.total$ = this.items$.pipe(
       map(items =>
         items.reduce((total, item) => total + (item.producto.precioVenta * item.cantidad), 0)
@@ -27,38 +33,29 @@ export class CartPageComponent {
     );
   }
 
-  // --- Métodos para los botones (Actualizados) ---
-
-  /**
-   * (Esta función se queda igual, solo cambia el tipo de 'item')
-   */
   incrementar(item: CartItem): void {
-    this.cartService.addItem(item.producto);
+    this.cartService.addItem(item.producto, item.variante || null);
   }
 
-  /**
-   * ¡MODIFICADO!
-   * Ahora comprueba la cantidad antes de actuar.
-   */
   decrementar(item: CartItem): void {
     if (item.cantidad > 1) {
-      // Si hay más de 1, solo decrementa. Sin aviso.
-      this.cartService.decrementItem(item.producto);
+      this.cartService.decrementItem(item);
     } else {
-      // Si la cantidad es 1, pide confirmación (requisito 2).
-      if (confirm(`Esto eliminará "${item.producto.nombre}" del carrito. ¿Estás seguro?`)) {
-        this.cartService.decrementItem(item.producto); // El servicio se encargará de borrarlo
-      }
+      this.modalService.open(`Esto eliminará "${item.producto.nombre}" del carrito. ¿Estás seguro?`)
+        .subscribe((result: any) => {
+          if (result) {
+            this.cartService.decrementItem(item);
+          }
+        });
     }
   }
 
-  /**
-   * ¡MODIFICADO!
-   * Ahora pide confirmación antes de eliminar (requisito 1).
-   */
   eliminar(item: CartItem): void {
-    if (confirm(`¿Estás seguro de que quieres eliminar "${item.producto.nombre}" del carrito?`)) {
-      this.cartService.removeItem(item.producto);
-    }
+    this.modalService.open(`¿Estás seguro de que quieres eliminar "${item.producto.nombre}" del carrito?`)
+      .subscribe((result: any) => {
+        if (result) {
+          this.cartService.removeItem(item);
+        }
+      });
   }
 }

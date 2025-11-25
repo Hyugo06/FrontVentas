@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router'; // ¡Importa todo esto!
-import { Auth } from '../../services/auth'; // Tu servicio de Auth
+import { Auth } from '../../services/auth';
+import {Modal} from '../../services/modal'; // Tu servicio de Auth
 
 @Component({
   selector: 'app-admin-layout',
@@ -18,7 +19,8 @@ export class AdminLayoutComponent implements OnInit {
 
   constructor(
     private authService: Auth,
-    private router: Router
+    private router: Router,
+    private modalService: Modal // <-- ¡INYECTAR EL SERVICIO!
   ) {}
 
   ngOnInit(): void {
@@ -27,8 +29,15 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   public logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']); // Al cerrar sesión, lo mandamos al login
+    // 1. Abrir el modal preguntando
+    this.modalService.open('¿Estás seguro de que deseas cerrar sesión?')
+      .subscribe((result: any) => {
+        // 2. Si el usuario dice "Sí" (true)
+        if (result) {
+          this.authService.logout();
+          this.router.navigate(['/login']);
+        }
+      });
   }
 
   public toggleMenu(): void {

@@ -7,12 +7,13 @@ import { CommonModule } from '@angular/common';
 import { CartStatusComponent } from './components/cart-status/cart-status';
 import {NavbarComponent} from './components/navbar/navbar';
 import {filter, Subscription} from 'rxjs';
+import {ConfirmModalComponent} from './components/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   // --- ¡AÑADE CommonModule y NavbarComponent AQUÍ! ---
-  imports: [RouterOutlet, CommonModule, NavbarComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent,ConfirmModalComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

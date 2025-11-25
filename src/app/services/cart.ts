@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ProductoVariante } from './producto'; // Importamos la interfaz de variante
+import { ProductoVariante } from './producto';
 
+// --- INTERFAZ EXPORTADA ---
 export interface CartItem {
   producto: any;
   cantidad: number;
-  variante?: ProductoVariante | null; // <--- ¡NUEVO CAMPO!
+  variante?: ProductoVariante | null;
 }
 
 @Injectable({
@@ -23,13 +24,8 @@ export class Cart {
 
   constructor() { }
 
-  /**
-   * Añade un producto (con o sin variante) al carrito.
-   */
   public addItem(producto: any, variante: ProductoVariante | null = null): void {
     const itemsActuales = this.itemsSubject.getValue();
-
-    // Buscamos si ya existe este producto CON ESTA MISMA variante
     const itemEnCarrito = itemsActuales.find(item => {
       const mismoProducto = item.producto.idProducto === producto.idProducto;
       const mismaVariante = item.variante?.idVariante === variante?.idVariante;
@@ -48,9 +44,10 @@ export class Cart {
     this.itemsSubject.next(itemsActuales);
   }
 
+  // --- MÉTODOS QUE RECIBEN EL ITEM COMPLETO ---
+
   public decrementItem(item: CartItem): void {
     let itemsActuales = this.itemsSubject.getValue();
-    // Buscamos el item exacto (producto + variante)
     const targetItem = itemsActuales.find(i =>
       i.producto.idProducto === item.producto.idProducto &&
       i.variante?.idVariante === item.variante?.idVariante
@@ -60,9 +57,8 @@ export class Cart {
       if (targetItem.cantidad > 1) {
         targetItem.cantidad--;
       } else {
-        // Eliminar si llega a 0
         this.removeItem(item);
-        return; // Salimos para no emitir dos veces
+        return;
       }
     }
     this.itemsSubject.next(itemsActuales);
