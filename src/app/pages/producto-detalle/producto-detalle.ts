@@ -17,6 +17,7 @@ export class ProductoDetalleComponent implements OnInit {
 
   public producto: any = null;
   public imagenes: any[] = [];
+  public imagenesFiltradas: any[] = [];
   public cargando: boolean = true;
   public activeTab: string = 'details';
 
@@ -88,6 +89,18 @@ export class ProductoDetalleComponent implements OnInit {
   seleccionarColor(color: string): void {
     this.colorSeleccionado = color;
     this.varianteSeleccionada = null;
+    const variantesDeColor = this.producto.variantes.filter((v:any) => v.color === color);
+    const idsVariantes = variantesDeColor.map((v:any) => v.idVariante);
+    this.imagenesFiltradas = this.imagenes.filter(img =>
+      img.idVariante == null || idsVariantes.includes(img.idVariante)
+    );
+    const primeraFotoVariante = this.imagenesFiltradas.find(img => img.idVariante != null);
+
+    if (primeraFotoVariante) {
+      this.cambiarImagen(primeraFotoVariante.urlImagen);
+    } else if (this.imagenesFiltradas.length > 0) {
+      this.cambiarImagen(this.imagenesFiltradas[0].urlImagen);
+    }
   }
 
   seleccionarTalla(variante: any): void {

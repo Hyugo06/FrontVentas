@@ -24,7 +24,7 @@
           }
         </div>
 
-        @if (producto.urlImagen || imagenes.length > 0) {
+        @if (producto.urlImagen || imagenesFiltradas.length > 0) {
           <div class="flex gap-3 overflow-x-auto pb-2">
 
             @if (producto.urlImagen) {
@@ -36,7 +36,7 @@
               </button>
             }
 
-            @for (img of imagenes; track img.idImagen) {
+            @for (img of imagenesFiltradas; track img.idImagen) {
               <button (click)="cambiarImagen(img.urlImagen)"
                       class="w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
                       [class.border-blue-600]="imagenActual === (baseUrl + img.urlImagen)"
