@@ -6,8 +6,6 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { Observable, forkJoin } from 'rxjs';
-
-// --- ¡AÑADE ESTA IMPORTACIÓN! ---
 import { Cart } from '../../services/cart';
 
 @Component({
@@ -27,11 +25,25 @@ export class ProductoListaComponent implements OnInit {
   public filtroForm: FormGroup;
   public showMobileMenu: boolean = false;
 
+  // --- NUEVAS VARIABLES PARA EL CARRUSEL ---
+  // Mapa que guarda TODAS las imágenes únicas por producto
+  public mapaImagenesProducto: { [idProducto: number]: string[] } = {};
+  // Mapa que guarda el índice actual que se está viendo
+  public indicesCarrusel: { [idProducto: number]: number } = {};
+
+  // Mapas de selección
+  public colorSeleccionado: { [idProducto: number]: string } = {};
+  public seleccion: { [idProducto: number]: any } = {};
+
+  // --- ¡NUEVA VARIABLE! Mapa para controlar la imagen de cada tarjeta ---
+  // Clave: idProducto, Valor: URL de la imagen a mostrar
+  public imagenesSeleccionadas: { [idProducto: number]: string } = {};
+
   constructor(
     private productoService: Producto,
     private categoriaService: Categoria,
     private fb: FormBuilder,
-    private cartService: Cart // <-- ¡INYECTA EL SERVICIO DE CARRITO!
+    private cartService: Cart
   ) {
     this.filtroForm = this.fb.group({
       search: [''],
@@ -39,76 +51,6 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  public seleccion: { [idProducto: number]: any } = {};
-
-  // ... (ngOnInit y cargarProductos) ...
-
-  /**
-   * Se ejecuta cuando cargan los productos para pre-seleccionar la primera opción
-   */
-  inicializarSeleccion(): void {
-    this.productos.forEach(prod => {
-      if (prod.variantes && prod.variantes.length > 0) {
-        // Por defecto, seleccionamos el primer color disponible
-        // Pero NO seleccionamos una variante final todavía (opcional)
-        const primerColor = prod.variantes[0].color;
-        this.colorSeleccionado[prod.idProducto] = primerColor;
-
-        // Opcional: Pre-seleccionar la primera variante válida de ese color
-        const variantePorDefecto = this.getTallasPorColor(prod, primerColor)[0];
-        if (variantePorDefecto) {
-          this.seleccion[prod.idProducto] = variantePorDefecto;
-        }
-      }
-    });
-  }
-
-  seleccionarVariante(prod: any, variante: any): void {
-    this.seleccion[prod.idProducto] = variante;
-  }
-
-  getColoresUnicos(prod: any): string[] {
-    if (!prod.variantes) return [];
-    const colores = prod.variantes.map((v: any) => v.color);
-    return [...new Set(colores)] as string[]; // Elimina duplicados
-  }
-
-  getTallasPorColor(prod: any, color: string): any[] {
-    if (!prod.variantes) return [];
-    return prod.variantes.filter((v: any) => v.color === color);
-  }
-
-
-  public colorSeleccionado: { [idProducto: number]: string } = {};
-
-  public toggleMobileMenu(): void {
-    this.showMobileMenu = !this.showMobileMenu;
-  }
-
-  seleccionarColor(prod: any, color: string): void {
-    this.colorSeleccionado[prod.idProducto] = color;
-
-    const tallasDisponibles = this.getTallasPorColor(prod, color);
-    console.log(`Colores para ${prod.nombre}:`, tallasDisponibles); // <--- ¡MIRA ESTO EN LA CONSOLA!
-
-    if (tallasDisponibles.length > 0) {
-      // NO selecciones automáticamente la talla, deja que el usuario elija
-      // this.seleccion[prod.idProducto] = tallasDisponibles[0];
-      this.seleccion[prod.idProducto] = null; // Resetea la selección para obligar al usuario a elegir talla
-    } else {
-      this.seleccion[prod.idProducto] = null;
-    }
-  }
-
-  seleccionarTalla(prod: any, variante: any): void {
-    this.seleccion[prod.idProducto] = variante;
-  }
-
-
-
-
-  // ... (tu ngOnInit, cargarProductosIniciales, cargarCategorias, limpiarFiltros y setCategoriaFiltro
-  //      están perfectos y se quedan igual) ...
   ngOnInit(): void {
     this.cargarCategorias();
     this.cargarProductosIniciales();
@@ -123,6 +65,7 @@ export class ProductoListaComponent implements OnInit {
     ).subscribe({
       next: (data: any) => {
         this.productos = data;
+        this.inicializarSeleccion(); // <-- Importante llamar a esto al filtrar también
         this.cargandoProductos = false;
       },
       error: (err: any) => {
@@ -147,28 +90,128 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
+  // --- MÉTODO ACTUALIZADO ---
+  /**
+   * Inicializa las selecciones por defecto (Color, Talla e IMAGEN)
+   */
+  inicializarSeleccion(): void {
+    this.productos.forEach(prod => {
+      // Usamos un Set para evitar URLs repetidas
+      const imagenesSet = new Set<string>();
+
+      // 1. Agregar Imagen Principal del Producto
+      if (prod.urlImagen) imagenesSet.add(prod.urlImagen);
+
+      // 2. Agregar Imágenes de las Variantes
+      if (prod.variantes) {
+        prod.variantes.forEach((v: any) => {
+          // A. Foto principal de la variante
+          if (v.urlImagen) imagenesSet.add(v.urlImagen);
+
+          // B. Galería extra de la variante (¡ESTO FALTABA!)
+          if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
+            v.galeriaImagenes.forEach((url: string) => imagenesSet.add(url));
+          }
+        });
+      }
+
+      // Convertir a Array
+      this.mapaImagenesProducto[prod.idProducto] = Array.from(imagenesSet);
+      this.indicesCarrusel[prod.idProducto] = 0;
+
+      // Debug: Ver en consola cuántas fotos encontró
+      // console.log(`Producto ${prod.nombre} tiene ${imagenesSet.size} fotos`);
+
+      // Pre-selección de color (tu lógica existente)
+      if (prod.variantes && prod.variantes.length > 0) {
+        this.colorSeleccionado[prod.idProducto] = prod.variantes[0].color;
+      }
+    });
+  }
+
+  nextImage(event: Event, prodId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const totalImages = this.mapaImagenesProducto[prodId].length;
+    if (totalImages > 1) {
+      // Incrementa índice y da la vuelta si llega al final (bucle)
+      this.indicesCarrusel[prodId] = (this.indicesCarrusel[prodId] + 1) % totalImages;
+    }
+  }
+
+  prevImage(event: Event, prodId: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const totalImages = this.mapaImagenesProducto[prodId].length;
+    if (totalImages > 1) {
+      // Decrementa índice y da la vuelta si llega al principio
+      this.indicesCarrusel[prodId] = (this.indicesCarrusel[prodId] - 1 + totalImages) % totalImages;
+    }
+  }
+
+  getCurrentImage(prodId: number): string | null {
+    const images = this.mapaImagenesProducto[prodId];
+    const index = this.indicesCarrusel[prodId];
+    if (images && images.length > 0) {
+      return images[index];
+    }
+    return null;
+  }
+
+  // --- MÉTODO ACTUALIZADO ---
+  seleccionarColor(prod: any, color: string): void {
+    // 1. Lógica existente de selección
+    this.colorSeleccionado[prod.idProducto] = color;
+    this.seleccion[prod.idProducto] = null; // Resetea la talla
+
+    // 2. --- ¡NUEVA LÓGICA! Cambiar la foto de la tarjeta ---
+    // Buscamos si hay una variante de este color que tenga foto
+    const varianteDeColor = prod.variantes.find((v: any) => v.color === color && v.urlImagen);
+
+    if (varianteDeColor) {
+      this.imagenesSeleccionadas[prod.idProducto] = varianteDeColor.urlImagen;
+    } else {
+      // Si este color no tiene foto, volvemos a la foto principal (o la primera disponible)
+      // Si prod.urlImagen es null, mantenemos la que estaba (que puede ser la de otro color) o buscamos un fallback
+      this.imagenesSeleccionadas[prod.idProducto] = prod.urlImagen || this.imagenesSeleccionadas[prod.idProducto];
+    }
+  }
+
+  // ... (resto de métodos: getColoresUnicos, getTallasPorColor, seleccionarTalla, agregarAlCarrito, etc.)
+
+  getColoresUnicos(prod: any): string[] {
+    if (!prod.variantes) return [];
+    const colores = prod.variantes.map((v: any) => v.color);
+    return [...new Set(colores)] as string[];
+  }
+
+  getTallasPorColor(prod: any, color: string): any[] {
+    if (!prod.variantes) return [];
+    return prod.variantes.filter((v: any) => v.color === color);
+  }
+
+  seleccionarTalla(prod: any, variante: any): void {
+    this.seleccion[prod.idProducto] = variante;
+  }
+
+  public agregarAlCarrito(event: MouseEvent, producto: any, variante?: any): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (producto.variantes?.length > 0 && !variante) {
+      alert("Por favor selecciona una opción.");
+      return;
+    }
+    this.cartService.addItem(producto, variante);
+  }
+
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
-
-        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-        // Ahora que el backend envía 'idCategoriaPadre', podemos filtrar:
-
-        // 1. Categorías Padre (las que tienen idCategoriaPadre == null)
-        // (Ej: Ropa, Hogar)
         this.categoriasPadre = data.filter(c => c.idCategoriaPadre == null);
-
-        // 2. Categorías Hija (las que tienen idCategoriaPadre != null)
-        // (Ej: Gorras, Polos, Sábanas)
         this.categoriasHijo = data.filter(c => c.idCategoriaPadre != null);
-
-        // (La lista completa 'categorias' ya no se usa para el bucle principal,
-        // pero la dejamos por si acaso la necesitas para otra cosa)
         this.categorias = data;
       },
-      error: (err: any) => {
-        console.error('Error al traer categorías:', err);
-      }
+      error: (err: any) => { console.error('Error al traer categorías:', err); }
     });
   }
 
@@ -181,24 +224,7 @@ export class ProductoListaComponent implements OnInit {
     this.filtroForm.get('categoria')?.setValue(nombreCategoria);
   }
 
-  // --- ¡AÑADE ESTE NUEVO MÉTODO! ---
-  /**
-   * Añade un producto al carrito directamente desde la lista.
-   * 'event.stopPropagation()' evita que el 'routerLink' de la tarjeta se active.
-   */
-  public agregarAlCarrito(event: MouseEvent, producto: any, variante?: any): void {
-    event.stopPropagation();
-    event.preventDefault();
-
-    // Si el producto tiene variantes pero no se seleccionó ninguna (error defensivo)
-    if (producto.variantes?.length > 0 && !variante) {
-      alert("Por favor selecciona una opción.");
-      return;
-    }
-
-    // Pasamos la variante al servicio (que ya actualizamos para aceptarla)
-    this.cartService.addItem(producto, variante);
-
-    // (Opcional: Mostrar un toast/notificación)
+  public toggleMobileMenu(): void {
+    this.showMobileMenu = !this.showMobileMenu;
   }
 }

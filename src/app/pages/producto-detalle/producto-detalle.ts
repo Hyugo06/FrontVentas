@@ -45,6 +45,7 @@ export class ProductoDetalleComponent implements OnInit {
         next: (resultado: any) => {
           this.producto = resultado.producto;
           this.imagenes = resultado.imagenes;
+          this.imagenesFiltradas = this.imagenes;
           this.cargando = false;
 
           // --- LÓGICA DE IMAGEN INICIAL ---
@@ -61,13 +62,12 @@ export class ProductoDetalleComponent implements OnInit {
             this.colorSeleccionado = this.producto.variantes[0].color;
           }
         },
-        error: (err) => {
-          console.error(err);
-          this.cargando = false;
-        }
+        error: (err) => { console.error(err); this.cargando = false; }
       });
     }
   }
+
+
 
   // --- MÉTODO PARA CAMBIAR LA IMAGEN GRANDE ---
   cambiarImagen(urlRelativa: string): void {
@@ -119,5 +119,27 @@ export class ProductoDetalleComponent implements OnInit {
   public objectEntries(obj: any): [string, any][] {
     if (!obj) return [];
     return Object.entries(obj);
+  }
+
+  navegarImagen(direccion: number): void {
+    if (!this.imagenActual || this.imagenesFiltradas.length <= 1) return;
+
+    // 1. Encontrar el índice de la imagen actual
+    // Quitamos el baseUrl para comparar solo la ruta relativa
+    const currentUrlRelativa = this.imagenActual.replace(this.baseUrl, '');
+
+    const currentIndex = this.imagenesFiltradas.findIndex(img => img.urlImagen === currentUrlRelativa);
+
+    if (currentIndex !== -1) {
+      // 2. Calcular nuevo índice con bucle (wrap around)
+      const totalImages = this.imagenesFiltradas.length;
+      let newIndex = (currentIndex + direccion) % totalImages;
+
+      // Manejar índices negativos (al ir hacia atrás desde el 0)
+      if (newIndex < 0) newIndex = totalImages - 1;
+
+      // 3. Cambiar la imagen
+      this.cambiarImagen(this.imagenesFiltradas[newIndex].urlImagen);
+    }
   }
 }
