@@ -22,7 +22,7 @@ export class CartPageComponent {
   public total$: Observable<number>;
 
   constructor(
-    private cartService: Cart,
+    protected cartService: Cart,
     private modalService: Modal // Inyecta Modal
   ) {
     this.items$ = this.cartService.items$;

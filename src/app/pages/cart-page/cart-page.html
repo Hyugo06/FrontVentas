@@ -27,7 +27,9 @@
 
               <div class="flex-grow min-w-0">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ item.producto.marca?.nombre || 'Genérico' }}</span>
-                <h3 class="font-bold text-gray-900 text-lg truncate">{{ item.producto.nombre }}</h3>
+                <h3 class="font-bold text-gray-900 text-base sm:text-lg leading-tight break-words">
+                  {{ item.producto.nombre }}
+                </h3>
 
                 @if (item.variante) {
                   <div class="flex items-center mt-1 space-x-2">
@@ -70,12 +72,13 @@
             <h2 class="text-xl font-bold mb-6 text-gray-800 border-b pb-4">Resumen del Pedido</h2>
 
             <div class="flex justify-between mb-3 text-gray-600">
+              <span>Productos:</span>
+              <span class="font-medium">{{ cartService.totalItems$ | async }} u.</span>
+            </div>
+
+            <div class="flex justify-between mb-3 text-gray-600">
               <span>Subtotal:</span>
               <span class="font-medium">S/ {{ total$ | async | number: '1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between mb-6 text-gray-600">
-              <span>Envío:</span>
-              <span class="text-green-600 font-medium">Gratis</span>
             </div>
 
             <div class="flex justify-between items-center border-t pt-4 mb-8">
