@@ -1,133 +1,97 @@
-@if (isPurchaseSuccessful) {
-  <div class="container mx-auto p-12 text-center bg-green-50 rounded-lg shadow-md mt-10">
-    <h1 class="text-4xl font-extrabold text-green-700 mb-4">¡Compra Exitosa!</h1>
-    <p class="text-xl text-gray-600">
-      Tu pedido ha sido procesado correctamente. ¡Gracias por tu compra!
-    </p>
-    <a routerLink="/productos" class="mt-6 inline-block text-white bg-blue-600 py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-150">
-      Volver a la tienda
-    </a>
+@if (showSuccessModal) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-100">
+
+      <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+        <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-2">¡Venta Exitosa!</h2>
+      <p class="text-gray-500 mb-8">El pedido se ha procesado correctamente. Gracias por tu preferencia.</p>
+
+      <div class="flex justify-center items-center mb-6 relative h-24 w-24 mx-auto">
+        <svg class="transform -rotate-90 w-full h-full">
+          <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-200" />
+
+          <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent"
+                  class="text-blue-600 transition-all duration-1000 ease-linear"
+                  stroke-dasharray="251"
+                  [attr.stroke-dashoffset]="251 - (251 * countdown / 5)" />
+        </svg>
+
+        <span class="absolute text-3xl font-bold text-gray-700">{{ countdown }}</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-6">Redirigiendo a la tienda...</p>
+
+      <button (click)="cerrarYRedirigir()"
+              class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors shadow-lg">
+        Aceptar y Volver
+      </button>
+
+    </div>
   </div>
-} @else {
+}
+@else {
   <div class="container mx-auto p-8 mt-4">
     <h1 class="text-3xl font-bold mb-8">Confirmación de Pedido</h1>
 
     <a routerLink="/productos" class="text-blue-600 hover:underline mb-6 inline-block">
-      &larr; Volver a la Tienda
+      &larr; Continuar Comprando
     </a>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
       <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-xl">
         <h2 class="text-xl font-semibold mb-4 border-b pb-2">Datos del Comprobante</h2>
-
         <form [formGroup]="checkoutForm" (ngSubmit)="procesarCompra()">
-
           <div class="mb-4">
-            <label for="comprobante" class="block text-sm font-medium text-gray-700">Tipo de Comprobante</label>
-            <select id="comprobante" formControlName="tipoComprobante"
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <label class="block text-sm font-medium text-gray-700">Tipo de Comprobante</label>
+            <select formControlName="tipoComprobante" class="mt-1 block w-full border p-2 rounded">
               <option value="boleta">Boleta</option>
               <option value="factura">Factura</option>
-              <option value="ticket">Ticket</option>
             </select>
           </div>
-
           <div formGroupName="cliente">
-            <h3 class="text-lg font-semibold mb-3 border-b pb-1 mt-6">Datos del Cliente</h3>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="mb-4">
-                <label for="nombres" class="block text-sm font-medium text-gray-700">Nombres (*)</label>
-                <input type="text" id="nombres" formControlName="nombres" required
-                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-              </div>
-              <div class="mb-4">
-                <label for="apellidos" class="block text-sm font-medium text-gray-700">Apellidos (*)</label>
-                <input type="text" id="apellidos" formControlName="apellidos" required
-                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-              </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <input type="text" formControlName="nombres" placeholder="Nombres" class="border p-2 rounded w-full">
+              <input type="text" formControlName="apellidos" placeholder="Apellidos" class="border p-2 rounded w-full">
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="mb-4">
-                <label for="dni" class="block text-sm font-medium text-gray-700">DNI (8 dígitos) (*)</label>
-                <input type="text" id="dni" formControlName="dni" required maxlength="8"
-                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                @if (checkoutForm.get('cliente.dni')?.invalid && checkoutForm.get('cliente.dni')?.touched) {
-                  <p class="text-xs text-red-500 mt-1">El DNI debe tener 8 dígitos numéricos.</p>
-                }
-              </div>
-              <div class="mb-4">
-                <label for="celular" class="block text-sm font-medium text-gray-700">Celular (9 dígitos) (*)</label>
-                <input type="text" id="celular" formControlName="celular" required maxlength="9"
-                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                @if (checkoutForm.get('cliente.celular')?.invalid && checkoutForm.get('cliente.celular')?.touched) {
-                  <p class="text-xs text-red-500 mt-1">El celular debe tener 9 dígitos numéricos.</p>
-                }
-              </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <input type="text" formControlName="dni" placeholder="DNI" maxlength="8" class="border p-2 rounded w-full">
+              <input type="text" formControlName="celular" placeholder="Celular" maxlength="9" class="border p-2 rounded w-full">
             </div>
-
             <div class="mb-4">
-              <label for="email" class="block text-sm font-medium text-gray-700">Email (Opcional)</label>
-              <input type="email" id="email" formControlName="email"
-                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-              @if (checkoutForm.get('cliente.email')?.invalid && checkoutForm.get('cliente.email')?.touched) {
-                <p class="text-xs text-red-500 mt-1">Por favor, ingrese un email válido.</p>
-              }
+              <input type="email" formControlName="email" placeholder="Email" class="border p-2 rounded w-full">
             </div>
-
           </div>
-          @if (error) {
-            <p class="text-red-600 bg-red-100 p-3 rounded-lg my-4">{{ error }}</p>
-          }
-          @if (cargando) {
-            <p class="text-gray-500">Procesando compra, por favor espere...</p>
-          }
+
+          @if (error) { <p class="text-red-500">{{error}}</p> }
+          @if (cargando) { <p class="text-gray-500">Procesando...</p> }
 
           <button type="submit" [disabled]="checkoutForm.invalid || cartItems.length === 0 || cargando"
-                  class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors mt-4 disabled:bg-gray-400">
+                  class="w-full bg-green-600 text-white font-bold py-3 rounded hover:bg-green-700">
             Confirmar Compra (S/ {{ totalMonto | number: '1.2-2' }})
           </button>
         </form>
       </div>
 
       <div class="lg:col-span-1 bg-gray-50 p-6 rounded-lg shadow-xl h-fit">
-        <h2 class="text-xl font-semibold mb-4 border-b pb-2">Resumen del Pedido</h2>
-
+        <h2 class="text-xl font-semibold mb-4">Resumen</h2>
         @for (item of cartItems; track item.producto.idProducto) {
-          <div class="flex justify-between mb-4 border-b pb-2 last:border-0">
-
-            <div class="flex flex-col">
-              <span class="text-sm font-bold text-gray-800">{{ item.producto.nombre }}</span>
-
-              @if (item.variante) {
-                <span class="text-xs text-gray-500">
-                  Opción: {{ item.variante.color }} / {{ item.variante.talla }}
-                </span>
-              }
-            </div>
-
-            <div class="text-right">
-              <span class="text-sm font-medium text-gray-900 block">x {{ item.cantidad }}</span>
-              <span class="text-xs text-blue-600 font-bold">
-                 S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}
-              </span>
-            </div>
+          <div class="flex justify-between mb-2 border-b pb-2">
+            <span>{{ item.producto.nombre }} (x{{item.cantidad}})</span>
+            <span>S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}</span>
           </div>
         }
-
-        <div class="border-t pt-4 mt-4 flex justify-between font-bold text-lg">
-          <span>TOTAL:</span>
-          <span>S/ {{ totalMonto | number: '1.2-2' }}</span>
+        <div class="mt-4 pt-4 border-t font-bold text-lg flex justify-between">
+          <span>Total:</span>
+          <span>S/ {{ totalMonto | number:'1.2-2' }}</span>
         </div>
-
-        <div class="mt-4">
-          <a routerLink="/carrito" class="w-full text-center inline-block bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
-            Editar Carrito
-          </a>
-        </div>
+        <a routerLink="/carrito" class="block text-center mt-4 bg-gray-300 py-2 rounded">Editar Carrito</a>
       </div>
+
     </div>
   </div>
 }

@@ -1483,6 +1483,11 @@
     "@tufjs/canonical-json" "2.0.0"
     minimatch "^9.0.5"
 
+"@types/canvas-confetti@^1.9.0":
+  version "1.9.0"
+  resolved "https://registry.npmjs.org/@types/canvas-confetti/-/canvas-confetti-1.9.0.tgz"
+  integrity sha512-aBGj/dULrimR1XDZLtG9JwxX1b4HPRF6CX9Yfwh3NvstZEm1ZL7RBnel4keCPSqs1ANRu1u2Aoz9R+VmtjYuTg==
+
 "@types/cors@^2.8.12":
   version "2.8.19"
   resolved "https://registry.npmjs.org/@types/cors/-/cors-2.8.19.tgz"
@@ -1876,6 +1881,11 @@ caniuse-lite@^1.0.30001754:
   version "1.0.30001754"
   resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001754.tgz"
   integrity sha512-x6OeBXueoAceOmotzx3PO4Zpt4rzpeIFsSr6AAePTZxSkXiYDUmpypEl7e2+8NCd9bD7bXjqyef8CJYPC1jfxg==
+
+canvas-confetti@^1.9.4:
+  version "1.9.4"
+  resolved "https://registry.npmjs.org/canvas-confetti/-/canvas-confetti-1.9.4.tgz"
+  integrity sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==
 
 canvg@^3.0.11:
   version "3.0.11"

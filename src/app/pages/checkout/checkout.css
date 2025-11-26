@@ -1,0 +1,9 @@
+/* Animación suave para el círculo de progreso */
+circle {
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* Fondo desenfocado para el modal */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}

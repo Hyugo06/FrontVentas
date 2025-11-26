@@ -1,81 +1,106 @@
-<div class="container mx-auto p-8 max-w-4xl">
+<div class="container mx-auto p-8 max-w-5xl">
 
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Mi Carrito de Compras</h1>
-    <a routerLink="/productos" class="text-blue-500 hover:underline">
-      &larr; Volver a la Tienda
+  <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+    <h1 class="text-3xl font-bold text-gray-800">Mi Carrito de Compras</h1>
+    <a routerLink="/productos" class="text-blue-600 font-semibold hover:underline flex items-center">
+      <span>&larr;</span> <span class="ml-2">Seguir comprando</span>
     </a>
   </div>
 
   @if (items$ | async; as items) {
     @if (items.length > 0) {
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <div class="md:col-span-2 space-y-4">
+        <div class="lg:col-span-2 space-y-4">
 
           @for (item of items; track item.producto.idProducto) {
-            <div class="flex items-center bg-white p-4 rounded-lg shadow-md">
-              <div class="w-20 h-20 bg-gray-200 rounded-md mr-4 flex-shrink-0"></div>
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-shadow hover:shadow-md">
 
-              <div class="flex-grow">
-                <span class="text-xs text-gray-500">{{ item.producto.marca?.nombre }}</span>
-                <h3 class="font-semibold text-lg">{{ item.producto.nombre }}</h3>
-                @if (item.variante) {
-                  <p class="text-sm text-gray-600">
-                    Opción: <span class="font-medium">{{ item.variante.color }} / {{ item.variante.talla }}</span>
-                  </p>
+              <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                @if (item.producto.urlImagen) {
+                  <img [src]="'http://localhost:8080' + item.producto.urlImagen" class="w-full h-full object-cover">
+                } @else {
+                  <span class="text-gray-400 text-xs">Sin foto</span>
                 }
-                <p class="text-blue-600 font-bold">S/ {{ item.producto.precioVenta | number: '1.2-2' }}</p>
               </div>
 
-              <div class="flex items-center border rounded-lg mx-4">
-                <button (click)="decrementar(item)" class="px-3 py-1 text-lg font-bold text-gray-600 hover:bg-gray-100 rounded-l-lg">
-                  -
-                </button>
-                <span class="px-4 py-1 text-center w-12">{{ item.cantidad }}</span>
-                <button (click)="incrementar(item)" class="px-3 py-1 text-lg font-bold text-gray-600 hover:bg-gray-100 rounded-r-lg">
-                  +
+              <div class="flex-grow min-w-0">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ item.producto.marca?.nombre || 'Genérico' }}</span>
+                <h3 class="font-bold text-gray-900 text-lg truncate">{{ item.producto.nombre }}</h3>
+
+                @if (item.variante) {
+                  <div class="flex items-center mt-1 space-x-2">
+                    <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante.color }}</span></span>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-sm text-gray-600">Talla: <span class="font-medium text-gray-800">{{ item.variante.talla }}</span></span>
+                  </div>
+                }
+
+                <p class="text-blue-600 font-bold mt-2">S/ {{ item.producto.precioVenta | number: '1.2-2' }}</p>
+              </div>
+
+              <div class="flex flex-row sm:flex-col items-center sm:items-end gap-3 w-full sm:w-auto justify-between sm:justify-center mt-2 sm:mt-0">
+
+                <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                  <button (click)="decrementar(item)"
+                          class="px-3 py-1 bg-gray-50 hover:bg-gray-200 text-gray-600 font-bold transition-colors disabled:opacity-50">
+                    -
+                  </button>
+                  <span class="px-3 py-1 text-sm font-semibold bg-white w-10 text-center">{{ item.cantidad }}</span>
+                  <button (click)="incrementar(item)"
+                          class="px-3 py-1 bg-gray-50 hover:bg-gray-200 text-gray-600 font-bold transition-colors">
+                    +
+                  </button>
+                </div>
+
+                <button (click)="eliminar(item)"
+                        class="text-red-500 hover:text-red-700 text-sm font-medium flex items-center transition-colors group">
+                  <svg class="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  Eliminar
                 </button>
               </div>
 
-              <button (click)="eliminar(item)" class="text-red-500 hover:text-red-700 font-medium">
-                Eliminar
-              </button>
             </div>
           }
         </div>
 
-        <div class="md:col-span-1">
-          <div class="bg-white p-6 rounded-lg shadow-xl sticky top-24">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2">Resumen del Pedido</h2>
-            <div class="flex justify-between mb-4">
-              <span class="text-gray-600">Subtotal:</span>
-              <span class="font-semibold">S/ {{ total$ | async | number: '1.2-2' }}</span>
+        <div class="lg:col-span-1">
+          <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-24">
+            <h2 class="text-xl font-bold mb-6 text-gray-800 border-b pb-4">Resumen del Pedido</h2>
+
+            <div class="flex justify-between mb-3 text-gray-600">
+              <span>Subtotal:</span>
+              <span class="font-medium">S/ {{ total$ | async | number: '1.2-2' }}</span>
             </div>
-            <div class="flex justify-between mb-6">
-              <span class="text-gray-600">Envío:</span>
-              <span class="font-semibold">Gratis</span>
+            <div class="flex justify-between mb-6 text-gray-600">
+              <span>Envío:</span>
+              <span class="text-green-600 font-medium">Gratis</span>
             </div>
-            <div class="flex justify-between font-bold text-2xl border-t pt-4">
-              <span>TOTAL:</span>
-              <span>S/ {{ total$ | async | number: '1.2-2' }}</span>
+
+            <div class="flex justify-between items-center border-t pt-4 mb-8">
+              <span class="text-lg font-bold text-gray-900">Total a Pagar:</span>
+              <span class="text-2xl font-extrabold text-blue-600">S/ {{ total$ | async | number: '1.2-2' }}</span>
             </div>
 
             <a routerLink="/checkout"
-               class="block w-full text-center mt-6 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors">
-              Continuar Compra
+               class="block w-full text-center bg-gray-900 text-white font-bold py-4 rounded-xl shadow-md hover:bg-gray-800 transition-all transform hover:-translate-y-1">
+              Ir a Pagar
             </a>
           </div>
         </div>
+
       </div>
 
     } @else {
-      <div class="text-center p-12 bg-white rounded-lg shadow-md">
-        <h2 class="text-2xl font-semibold mb-4">Tu carrito está vacío</h2>
-        <p class="text-gray-600 mb-6">Aún no has añadido productos. ¡Explora la tienda!</p>
-        <a routerLink="/productos" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
-          Ir a la Tienda
+      <div class="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
+        <div class="text-gray-300 mb-4">
+          <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Tu carrito está vacío</h2>
+        <p class="text-gray-500 mb-8">Parece que aún no has añadido nada.</p>
+        <a routerLink="/productos" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 transition-colors shadow-md">
+          Empezar a Comprar
         </a>
       </div>
     }
