@@ -89,16 +89,33 @@ export class ProductoDetalleComponent implements OnInit {
   seleccionarColor(color: string): void {
     this.colorSeleccionado = color;
     this.varianteSeleccionada = null;
-    const variantesDeColor = this.producto.variantes.filter((v:any) => v.color === color);
-    const idsVariantes = variantesDeColor.map((v:any) => v.idVariante);
-    this.imagenesFiltradas = this.imagenes.filter(img =>
-      img.idVariante == null || idsVariantes.includes(img.idVariante)
-    );
+
+    // 1. Identificar las variantes que corresponden a este color
+    const variantesDeColor = this.producto.variantes.filter((v: any) => v.color === color);
+    const idsVariantesDeColor = variantesDeColor.map((v: any) => v.idVariante);
+
+    // 2. Filtrar la galería de imágenes
+    this.imagenesFiltradas = this.imagenes.filter(img => {
+      // Caso A: La imagen pertenece explícitamente a una de las variantes de este color
+      if (img.idVariante && idsVariantesDeColor.includes(img.idVariante)) {
+        return true;
+      }
+      // Caso B: La imagen es "general" (no tiene variante asignada)
+      // Opcional: Si quieres ocultar las generales al seleccionar color, quita esta condición
+      if (img.idVariante == null) {
+        return true;
+      }
+      return false;
+    });
+
+    // 3. Actualizar la imagen principal (Visor)
+    // Buscamos si alguna de las nuevas imágenes filtradas es específica de variante
     const primeraFotoVariante = this.imagenesFiltradas.find(img => img.idVariante != null);
 
     if (primeraFotoVariante) {
       this.cambiarImagen(primeraFotoVariante.urlImagen);
     } else if (this.imagenesFiltradas.length > 0) {
+      // Si no hay específica, usamos la primera disponible (general)
       this.cambiarImagen(this.imagenesFiltradas[0].urlImagen);
     }
   }
