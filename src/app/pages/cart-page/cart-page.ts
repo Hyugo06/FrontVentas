@@ -34,7 +34,16 @@ export class CartPageComponent {
   }
 
   incrementar(item: CartItem): void {
-    this.cartService.addItem(item.producto, item.variante || null);
+    // 1. Determinar el stock máximo
+    const stockMaximo = item.variante ? item.variante.stockActual : item.producto.stockActual;
+
+    // 2. Verificar antes de añadir
+    if (item.cantidad < stockMaximo) {
+      this.cartService.addItem(item.producto, item.variante || null);
+    } else {
+      // --- ¡CAMBIO AQUÍ! Usamos el Modal en lugar de alert() ---
+      this.modalService.open(`Lo sentimos, solo quedan ${stockMaximo} unidades disponibles.`);
+    }
   }
 
   decrementar(item: CartItem): void {

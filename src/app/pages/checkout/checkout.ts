@@ -77,6 +77,7 @@ export class CheckoutComponent implements OnInit {
 
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
+      idVariante: item.variante?.idVariante, // <-- ¡ENVIAMOS LA VARIANTE!
       cantidad: item.cantidad
     }));
 

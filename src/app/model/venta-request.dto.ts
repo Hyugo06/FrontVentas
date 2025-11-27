@@ -10,6 +10,7 @@ export interface ClienteRequestDTO {
 // DTO para los detalles del carrito (este ya lo tenías)
 export interface DetalleVentaDTO {
   idProducto: number;
+  idVariante?: number;
   cantidad: number;
 }
 

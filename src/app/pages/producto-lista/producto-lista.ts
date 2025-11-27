@@ -5,6 +5,8 @@ import { Producto } from '../../services/producto';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { take } from 'rxjs/operators'; // <-- AÑADE ESTO
+import { Modal } from '../../services/modal'; // <-- AÑADE ESTO
 import { Observable, forkJoin } from 'rxjs';
 import { Cart } from '../../services/cart';
 
@@ -43,7 +45,8 @@ export class ProductoListaComponent implements OnInit {
     private productoService: Producto,
     private categoriaService: Categoria,
     private fb: FormBuilder,
-    private cartService: Cart
+    private cartService: Cart,
+    private modalService: Modal
   ) {
     this.filtroForm = this.fb.group({
       search: [''],
@@ -197,11 +200,36 @@ export class ProductoListaComponent implements OnInit {
   public agregarAlCarrito(event: MouseEvent, producto: any, variante?: any): void {
     event.stopPropagation();
     event.preventDefault();
+
+    // 1. Validación de Variante requerida
     if (producto.variantes?.length > 0 && !variante) {
-      alert("Por favor selecciona una opción.");
+      this.modalService.open("Por favor selecciona un color y talla."); // Usa modal aquí también
       return;
     }
-    this.cartService.addItem(producto, variante);
+
+    // 2. Determinar Stock Máximo real
+    const stockMaximo = variante ? variante.stockActual : producto.stockActual;
+
+    // 3. Consultar el carrito actual para ver cuántos tenemos ya
+    this.cartService.items$.pipe(take(1)).subscribe(items => {
+
+      // Buscamos si este producto+variante ya está en el carrito
+      const itemEnCarrito = items.find(i =>
+        i.producto.idProducto === producto.idProducto &&
+        i.variante?.idVariante === variante?.idVariante
+      );
+
+      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+
+      // 4. Validar si podemos añadir uno más
+      if (cantidadEnCarrito + 1 > stockMaximo) {
+        this.modalService.open(`Stock insuficiente. Ya tienes ${cantidadEnCarrito} en el carrito y solo quedan ${stockMaximo} disponibles.`);
+      } else {
+        // Si hay espacio, añadimos
+        this.cartService.addItem(producto, variante);
+        // (Opcional: Aquí podrías mostrar un mensajito de "Añadido" si quisieras)
+      }
+    });
   }
 
   cargarCategorias(): void {
@@ -222,6 +250,13 @@ export class ProductoListaComponent implements OnInit {
 
   setCategoriaFiltro(nombreCategoria: string): void {
     this.filtroForm.get('categoria')?.setValue(nombreCategoria);
+  }
+
+  getStockTotalColor(prod: any, color: string): number {
+    if (!prod.variantes || !color) return 0;
+    return prod.variantes
+      .filter((v: any) => v.color === color)
+      .reduce((sum: number, v: any) => sum + v.stockActual, 0);
   }
 
   public toggleMobileMenu(): void {
