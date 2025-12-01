@@ -18,6 +18,7 @@ export interface Cliente {
 export class ClienteService {
 
   private apiUrl = 'http://localhost:8080/api/clientes'; // (O tu puerto)
+  //private apiUrl = 'https://apiventas-1.onrender.com/api/clientes';
   private http = inject(HttpClient);
 
   constructor() { }

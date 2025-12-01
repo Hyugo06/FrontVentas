@@ -10,8 +10,7 @@ import { VentaRequestDTO } from '../model/venta-request.dto';
 export class Venta { // Tu clase 'Venta'
 
   private apiUrl = 'http://192.168.1.34:8080/api/ventas';
-
-  //private apiUrl = 'http://localhost:8080/api/ventas'; // Usa 8081 si cambiaste el puerto
+  //private apiUrl = 'https://apiventas-1.onrender.com/api/ventas';
 
   constructor(private http: HttpClient) { }
 

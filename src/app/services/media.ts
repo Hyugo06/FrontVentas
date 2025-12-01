@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 export class Media {
 
   private apiUrl = 'http://localhost:8080/api/media/upload'; // (O tu puerto 8081)
+  //private apiUrl = 'https://apiventas-1.onrender.com/api/media/upload';
   private http = inject(HttpClient);
 
   constructor() { }
