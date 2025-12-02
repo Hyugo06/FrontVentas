@@ -224,7 +224,7 @@ export class ProductoFormComponent implements OnInit {
           precioRegular: producto.precioRegular,
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
-          stockActual: producto.stockActual,
+          // stockActual: producto.stockActual, // <-- Ya no confiamos en este valor directo
           idMarca: producto.marca?.idMarca,
           idCategoria: producto.categoria?.idCategoria,
           urlImagen: producto.urlImagen
@@ -243,6 +243,11 @@ export class ProductoFormComponent implements OnInit {
         } else {
           this.agregarVariante();
         }
+
+        // --- ¡CORRECCIÓN AQUÍ! ---
+        // Forzamos el recálculo matemático del stock basado en las variantes cargadas
+        this.actualizarStockTotal();
+        // ------------------------
 
         if (producto.caracteristicas) {
           this.actualizarCamposCaracteristicas(producto.categoria.idCategoria);

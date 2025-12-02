@@ -15,6 +15,7 @@
   @if (venta) {
     <div class="bg-white p-8 rounded-lg shadow-xl max-w-4xl mx-auto">
 
+      <!-- Cabecera -->
       <div class="flex justify-between items-start border-b pb-4 mb-6">
         <div>
           <h1 class="text-3xl font-bold text-gray-900">Detalle de Venta #{{ venta.idVenta }}</h1>
@@ -26,57 +27,83 @@
           </p>
         </div>
 
-        <div class="flex space-x-2">
+        <div>
           <button (click)="generarBoletaPDF()"
-                  class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+                  class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-md">
             Exportar PDF
           </button>
         </div>
       </div>
 
+      <!-- Datos del Cliente -->
       <div class="mb-6">
         <h2 class="text-xl font-semibold mb-3">Cliente</h2>
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="font-medium text-gray-800">{{ venta.cliente?.nombres || 'N/A' }} {{ venta.cliente?.apellidos || '' }}</p>
-          <p class="text-sm text-gray-600">DNI: {{ venta.cliente?.dni || 'N/A' }}</p>
-          <p class="text-sm text-gray-600">Celular: {{ venta.cliente?.celular || 'N/A' }}</p>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+          <p class="font-medium text-gray-800 text-lg">{{ venta.cliente?.nombres || 'N/A' }} {{ venta.cliente?.apellidos || '' }}</p>
+          <div class="flex gap-6 mt-1 text-sm text-gray-600">
+            <p>DNI: <span class="font-semibold">{{ venta.cliente?.dni || 'N/A' }}</span></p>
+            <p>Celular: <span class="font-semibold">{{ venta.cliente?.celular || 'N/A' }}</span></p>
+          </div>
         </div>
       </div>
 
+      <!-- Tabla de Productos -->
       <h2 class="text-xl font-semibold mb-3">Productos Incluidos</h2>
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-          <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">P. Unitario</th>
-          <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>
-        </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+          <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">SKU</th>
+            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Producto</th>
+            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Cant.</th>
+            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">P. Unit.</th>
+            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Subtotal</th>
+          </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
 
-          @for (item of venta.detalles; track item.idDetalle) {
-            <tr>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ item.producto?.codigoSku || 'N/A' }}</td>
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.producto?.nombre || 'Producto no disponible' }}</td>
-              <td class="px-4 py-3 text-sm text-center text-gray-500">{{ item.cantidad }}</td>
-              <td class="px-4 py-3 text-sm text-right text-gray-500">S/ {{ item.precioUnitario | number: '1.2-2' }}</td>
-              <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900">S/ {{ item.subtotal | number: '1.2-2' }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="5" class="text-center p-4 text-gray-500">No hay detalles para esta venta.</td>
-            </tr>
-          }
+            @for (item of venta.detalles; track item.idDetalle) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 text-sm text-gray-500">{{ item.producto?.codigoSku || 'N/A' }}</td>
 
-        </tbody>
-        <tfoot class="bg-gray-50">
-        <tr>
-          <td colspan="4" class="px-4 py-3 text-right text-lg font-bold text-gray-900">MONTO TOTAL:</td>
-          <td class="px-4 py-3 text-right text-xl font-extrabold text-blue-600">S/ {{ venta.montoTotal | number: '1.2-2' }}</td>
-        </tr>
-        </tfoot>
-      </table>
+                <!-- COLUMNA DE NOMBRE Y VARIANTE -->
+                <td class="px-4 py-3 text-sm text-gray-900">
+                  <div class="font-medium">{{ item.producto?.nombre || 'Producto no disponible' }}</div>
 
-    </div> } </div>
+                  <!-- --- ¡AQUÍ SE MUESTRA EL COLOR Y LA TALLA! --- -->
+                  @if (item.variante) {
+                    <div class="flex gap-2 mt-1">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                        Color: {{ item.variante.color }}
+                      </span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        Talla: {{ item.variante.talla }}
+                      </span>
+                    </div>
+                  }
+                  <!-- ------------------------------------------- -->
+                </td>
+
+                <td class="px-4 py-3 text-sm text-center text-gray-600">{{ item.cantidad }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-600">S/ {{ item.precioUnitario | number: '1.2-2' }}</td>
+                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">S/ {{ item.subtotal | number: '1.2-2' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center p-4 text-gray-500 italic">No hay detalles para esta venta.</td>
+              </tr>
+            }
+
+          </tbody>
+          <tfoot class="bg-gray-50">
+          <tr>
+            <td colspan="4" class="px-4 py-4 text-right text-lg font-bold text-gray-800">MONTO TOTAL:</td>
+            <td class="px-4 py-4 text-right text-xl font-extrabold text-blue-600">S/ {{ venta.montoTotal | number: '1.2-2' }}</td>
+          </tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div>
+  }
+</div>

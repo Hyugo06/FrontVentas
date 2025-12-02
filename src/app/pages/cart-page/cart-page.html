@@ -18,24 +18,26 @@
             <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-shadow hover:shadow-md">
 
               <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
-                @if (item.producto.urlImagen) {
+
+                @if (item.variante?.urlImagen) {
+                  <img [src]="'http://localhost:8080' + item.variante?.urlImagen" class="w-full h-full object-cover">
+                } @else if (item.producto.urlImagen) {
                   <img [src]="'http://localhost:8080' + item.producto.urlImagen" class="w-full h-full object-cover">
                 } @else {
                   <span class="text-gray-400 text-xs">Sin foto</span>
                 }
+
               </div>
 
               <div class="flex-grow min-w-0">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ item.producto.marca?.nombre || 'Genérico' }}</span>
-                <h3 class="font-bold text-gray-900 text-base sm:text-lg leading-tight break-words">
-                  {{ item.producto.nombre }}
-                </h3>
+                <h3 class="font-bold text-gray-900 text-lg truncate">{{ item.producto.nombre }}</h3>
 
                 @if (item.variante) {
                   <div class="flex items-center mt-1 space-x-2">
-                    <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante.color }}</span></span>
+                    <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante!.color }}</span></span>
                     <span class="text-gray-300">|</span>
-                    <span class="text-sm text-gray-600">Talla: <span class="font-medium text-gray-800">{{ item.variante.talla }}</span></span>
+                    <span class="text-sm text-gray-600">Talla: <span class="font-medium text-gray-800">{{ item.variante?.talla }}</span></span>
                   </div>
                 }
 
@@ -79,6 +81,10 @@
             <div class="flex justify-between mb-3 text-gray-600">
               <span>Subtotal:</span>
               <span class="font-medium">S/ {{ total$ | async | number: '1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between mb-6 text-gray-600">
+              <span>Envío:</span>
+              <span class="text-green-600 font-medium">Gratis</span>
             </div>
 
             <div class="flex justify-between items-center border-t pt-4 mb-8">

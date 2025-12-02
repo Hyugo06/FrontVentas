@@ -9,6 +9,8 @@ export interface ProductoVariante {
   talla: string;
   skuVariante?: string;
   stockActual: number;
+  urlImagen?: string;         // <--- FALTABA ESTE
+  galeriaImagenes?: string[];
 }
 // ---------------------------------------
 
@@ -67,8 +69,6 @@ export class Producto {
   }
 
   public eliminarImagen(idImagen: number): Observable<void> {
-    // Construimos la URL: http://.../api/admin/imagenes/{id}
-    // (Usamos adminApiUrl que es .../admin/productos, le quitamos 'productos' y añadimos 'imagenes')
     const urlBase = this.adminApiUrl.replace('/productos', '');
     return this.http.delete<void>(`${urlBase}/imagenes/${idImagen}`);
   }

@@ -16,18 +16,38 @@ import { FormsModule } from '@angular/forms';
 export class ProductoDetalleComponent implements OnInit {
 
   public producto: any = null;
-  public imagenes: any[] = [];
-  public imagenesFiltradas: any[] = [];
+  public imagenes: any[] = [];            // Todas las imágenes (sin filtrar)
+  public imagenesFiltradas: any[] = [];   // Imágenes que se ven actualmente (filtradas)
   public cargando: boolean = true;
   public activeTab: string = 'details';
+  public tallaSeleccionada: string | null = null;
 
   // --- VARIABLES DE SELECCIÓN DE VARIANTES ---
   public colorSeleccionado: string | null = null;
   public varianteSeleccionada: ProductoVariante | null = null;
 
-  // --- ¡NUEVAS VARIABLES PARA GALERÍA! ---
+  // --- VARIABLES PARA GALERÍA ---
   public imagenActual: string | null = null;
-  public baseUrl = 'http://localhost:8080'; // O tu IP si usas móvil (ej. 192.168.1.X)
+  public baseUrl = 'http://localhost:8080'; // O tu IP
+
+  // --- ¡NUEVO! MAPA DE COLORES (Traducción Español -> CSS) ---
+  private colorMap: { [key: string]: string } = {
+    'rojo': '#EF4444',    // Red
+    'negro': '#000000',   // Black
+    'blanco': '#FFFFFF',  // White
+    'azul': '#3B82F6',    // Blue
+    'verde': '#22C55E',   // Green
+    'amarillo': '#EAB308',// Yellow
+    'gris': '#9CA3AF',    // Gray
+    'rosa': '#EC4899',    // Pink
+    'morado': '#A855F7',  // Purple
+    'azul marino': '#1E3A8A', // Dark Blue
+    'celeste': '#38BDF8',
+    'beige': '#F5F5DC',
+    'marrón': '#78350F',
+    'naranja': '#F97316',
+    'vino': '#722F37'
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -45,21 +65,17 @@ export class ProductoDetalleComponent implements OnInit {
         next: (resultado: any) => {
           this.producto = resultado.producto;
           this.imagenes = resultado.imagenes;
+
+          // Inicialmente mostramos TODAS las imágenes (Generales + Variantes)
           this.imagenesFiltradas = this.imagenes;
+
           this.cargando = false;
 
-          // --- LÓGICA DE IMAGEN INICIAL ---
+          // 1. Lógica de Imagen Inicial
           if (this.producto.urlImagen) {
-            // Si hay imagen principal, la usamos
             this.imagenActual = this.baseUrl + this.producto.urlImagen;
           } else if (this.imagenes.length > 0) {
-            // Si no, usamos la primera de la galería
             this.imagenActual = this.baseUrl + this.imagenes[0].urlImagen;
-          }
-
-          // --- LÓGICA DE VARIANTE INICIAL ---
-          if (this.producto.variantes && this.producto.variantes.length > 0) {
-            this.colorSeleccionado = this.producto.variantes[0].color;
           }
         },
         error: (err) => { console.error(err); this.cargando = false; }
@@ -67,14 +83,70 @@ export class ProductoDetalleComponent implements OnInit {
     }
   }
 
+  // --- ¡MÉTODO HELPER PARA EL COLOR! ---
+  getColorHex(nombreColor: string): string {
+    if (!nombreColor) return 'transparent';
+    const key = nombreColor.toLowerCase().trim();
+    // Retorna el valor del mapa, o el nombre original si no existe (por si acaso es "red" o hex)
+    return this.colorMap[key] || nombreColor;
+  }
 
+  getTallasUnicas(): string[] {
+    if (!this.producto?.variantes) return [];
+    const tallas = this.producto.variantes.map((v: any) => v.talla);
+    // Ordenar tallas si es necesario (S, M, L, XL...)
+    return [...new Set(tallas)] as string[];
+  }
 
-  // --- MÉTODO PARA CAMBIAR LA IMAGEN GRANDE ---
+  getTallasVisibles(): string[] {
+    if (!this.producto?.variantes) return [];
+
+    let variantesAConsiderar = this.producto.variantes;
+
+    // Si hay color seleccionado, filtramos primero por ese color
+    if (this.colorSeleccionado) {
+      variantesAConsiderar = variantesAConsiderar.filter((v: any) => v.color === this.colorSeleccionado);
+    }
+
+    const tallas = variantesAConsiderar.map((v: any) => v.talla);
+    return [...new Set(tallas)] as string[];
+  }
+
+  isCombinacionDisponible(color: string | null, talla: string | null): boolean {
+    if (!this.producto?.variantes) return false;
+
+    // Si falta alguno, no podemos validar la combinación final, pero el botón individual está activo
+    if (!color && !talla) return true;
+
+    return this.producto.variantes.some((v: any) => {
+      const matchColor = color ? v.color === color : true;
+      const matchTalla = talla ? v.talla === talla : true;
+      return matchColor && matchTalla && v.stockActual > 0;
+    });
+  }
+  // --- LÓGICA DE GALERÍA ---
+
   cambiarImagen(urlRelativa: string): void {
     this.imagenActual = this.baseUrl + urlRelativa;
   }
 
-  // --- LÓGICA DE SELECTORES ---
+  navegarImagen(direccion: number): void {
+    if (!this.imagenActual || this.imagenesFiltradas.length <= 1) return;
+
+    const currentUrlRelativa = this.imagenActual.replace(this.baseUrl, '');
+    const currentIndex = this.imagenesFiltradas.findIndex(img => img.urlImagen === currentUrlRelativa);
+
+    if (currentIndex !== -1) {
+      const totalImages = this.imagenesFiltradas.length;
+      let newIndex = (currentIndex + direccion) % totalImages;
+      if (newIndex < 0) newIndex = totalImages - 1;
+
+      this.cambiarImagen(this.imagenesFiltradas[newIndex].urlImagen);
+    }
+  }
+
+  // --- LÓGICA DE SELECTORES Y FILTRADO ---
+
   getColoresUnicos(): string[] {
     if (!this.producto?.variantes) return [];
     const colores = this.producto.variantes.map((v: any) => v.color);
@@ -86,9 +158,10 @@ export class ProductoDetalleComponent implements OnInit {
     return this.producto.variantes.filter((v: any) => v.color === color);
   }
 
+  // --- ¡MÉTODO ACTUALIZADO CON FILTRADO ESTRICTO! ---
   seleccionarColor(color: string): void {
     this.colorSeleccionado = color;
-    this.varianteSeleccionada = null;
+    this.varianteSeleccionada = null; // Resetea talla
 
     // 1. Identificar las variantes que corresponden a este color
     const variantesDeColor = this.producto.variantes.filter((v: any) => v.color === color);
@@ -96,12 +169,9 @@ export class ProductoDetalleComponent implements OnInit {
 
     // 2. Filtrar la galería de imágenes
     this.imagenesFiltradas = this.imagenes.filter(img => {
-      // Caso A: La imagen pertenece explícitamente a una de las variantes de este color
       if (img.idVariante && idsVariantesDeColor.includes(img.idVariante)) {
         return true;
       }
-      // Caso B: La imagen es "general" (no tiene variante asignada)
-      // Opcional: Si quieres ocultar las generales al seleccionar color, quita esta condición
       if (img.idVariante == null) {
         return true;
       }
@@ -109,19 +179,35 @@ export class ProductoDetalleComponent implements OnInit {
     });
 
     // 3. Actualizar la imagen principal (Visor)
-    // Buscamos si alguna de las nuevas imágenes filtradas es específica de variante
     const primeraFotoVariante = this.imagenesFiltradas.find(img => img.idVariante != null);
 
     if (primeraFotoVariante) {
       this.cambiarImagen(primeraFotoVariante.urlImagen);
     } else if (this.imagenesFiltradas.length > 0) {
-      // Si no hay específica, usamos la primera disponible (general)
       this.cambiarImagen(this.imagenesFiltradas[0].urlImagen);
     }
   }
 
-  seleccionarTalla(variante: any): void {
-    this.varianteSeleccionada = variante;
+  seleccionarTalla(talla: string): void {
+    this.tallaSeleccionada = talla;
+    this.actualizarVariante();
+  }
+
+  actualizarVariante(): void {
+    if (this.colorSeleccionado && this.tallaSeleccionada) {
+      this.varianteSeleccionada = this.producto.variantes.find((v: any) =>
+        v.color === this.colorSeleccionado && v.talla === this.tallaSeleccionada
+      ) || null;
+    } else {
+      this.varianteSeleccionada = null;
+    }
+  }
+
+  getStockTotalReal(): number {
+    if (this.producto?.variantes && this.producto.variantes.length > 0) {
+      return this.producto.variantes.reduce((sum: number, v: any) => sum + v.stockActual, 0);
+    }
+    return this.producto?.stockActual || 0;
   }
 
   // --- CARRITO ---
@@ -136,27 +222,5 @@ export class ProductoDetalleComponent implements OnInit {
   public objectEntries(obj: any): [string, any][] {
     if (!obj) return [];
     return Object.entries(obj);
-  }
-
-  navegarImagen(direccion: number): void {
-    if (!this.imagenActual || this.imagenesFiltradas.length <= 1) return;
-
-    // 1. Encontrar el índice de la imagen actual
-    // Quitamos el baseUrl para comparar solo la ruta relativa
-    const currentUrlRelativa = this.imagenActual.replace(this.baseUrl, '');
-
-    const currentIndex = this.imagenesFiltradas.findIndex(img => img.urlImagen === currentUrlRelativa);
-
-    if (currentIndex !== -1) {
-      // 2. Calcular nuevo índice con bucle (wrap around)
-      const totalImages = this.imagenesFiltradas.length;
-      let newIndex = (currentIndex + direccion) % totalImages;
-
-      // Manejar índices negativos (al ir hacia atrás desde el 0)
-      if (newIndex < 0) newIndex = totalImages - 1;
-
-      // 3. Cambiar la imagen
-      this.cambiarImagen(this.imagenesFiltradas[newIndex].urlImagen);
-    }
   }
 }

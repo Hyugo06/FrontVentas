@@ -1,8 +1,7 @@
-@if (!isAdminRoute) {
+@if (showPublicNavbar) {
   <app-navbar></app-navbar>
 }
 
 <router-outlet></router-outlet>
-<app-confirm-modal></app-confirm-modal> ```
 
-
+<app-confirm-modal></app-confirm-modal>

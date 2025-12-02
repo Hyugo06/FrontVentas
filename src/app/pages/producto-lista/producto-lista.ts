@@ -4,11 +4,10 @@ import { RouterLink } from '@angular/router';
 import { Producto } from '../../services/producto';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
-import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { take } from 'rxjs/operators'; // <-- AÑADE ESTO
-import { Modal } from '../../services/modal'; // <-- AÑADE ESTO
+import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import { Observable, forkJoin } from 'rxjs';
 import { Cart } from '../../services/cart';
+import { Modal } from '../../services/modal';
 
 @Component({
   selector: 'app-producto-lista',
@@ -27,19 +26,33 @@ export class ProductoListaComponent implements OnInit {
   public filtroForm: FormGroup;
   public showMobileMenu: boolean = false;
 
-  // --- NUEVAS VARIABLES PARA EL CARRUSEL ---
-  // Mapa que guarda TODAS las imágenes únicas por producto
+  // Mapas para gestionar el estado visual de cada tarjeta independientemente
   public mapaImagenesProducto: { [idProducto: number]: string[] } = {};
-  // Mapa que guarda el índice actual que se está viendo
   public indicesCarrusel: { [idProducto: number]: number } = {};
-
-  // Mapas de selección
-  public colorSeleccionado: { [idProducto: number]: string } = {};
-  public seleccion: { [idProducto: number]: any } = {};
-
-  // --- ¡NUEVA VARIABLE! Mapa para controlar la imagen de cada tarjeta ---
-  // Clave: idProducto, Valor: URL de la imagen a mostrar
   public imagenesSeleccionadas: { [idProducto: number]: string } = {};
+
+  // Mapas para la selección de compra
+  public colorSeleccionado: { [idProducto: number]: string } = {};
+  public seleccion: { [idProducto: number]: any } = {}; // Variante final seleccionada
+
+  // Mapa de Colores (Traducción Español -> CSS)
+  private colorMap: { [key: string]: string } = {
+    'rojo': '#EF4444',
+    'negro': '#000000',
+    'blanco': '#FFFFFF',
+    'azul': '#3B82F6',
+    'verde': '#22C55E',
+    'amarillo': '#EAB308',
+    'gris': '#9CA3AF',
+    'rosa': '#EC4899',
+    'morado': '#A855F7',
+    'azul marino': '#1E3A8A',
+    'celeste': '#38BDF8',
+    'beige': '#F5F5DC',
+    'marrón': '#78350F',
+    'naranja': '#F97316',
+    'vino': '#722F37'
+  };
 
   constructor(
     private productoService: Producto,
@@ -68,7 +81,7 @@ export class ProductoListaComponent implements OnInit {
     ).subscribe({
       next: (data: any) => {
         this.productos = data;
-        this.inicializarSeleccion(); // <-- Importante llamar a esto al filtrar también
+        this.inicializarSeleccion();
         this.cargandoProductos = false;
       },
       error: (err: any) => {
@@ -77,6 +90,24 @@ export class ProductoListaComponent implements OnInit {
       }
     });
   }
+
+  // --- ¡MÉTODO QUE FALTABA! ---
+  // Calcula la suma del stock de todas las tallas de un color específico
+  getStockTotalColor(prod: any, color: string): number {
+    if (!prod.variantes || !color) return 0;
+    return prod.variantes
+      .filter((v: any) => v.color === color)
+      .reduce((sum: number, v: any) => sum + v.stockActual, 0);
+  }
+
+  // --- MÉTODO HELPER DE COLOR ---
+  getColorHex(nombreColor: string): string {
+    if (!nombreColor) return 'transparent';
+    const key = nombreColor.toLowerCase().trim();
+    return this.colorMap[key] || nombreColor;
+  }
+
+  // --- CARGA Y LÓGICA INICIAL ---
 
   cargarProductosIniciales(): void {
     this.cargandoProductos = true;
@@ -93,51 +124,96 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  // --- MÉTODO ACTUALIZADO ---
-  /**
-   * Inicializa las selecciones por defecto (Color, Talla e IMAGEN)
-   */
   inicializarSeleccion(): void {
     this.productos.forEach(prod => {
-      // Usamos un Set para evitar URLs repetidas
+      // 1. Recolectar imágenes
       const imagenesSet = new Set<string>();
-
-      // 1. Agregar Imagen Principal del Producto
       if (prod.urlImagen) imagenesSet.add(prod.urlImagen);
-
-      // 2. Agregar Imágenes de las Variantes
       if (prod.variantes) {
         prod.variantes.forEach((v: any) => {
-          // A. Foto principal de la variante
           if (v.urlImagen) imagenesSet.add(v.urlImagen);
-
-          // B. Galería extra de la variante (¡ESTO FALTABA!)
           if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
             v.galeriaImagenes.forEach((url: string) => imagenesSet.add(url));
           }
         });
       }
-
-      // Convertir a Array
       this.mapaImagenesProducto[prod.idProducto] = Array.from(imagenesSet);
       this.indicesCarrusel[prod.idProducto] = 0;
 
-      // Debug: Ver en consola cuántas fotos encontró
-      // console.log(`Producto ${prod.nombre} tiene ${imagenesSet.size} fotos`);
+      // 2. Imagen por defecto (Visor)
+      let imagenInicial = prod.urlImagen;
+      if (!imagenInicial && prod.variantes && prod.variantes.length > 0) {
+        const varianteConFoto = prod.variantes.find((v: any) => v.urlImagen);
+        if (varianteConFoto) imagenInicial = varianteConFoto.urlImagen;
+      }
+      if (imagenInicial) this.imagenesSeleccionadas[prod.idProducto] = imagenInicial;
 
-      // Pre-selección de color (tu lógica existente)
+      // 3. Pre-seleccionar primer color
       if (prod.variantes && prod.variantes.length > 0) {
         this.colorSeleccionado[prod.idProducto] = prod.variantes[0].color;
       }
     });
   }
 
+  // --- SELECCIÓN E INTERACCIÓN ---
+
+  seleccionarColor(prod: any, color: string): void {
+    this.colorSeleccionado[prod.idProducto] = color;
+    this.seleccion[prod.idProducto] = null; // Resetea la talla al cambiar color
+
+    // Cambiar la foto de la tarjeta si el color tiene una foto específica
+    const varianteDeColor = prod.variantes.find((v: any) => v.color === color && v.urlImagen);
+
+    if (varianteDeColor) {
+      this.imagenesSeleccionadas[prod.idProducto] = varianteDeColor.urlImagen;
+    } else {
+      // Si no, volvemos a la principal (o mantenemos la que estaba si es la principal)
+      this.imagenesSeleccionadas[prod.idProducto] = prod.urlImagen || this.imagenesSeleccionadas[prod.idProducto];
+    }
+  }
+
+  seleccionarTalla(prod: any, variante: any): void {
+    this.seleccion[prod.idProducto] = variante;
+  }
+
+  // --- CARRITO (CON VALIDACIÓN DE STOCK) ---
+
+  public agregarAlCarrito(event: MouseEvent, producto: any, variante?: any): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Validación básica
+    if (producto.variantes?.length > 0 && !variante) {
+      this.modalService.open("Por favor selecciona una opción (Color y Talla).");
+      return;
+    }
+
+    const stockMaximo = variante ? variante.stockActual : producto.stockActual;
+
+    // Validar contra lo que ya está en el carrito
+    this.cartService.items$.pipe(take(1)).subscribe(items => {
+      const itemEnCarrito = items.find(i =>
+        i.producto.idProducto === producto.idProducto &&
+        i.variante?.idVariante === variante?.idVariante
+      );
+
+      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+
+      if (cantidadEnCarrito + 1 > stockMaximo) {
+        this.modalService.open(`Stock insuficiente. Ya tienes ${cantidadEnCarrito} en el carrito y solo quedan ${stockMaximo} disponibles.`);
+      } else {
+        this.cartService.addItem(producto, variante);
+      }
+    });
+  }
+
+  // --- MÉTODOS DE CARRUSEL ---
+
   nextImage(event: Event, prodId: number): void {
     event.preventDefault();
     event.stopPropagation();
-    const totalImages = this.mapaImagenesProducto[prodId].length;
+    const totalImages = this.mapaImagenesProducto[prodId]?.length || 0;
     if (totalImages > 1) {
-      // Incrementa índice y da la vuelta si llega al final (bucle)
       this.indicesCarrusel[prodId] = (this.indicesCarrusel[prodId] + 1) % totalImages;
     }
   }
@@ -145,42 +221,22 @@ export class ProductoListaComponent implements OnInit {
   prevImage(event: Event, prodId: number): void {
     event.preventDefault();
     event.stopPropagation();
-    const totalImages = this.mapaImagenesProducto[prodId].length;
+    const totalImages = this.mapaImagenesProducto[prodId]?.length || 0;
     if (totalImages > 1) {
-      // Decrementa índice y da la vuelta si llega al principio
       this.indicesCarrusel[prodId] = (this.indicesCarrusel[prodId] - 1 + totalImages) % totalImages;
     }
   }
 
   getCurrentImage(prodId: number): string | null {
     const images = this.mapaImagenesProducto[prodId];
-    const index = this.indicesCarrusel[prodId];
+    const index = this.indicesCarrusel[prodId] || 0;
     if (images && images.length > 0) {
       return images[index];
     }
     return null;
   }
 
-  // --- MÉTODO ACTUALIZADO ---
-  seleccionarColor(prod: any, color: string): void {
-    // 1. Lógica existente de selección
-    this.colorSeleccionado[prod.idProducto] = color;
-    this.seleccion[prod.idProducto] = null; // Resetea la talla
-
-    // 2. --- ¡NUEVA LÓGICA! Cambiar la foto de la tarjeta ---
-    // Buscamos si hay una variante de este color que tenga foto
-    const varianteDeColor = prod.variantes.find((v: any) => v.color === color && v.urlImagen);
-
-    if (varianteDeColor) {
-      this.imagenesSeleccionadas[prod.idProducto] = varianteDeColor.urlImagen;
-    } else {
-      // Si este color no tiene foto, volvemos a la foto principal (o la primera disponible)
-      // Si prod.urlImagen es null, mantenemos la que estaba (que puede ser la de otro color) o buscamos un fallback
-      this.imagenesSeleccionadas[prod.idProducto] = prod.urlImagen || this.imagenesSeleccionadas[prod.idProducto];
-    }
-  }
-
-  // ... (resto de métodos: getColoresUnicos, getTallasPorColor, seleccionarTalla, agregarAlCarrito, etc.)
+  // --- HELPERS DE VARIANTES ---
 
   getColoresUnicos(prod: any): string[] {
     if (!prod.variantes) return [];
@@ -193,44 +249,7 @@ export class ProductoListaComponent implements OnInit {
     return prod.variantes.filter((v: any) => v.color === color);
   }
 
-  seleccionarTalla(prod: any, variante: any): void {
-    this.seleccion[prod.idProducto] = variante;
-  }
-
-  public agregarAlCarrito(event: MouseEvent, producto: any, variante?: any): void {
-    event.stopPropagation();
-    event.preventDefault();
-
-    // 1. Validación de Variante requerida
-    if (producto.variantes?.length > 0 && !variante) {
-      this.modalService.open("Por favor selecciona un color y talla."); // Usa modal aquí también
-      return;
-    }
-
-    // 2. Determinar Stock Máximo real
-    const stockMaximo = variante ? variante.stockActual : producto.stockActual;
-
-    // 3. Consultar el carrito actual para ver cuántos tenemos ya
-    this.cartService.items$.pipe(take(1)).subscribe(items => {
-
-      // Buscamos si este producto+variante ya está en el carrito
-      const itemEnCarrito = items.find(i =>
-        i.producto.idProducto === producto.idProducto &&
-        i.variante?.idVariante === variante?.idVariante
-      );
-
-      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
-
-      // 4. Validar si podemos añadir uno más
-      if (cantidadEnCarrito + 1 > stockMaximo) {
-        this.modalService.open(`Stock insuficiente. Ya tienes ${cantidadEnCarrito} en el carrito y solo quedan ${stockMaximo} disponibles.`);
-      } else {
-        // Si hay espacio, añadimos
-        this.cartService.addItem(producto, variante);
-        // (Opcional: Aquí podrías mostrar un mensajito de "Añadido" si quisieras)
-      }
-    });
-  }
+  // --- CARGA DE CATEGORÍAS ---
 
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
@@ -243,6 +262,15 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
+  getStockTotalProducto(prod: any): number {
+    if (prod.variantes && prod.variantes.length > 0) {
+      return prod.variantes.reduce((sum: number, v: any) => sum + v.stockActual, 0);
+    }
+    return prod.stockActual || 0;
+  }
+
+  // --- FILTROS Y MENÚ ---
+
   limpiarFiltros(): void {
     this.filtroForm.reset({ search: '', categoria: '' }, { emitEvent: false });
     this.cargarProductosIniciales();
@@ -250,13 +278,6 @@ export class ProductoListaComponent implements OnInit {
 
   setCategoriaFiltro(nombreCategoria: string): void {
     this.filtroForm.get('categoria')?.setValue(nombreCategoria);
-  }
-
-  getStockTotalColor(prod: any, color: string): number {
-    if (!prod.variantes || !color) return 0;
-    return prod.variantes
-      .filter((v: any) => v.color === color)
-      .reduce((sum: number, v: any) => sum + v.stockActual, 0);
   }
 
   public toggleMobileMenu(): void {

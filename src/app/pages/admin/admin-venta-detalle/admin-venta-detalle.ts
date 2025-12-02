@@ -84,13 +84,21 @@ export class AdminVentaDetalleComponent implements OnInit {
 
     // 3. Preparar los datos para la Tabla (Sin cambios)
     const head = [['SKU', 'Producto', 'Cant.', 'P. Unit.', 'Subtotal']];
-    const body = venta.detalles.map((item: any) => [
-      item.producto?.codigoSku || 'N/A',
-      item.producto?.nombre || 'N/A',
-      item.cantidad,
-      `S/ ${item.precioUnitario.toFixed(2)}`,
-      `S/ ${item.subtotal.toFixed(2)}`
-    ]);
+    const body = venta.detalles.map((item: any) => {
+      // Construimos el nombre con la variante
+      let nombreProducto = item.producto?.nombre || 'N/A';
+      if (item.variante) {
+        nombreProducto += ` (${item.variante.color} / ${item.variante.talla})`;
+      }
+
+      return [
+        item.producto?.codigoSku || 'N/A',
+        nombreProducto,
+        item.cantidad,
+        `S/ ${item.precioUnitario.toFixed(2)}`,
+        `S/ ${item.subtotal.toFixed(2)}`
+      ];
+    });
 
     // 4. Dibujar la Tabla (Sin cambios)
     autoTable(doc, {
