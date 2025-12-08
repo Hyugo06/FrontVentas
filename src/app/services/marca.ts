@@ -16,8 +16,11 @@ export class Marca { // Tu clase 'Marca'
   //private publicApiUrl = 'https://apiventas-1.onrender.com/api/marcas';
   //private adminApiUrl = 'https://apiventas-1.onrender.com/api/admin/marcas';
 
-  private publicApiUrl = 'http://localhost:8080/api/marcas';
-  private adminApiUrl = 'http://localhost:8080/api/admin/marcas';
+  //private publicApiUrl = 'http://localhost:8080/api/marcas';
+  //private adminApiUrl = 'http://localhost:8080/api/admin/marcas';
+
+  private publicApiUrl = 'http://192.168.1.34:8080/api/marcas';
+  private adminApiUrl = 'http://192.168.1.34:8080/api/admin/marcas';
 
   private http = inject(HttpClient);
   constructor() { }

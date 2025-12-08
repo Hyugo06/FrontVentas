@@ -30,6 +30,8 @@
     "@angular/router": "^20.3.0",
     "@capacitor/android": "^7.4.4",
     "@capacitor/core": "^7.4.4",
+    "@capacitor/status-bar": "^7.0.3",
+    "@capgo/capacitor-navigation-bar": "^7.3.18",
     "canvas-confetti": "^1.9.4",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",

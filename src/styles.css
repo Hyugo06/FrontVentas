@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body.is-mobile {
+  background-color: #000000 !important; /* Fondo negro de seguridad */
+  height: 100vh; /* Forzamos altura exacta */
+  overflow: hidden; /* Evita que toda la app rebote */
+}
+
+body.is-mobile app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #f3f4f6; /* Fondo gris de tu app */
+  overflow-y: auto; /* El scroll ocurre AQUÍ, no en el body */
+}
+/* 1. ARREGLO DEL SIDEBAR (Para ver 'Cerrar Sesión') */
+body.is-mobile aside {
+  /* Restamos 50px (aprox barra nativa) a la altura total */
+  height: calc(100vh - 60px) !important;
+  padding-bottom: 80px !important; /* Colchón extra abajo para asegurar que el botón suba */
+  overflow-y: auto; /* Permitir scroll si el menú es muy largo */
+}
+
+/* 2. ARREGLO DEL HEADER (Para que no esté pegado arriba) */
+/* Aplica al Navbar y al Sidebar cuando están en móvil */
+body.is-mobile nav,
+body.is-mobile .bg-white.p-4.sticky {
+  padding-top: 15px !important; /* Un poco de aire extra arriba */
+  padding-bottom: 15px !important;
+}
+
+/* 3. Ajuste extra para el contenedor principal */
+body.is-mobile main {
+  padding-bottom: 100px !important; /* Espacio al final de la lista de productos */
+}

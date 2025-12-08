@@ -1,19 +1,19 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.margarita.app',
+  appId: 'com.margarita.app', // (Tu ID puede variar, déjalo como está)
   appName: 'Tienda Margarita',
+  webDir: 'dist/tienda-frontend/browser', // (Verifica que sea tu ruta correcta)
 
-  // --- ¡CAMBIA ESTA LÍNEA! ---
-  // No uses 'www'. Usa la ruta real de tu carpeta dist.
-  // Si tu index.html está en dist/FrontVentas/browser, pon eso.
-  // Si está en dist/tienda-frontend/browser, pon eso.
-  webDir: 'dist/tienda-frontend/browser',
-  // ---------------------------
-
+  // --- AGREGA O MODIFICA ESTO ---
   server: {
-    androidScheme: 'https'
+    androidScheme: 'http',         // <--- ESTO ES LA SOLUCIÓN MÁGICA
+    allowNavigation: [
+      '192.168.1.34'              // <--- Permite navegar a tu IP
+    ],
+    cleartext: true
   }
+  // -----------------------------
 };
 
 export default config;

@@ -20,9 +20,9 @@
               <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
 
                 @if (item.variante?.urlImagen) {
-                  <img [src]="'http://localhost:8080' + item.variante?.urlImagen" class="w-full h-full object-cover">
+                  <img [src]="'http://192.168.1.34:8080' + item.variante?.urlImagen" class="w-full h-full object-cover">
                 } @else if (item.producto.urlImagen) {
-                  <img [src]="'http://localhost:8080' + item.producto.urlImagen" class="w-full h-full object-cover">
+                  <img [src]="'http://192.168.1.34:8080' + item.producto.urlImagen" class="w-full h-full object-cover">
                 } @else {
                   <span class="text-gray-400 text-xs">Sin foto</span>
                 }
@@ -35,9 +35,9 @@
 
                 @if (item.variante) {
                   <div class="flex items-center mt-1 space-x-2">
-                    <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante!.color }}</span></span>
+                    <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante.color }}</span></span>
                     <span class="text-gray-300">|</span>
-                    <span class="text-sm text-gray-600">Talla: <span class="font-medium text-gray-800">{{ item.variante?.talla }}</span></span>
+                    <span class="text-sm text-gray-600">Talla: <span class="font-medium text-gray-800">{{ item.variante.talla }}</span></span>
                   </div>
                 }
 

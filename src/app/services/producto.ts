@@ -19,8 +19,11 @@ export interface ProductoVariante {
 })
 export class Producto {
 
-  private publicApiUrl = 'http://localhost:8080/api/productos';
-  private adminApiUrl = 'http://localhost:8080/api/admin/productos';
+  //private publicApiUrl = 'http://localhost:8080/api/productos';
+  //private adminApiUrl = 'http://localhost:8080/api/admin/productos';
+
+  private publicApiUrl = 'http://192.168.1.34:8080/api/productos';
+  private adminApiUrl = 'http://192.168.1.34:8080/api/admin/productos';
 
   //private publicApiUrl = 'https://apiventas-1.onrender.com/api/productos';
   //private adminApiUrl = 'https://apiventas-1.onrender.com/api/admin/productos';
