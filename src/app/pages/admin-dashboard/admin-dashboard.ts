@@ -68,16 +68,27 @@ export class AdminDashboardComponent implements OnInit {
     this.productoAEliminar = null;
   }
 
-  // 3. Botón "Sí, Eliminar" del modal
+  cargarProductos(): void {
+    this.cargando = true;
+    const searchTerm = this.searchForm.get('search')?.value || '';
+
+    this.productoService.getProductosAdmin(searchTerm).subscribe({
+      next: (data: any) => {
+        this.productos = data;
+        this.cargando = false;
+      },
+      error: (err: any) => {
+        this.error = 'No se pudieron cargar los productos.';
+        this.cargando = false;
+      }
+    });
+  }
+
   eliminarDefinitivamente(): void {
     if (this.productoAEliminar) {
       this.productoService.deleteProducto(this.productoAEliminar.idProducto).subscribe({
         next: () => {
-          // Refrescar lista
-          const currentSearch = this.searchForm.get('search')?.value || '';
-          this.searchForm.get('search')!.setValue(currentSearch);
-
-          // Cerrar modal
+          this.cargarProductos();
           this.productoAEliminar = null;
         },
         error: (err: any) => {

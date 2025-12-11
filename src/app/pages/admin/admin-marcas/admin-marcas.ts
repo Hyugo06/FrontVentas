@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Marca, MarcaDTO } from '../../../services/marca'; // Tu servicio de Marca
+import { Marca, MarcaDTO } from '../../../services/marca';
 
 @Component({
   selector: 'app-admin-marcas',
@@ -22,11 +22,12 @@ export class AdminMarcasComponent implements OnInit {
     this.cargarMarcas();
   }
 
+  // --- MÉTODO REUTILIZABLE ---
   cargarMarcas(): void {
     this.cargando = true;
     this.error = null;
 
-    this.marcaService.getMarcas().subscribe({ // Llama al GET /api/marcas
+    this.marcaService.getMarcas().subscribe({
       next: (data: MarcaDTO[]) => {
         this.marcas = data;
         this.cargando = false;
@@ -40,14 +41,19 @@ export class AdminMarcasComponent implements OnInit {
   }
 
   eliminarMarca(id: number): void {
-    if (confirm('¿Estás seguro de que quieres eliminar esta marca? (Esto podría fallar si está en uso por un producto)')) {
+    if (confirm('¿Estás seguro de eliminar esta marca?')) {
+      this.cargando = true; // Feedback visual
+
       this.marcaService.deleteMarca(id).subscribe({
         next: () => {
-          this.cargarMarcas(); // Recarga la lista
+          // --- RECARGA AUTOMÁTICA ---
+          this.cargarMarcas();
         },
         error: (err: any) => {
+          this.cargando = false;
           console.error('Error al eliminar marca:', err);
-          this.error = 'Error al eliminar: ' + (err.error?.message || 'Error desconocido');
+          // Mensaje amigable si la marca está ocupada
+          this.error = 'No se puede eliminar: Esta marca está asignada a productos.';
         }
       });
     }

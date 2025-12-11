@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Auth } from '../../../services/auth'; // Tu servicio de autenticación/usuario
+import { Auth } from '../../../services/auth';
 
 @Component({
   selector: 'app-user-management',
@@ -22,11 +22,11 @@ export class UserManagementComponent implements OnInit {
     this.cargarUsuarios();
   }
 
+  // --- MÉTODO REUTILIZABLE ---
   cargarUsuarios(): void {
     this.cargando = true;
     this.error = null;
 
-    // Llama al nuevo método GET /api/usuarios
     this.authService.getAllUsuarios().subscribe({
       next: (data: any) => {
         this.usuarios = data;
@@ -34,23 +34,24 @@ export class UserManagementComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Error cargando usuarios:', err);
-        this.error = 'No se pudieron cargar los usuarios. Revisa la consola para más detalles.';
+        this.error = 'No se pudieron cargar los usuarios.';
         this.cargando = false;
       }
     });
   }
 
-  /**
-   * Llama al servicio DELETE para desactivar un usuario (Soft Delete).
-   */
   desactivarUsuario(id: number): void {
     if (confirm('¿Estás seguro de que quieres DESACTIVAR este usuario?')) {
+      // Optimizamos la experiencia visual: Ponemos "cargando" mientras borra
+      this.cargando = true;
+
       this.authService.deleteUsuario(id).subscribe({
         next: () => {
-          // Recargamos la lista después de la desactivación
+          // --- AQUÍ ESTÁ LA MAGIA: RECARGAMOS LA LISTA ---
           this.cargarUsuarios();
         },
         error: (err: any) => {
+          this.cargando = false; // Quitamos el loading si falla
           console.error('Error al desactivar usuario:', err);
           this.error = 'Error al desactivar la cuenta.';
         }

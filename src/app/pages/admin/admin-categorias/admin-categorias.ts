@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Categoria, CategoriaDTO } from '../../../services/categoria'; // Tu servicio de Categoria
+import { Categoria, CategoriaDTO } from '../../../services/categoria';
 
 interface CategoriaTree extends CategoriaDTO {
   children?: CategoriaDTO[];
@@ -28,6 +28,7 @@ export class AdminCategoriasComponent implements OnInit {
     this.cargarCategorias();
   }
 
+  // --- MÉTODO REUTILIZABLE ---
   cargarCategorias(): void {
     this.cargando = true;
     this.error = null;
@@ -35,10 +36,11 @@ export class AdminCategoriasComponent implements OnInit {
     this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
         this.categorias = data;
+        // Reconstruimos el árbol desde cero con los datos frescos
         const padres = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
         padres.forEach(padre => {
           padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria);
-          padre.isOpen = false;
+          padre.isOpen = false; // Opcional: Podrías guardar el estado abierto si quisieras ser muy pro
         });
         this.categoriasTree = padres;
         this.cargando = false;
@@ -52,14 +54,18 @@ export class AdminCategoriasComponent implements OnInit {
   }
 
   eliminarCategoria(id: number): void {
-    if (confirm('¿Estás seguro de que quieres eliminar esta categoría? ¡Fallará si está siendo usada por productos!')) {
+    if (confirm('¿Eliminar categoría?')) {
+      this.cargando = true; // Feedback visual
+
       this.categoriaService.deleteCategoria(id).subscribe({
         next: () => {
-          this.cargarCategorias(); // Recarga la lista
+          // --- RECARGA AUTOMÁTICA ---
+          this.cargarCategorias();
         },
         error: (err: any) => {
+          this.cargando = false;
           console.error('Error al eliminar categoría:', err);
-          this.error = 'Error al eliminar: La categoría está en uso.';
+          this.error = 'No se puede eliminar: La categoría tiene subcategorías o productos asignados.';
         }
       });
     }
