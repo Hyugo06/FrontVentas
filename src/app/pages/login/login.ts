@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core'; // <--- 1. Importa OnInit
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Auth } from '../../services/auth';
-import { HttpErrorResponse } from '@angular/common/http'; // <-- Importa esto
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
@@ -12,65 +12,59 @@ import { HttpErrorResponse } from '@angular/common/http'; // <-- Importa esto
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
 
   public credenciales = {
     username: '',
     password: ''
   };
 
-  public error: string | null = null; // Para mostrar errores de login
+  public error: string | null = null;
 
   constructor(
     private authService: Auth,
     private router: Router
   ) {}
 
-  /**
-   * ESTE ES EL MÉTODO CORREGIDO
-   */
+  // --- 3. AGREGA ESTE BLOQUE NUEVO ---
+  ngOnInit(): void {
+    // Apenas carga la pantalla de Login, borramos cualquier rastro del usuario anterior.
+    // Esto evita que el Interceptor use un token viejo por error.
+    this.authService.logout();
+    console.log("--> [LOGIN INIT] Memoria limpia. Listo para nuevo usuario.");
+  }
+  // -----------------------------------
+
   public login(): void {
-    // --- CHIVATO 1: ¿Entra a la función? ---
-    console.log("--> 1. [LOGIN] Se presionó el botón. Iniciando función...");
-    console.log("--> 2. [LOGIN] Datos:", this.credenciales);
+    console.log("--> 1. [LOGIN] Iniciando...");
 
     this.error = null;
     const username = this.credenciales.username;
 
-    // Validación rápida antes de llamar a la API
     if (!username || !this.credenciales.password) {
-      console.log("--> [LOGIN] Falta usuario o contraseña. Abortando.");
       this.error = "Por favor ingresa usuario y contraseña";
       return;
     }
 
-    console.log("--> 3. [LOGIN] Llamando al AuthService con URL:", this.authService.apiUrl); // ¡Verifica la IP aquí!
-
-    // 1. Llamamos al servicio Y NOS SUSCRIBIMOS
     this.authService.login(username, this.credenciales.password).subscribe({
-
-      // 2. El bloque NEXT solo se ejecuta si el login (y la llamada a /me) fue exitoso
       next: (usuario) => {
-        console.log("--> 4. [LOGIN] ¡ÉXITO! Respuesta del servidor:", usuario); // CHIVATO DE ÉXITO
+        console.log("--> [LOGIN] ¡Éxito! Bienvenido:", usuario.nombreUsuario);
 
-        // 3. Leemos el ROL que guardó el servicio
-        const rol = this.authService.getRole();
-        console.log("--> 5. [LOGIN] Rol detectado:", rol);
+        // Guardamos datos (auth.ts ya guardó token y rol, aquí guardamos extras)
+        localStorage.setItem('nombreUsuarioReal', usuario.nombres);
+        localStorage.setItem('misPermisos', JSON.stringify(usuario.permisos || []));
 
-        // 4. Redirigimos basándonos en el ROL
-        if (rol === 'ADMIN') {
-          this.router.navigate(['/admin/productos']);
+        const rol = usuario.rol;
+        // Redirección basada en el ROL FRESCO que acaba de llegar
+        if (rol === 'ADMIN' || rol === 'MODERADOR') {
+          this.router.navigate(['/admin/dashboard']);
         } else {
           this.router.navigate(['/productos']);
         }
       },
-
-      // 5. El bloque ERROR se ejecuta si falla la red o la contraseña
       error: (err: HttpErrorResponse) => {
-        console.error("--> 6. [LOGIN] ERROR FATAL:", err); // CHIVATO DE ERROR
-        console.error("--> [LOGIN] Status:", err.status);
-        console.error("--> [LOGIN] Mensaje:", err.message);
-        this.error = "Usuario o contraseña incorrectos (o error de conexión).";
+        console.error("--> [LOGIN] Error:", err);
+        this.error = "Usuario o contraseña incorrectos.";
       }
     });
   }

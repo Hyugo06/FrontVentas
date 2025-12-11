@@ -58,4 +58,19 @@ export class AdminLayoutComponent implements OnInit {
   public toggleUserMenu(): void {
     this.isUserMenuOpen = !this.isUserMenuOpen;
   }
+
+  public can(permisoRequerido: string): boolean {
+    // 1. Si es ADMIN, tiene llave maestra (siempre true)
+    // (Asegúrate de tener acceso al rol, ya sea por authService o localStorage)
+    const rol = this.authService.getRole();
+    if (rol === 'ADMIN') return true;
+
+    // 2. Si no es admin, buscamos en su lista de permisos
+    const permisosGuardados = localStorage.getItem('misPermisos');
+    if (!permisosGuardados) return false;
+
+    const listaPermisos: string[] = JSON.parse(permisosGuardados);
+    console.log('Soy', rol, 'y mis permisos son:', listaPermisos);
+    return listaPermisos.includes(permisoRequerido);
+  }
 }

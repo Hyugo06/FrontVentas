@@ -12,6 +12,16 @@
     </a>
   </div>
 
+  @if (error) {
+    <div class="max-w-5xl mx-auto mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md relative" role="alert">
+      <strong class="font-bold">¡Ups! Ocurrió un error:</strong>
+      <span class="block sm:inline ml-1">{{ error }}</span>
+      <button (click)="cargarCategorias()" class="absolute top-0 bottom-0 right-0 px-4 py-3 text-red-700 hover:text-red-900 font-bold">
+        ↻
+      </button>
+    </div>
+  }
+
   @if (cargando) {
     <div class="max-w-5xl mx-auto space-y-4 animate-pulse">
       @for (item of [1,2,3]; track item) {

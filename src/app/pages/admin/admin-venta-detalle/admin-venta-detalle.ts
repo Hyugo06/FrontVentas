@@ -7,6 +7,7 @@ import { Venta } from '../../../services/venta';
 import jsPDF from 'jspdf';
 // Importamos 'autoTable' como una función separada
 import autoTable from 'jspdf-autotable';
+import Swal from 'sweetalert2';
 // ------------------------------------
 
 @Component({
@@ -118,5 +119,48 @@ export class AdminVentaDetalleComponent implements OnInit {
 
     // 6. Guardar el archivo (Sin cambios)
     doc.save(`Boleta_Venta_#${venta.idVenta}.pdf`);
+  }
+
+  public confirmarAnulacion(): void {
+    if (!this.venta) return;
+
+    Swal.fire({
+      title: '¿Anular esta venta?',
+      text: "Al hacerlo, el stock de los productos será devuelto al inventario. Esta acción no se puede deshacer.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444', // Rojo peligro
+      cancelButtonColor: '#3085d6',  // Azul cancelar
+      confirmButtonText: 'Sí, anular venta',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.ejecutarAnulacion();
+      }
+    });
+  }
+
+  private ejecutarAnulacion(): void {
+    this.cargando = true;
+    this.ventaService.anularVenta(this.venta.idVenta).subscribe({
+      next: (res: any) => {
+        this.cargando = false;
+
+        // Éxito: Mostramos mensaje y actualizamos la vista
+        Swal.fire(
+          '¡Anulada!',
+          'La venta ha sido anulada y el stock ha sido restaurado.',
+          'success'
+        );
+
+        // Actualizamos el estado localmente para que cambie el color sin recargar
+        this.venta.estado = 'ANULADA';
+      },
+      error: (err: any) => {
+        this.cargando = false;
+        console.error(err);
+        Swal.fire('Error', err.error || 'No se pudo anular la venta.', 'error');
+      }
+    });
   }
 }

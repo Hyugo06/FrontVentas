@@ -56,4 +56,8 @@ export class Venta { // Tu clase 'Venta'
   public getVentaPorId(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
+
+  public anularVenta(id: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/anular`, {});
+  }
 }

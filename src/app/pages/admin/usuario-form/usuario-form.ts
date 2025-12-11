@@ -3,9 +3,18 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-
+import Swal from 'sweetalert2';
 // Importa tu servicio de autenticación/usuario
 import { Auth } from '../../../services/auth'; //
+
+
+const PERMISOS_DISPONIBLES = [
+  { key: 'GESTIONAR_PRODUCTOS', label: 'Gestionar Productos' },
+  { key: 'GESTIONAR_VENTAS', label: 'Gestionar Ventas' },
+  { key: 'GESTIONAR_USUARIOS', label: 'Gestionar Usuarios' },
+  { key: 'GESTIONAR_CATEGORIAS', label: 'Gestionar Categorías' },
+  { key: 'GESTIONAR_MARCAS', label: 'Gestionar Marcas' }
+];
 
 @Component({
   selector: 'app-usuario-form',
@@ -16,13 +25,14 @@ import { Auth } from '../../../services/auth'; //
 })
 export class UsuarioFormComponent implements OnInit { //
 
+  public listaPermisos = PERMISOS_DISPONIBLES;
   public usuarioForm: FormGroup;
   public esEdicion: boolean = false;
   public usuarioId: string | null = null;
   public cargando: boolean = true;
   public error: string | null = null;
 
-  public roles: string[] = ['ADMIN', 'VENDEDOR'];
+  public roles: string[] = ['ADMIN', 'VENDEDOR', 'MODERADOR'];
 
   constructor(
     private fb: FormBuilder,
@@ -43,8 +53,25 @@ export class UsuarioFormComponent implements OnInit { //
       nombreUsuario: ['', [Validators.required, Validators.minLength(4)]],
       hashContrasena: ['', [Validators.minLength(6)]], // Requerido solo al crear
       rol: ['VENDEDOR', Validators.required],
-      activo: [true, Validators.required]
+      activo: [true, Validators.required],
+      permisos: [[]]
     });
+  }
+
+  onPermisoChange(event: any, permiso: string) {
+    const permisosActuales = this.usuarioForm.get('permisos')?.value || [];
+
+    if (event.target.checked) {
+      // Si marcó el check, agregamos el permiso a la lista
+      this.usuarioForm.patchValue({
+        permisos: [...permisosActuales, permiso]
+      });
+    } else {
+      // Si desmarcó, lo sacamos de la lista
+      this.usuarioForm.patchValue({
+        permisos: permisosActuales.filter((p: string) => p !== permiso)
+      });
+    }
   }
 
   ngOnInit(): void {
@@ -78,7 +105,8 @@ export class UsuarioFormComponent implements OnInit { //
           celular: usuario.celular,
           nombreUsuario: usuario.nombreUsuario,
           rol: usuario.rol,
-          activo: usuario.activo
+          activo: usuario.activo,
+          permisos: usuario.permisos || []
           // No cargamos el hashContrasena por seguridad
         });
         this.cargando = false;
@@ -94,15 +122,21 @@ export class UsuarioFormComponent implements OnInit { //
    * Maneja el envío del formulario (POST o PUT)
    */
   onSubmit(): void {
+    // 1. Validación de campos vacíos
     if (this.usuarioForm.invalid) {
-      this.error = 'Por favor, completa todos los campos requeridos (*).';
+      Swal.fire({
+        title: 'Faltan datos',
+        text: 'Por favor, completa todos los campos requeridos (*).',
+        icon: 'warning',
+        confirmButtonColor: '#4f46e5', // Color Indigo
+        confirmButtonText: 'Revisar'
+      });
       return;
     }
 
     const userData = this.usuarioForm.value;
 
     // Si la contraseña está vacía en modo edición, la eliminamos
-    // para que el backend no intente hashear un string vacío.
     if (this.esEdicion && (!userData.hashContrasena || userData.hashContrasena.length === 0)) {
       delete userData.hashContrasena;
     }
@@ -112,26 +146,59 @@ export class UsuarioFormComponent implements OnInit { //
 
     if (this.esEdicion && this.usuarioId) {
       // --- LÓGICA DE ACTUALIZAR (PUT) ---
-      this.authService.updateUsuario(parseInt(this.usuarioId, 10), userData).subscribe({ //
+      this.authService.updateUsuario(parseInt(this.usuarioId, 10), userData).subscribe({
         next: (response: any) => {
-          alert(`Usuario ${response.nombreUsuario} actualizado con éxito!`);
-          this.router.navigate(['/admin/usuarios']);
+          this.cargando = false; // Detenemos la carga visual
+
+          Swal.fire({
+            title: '¡Cambios Guardados!',
+            text: `El usuario ${response.nombreUsuario} ha sido actualizado correctamente.`,
+            icon: 'success',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#4f46e5'
+          }).then((result) => {
+            // Solo redirigimos cuando el usuario cierra la alerta
+            if (result.isConfirmed || result.isDismissed) {
+              this.router.navigate(['/admin/usuarios']);
+            }
+          });
         },
         error: (err: HttpErrorResponse) => {
-          this.error = `Error al actualizar: ${err.error?.message || err.statusText}`;
           this.cargando = false;
+          Swal.fire({
+            title: 'Error al actualizar',
+            text: err.error?.message || 'No se pudieron guardar los cambios.',
+            icon: 'error',
+            confirmButtonColor: '#ef4444' // Rojo para errores
+          });
         }
       });
     } else {
       // --- LÓGICA DE CREAR (POST) ---
-      this.authService.register(userData).subscribe({ //
+      this.authService.register(userData).subscribe({
         next: (response: any) => {
-          alert(`Usuario ${response.nombreUsuario} creado con éxito!`);
-          this.router.navigate(['/admin/usuarios']);
+          this.cargando = false;
+
+          Swal.fire({
+            title: '¡Usuario Creado!',
+            text: `Bienvenido al equipo, ${response.nombreUsuario}.`,
+            icon: 'success',
+            confirmButtonText: 'Excelente',
+            confirmButtonColor: '#4f46e5'
+          }).then((result) => {
+            if (result.isConfirmed || result.isDismissed) {
+              this.router.navigate(['/admin/usuarios']);
+            }
+          });
         },
         error: (err: HttpErrorResponse) => {
-          this.error = `Error al crear: ${err.error?.message || 'El usuario ya existe'}`;
           this.cargando = false;
+          Swal.fire({
+            title: 'No se pudo crear',
+            text: err.error?.message || 'Es posible que el usuario ya exista.',
+            icon: 'error',
+            confirmButtonColor: '#ef4444'
+          });
         }
       });
     }

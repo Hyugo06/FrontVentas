@@ -35,13 +35,12 @@ export class Auth { // Tu clase 'Auth'
    * Guarda el token, llama a /me, y guarda el ROL y el USERNAME
    */
   public login(username: string, password: string): Observable<any> {
-    const token = 'Basic ' + btoa(username + ':' + password);
-    localStorage.setItem(this.AUTH_TOKEN_KEY, token);
-    localStorage.setItem(this.USERNAME_KEY, username);
-
-    // ¡ASEGÚRATE DE QUE ESTO SEA UN GET!
-    return this.http.get<any>(`${this.apiUrl}/me`).pipe(
+    const tokenTemp = 'Basic ' + btoa(username + ':' + password);
+    const headers = { 'Authorization': tokenTemp };
+    return this.http.get<any>(`${this.apiUrl}/me`, { headers }).pipe(
       tap(usuario => {
+        localStorage.setItem(this.AUTH_TOKEN_KEY, tokenTemp);
+        localStorage.setItem(this.USERNAME_KEY, username);
         localStorage.setItem(this.USER_ROLE_KEY, usuario.rol);
         this.loggedIn.next(true);
       })
@@ -52,7 +51,9 @@ export class Auth { // Tu clase 'Auth'
     localStorage.removeItem(this.AUTH_TOKEN_KEY);
     localStorage.removeItem(this.USER_ROLE_KEY);
     localStorage.removeItem(this.USERNAME_KEY);
-    this.loggedIn.next(false); // <-- Emite el nuevo estado 'false'
+    localStorage.removeItem('nombreUsuarioReal');
+    localStorage.removeItem('misPermisos');
+    this.loggedIn.next(false);
   }
 
   public getAuthToken(): string | null {

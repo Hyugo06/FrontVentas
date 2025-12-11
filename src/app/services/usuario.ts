@@ -13,8 +13,8 @@ export class Usuario { // Tu CLI usa el nombre 'Usuario'
 
   constructor(private http: HttpClient) { }
 
-  public getUsuarioPorId(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`);
+  public getUsuarioPorId(id: string): Observable<Usuario> { // <--- Usa el tipo Usuario
+    return this.http.get<Usuario>(`${this.apiUrl}/${id}`);
   }
 
   public register(userData: any): Observable<any> {
