@@ -1,50 +1,78 @@
-<div class="container mx-auto p-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Gestión de Categorías</h1>
-    <a routerLink="/admin/categorias/nuevo"
-       class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+<div class="container mx-auto p-4 md:p-8">
+  <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Categorías</h1>
+    <a routerLink="/admin/categorias/nuevo" class="w-full md:w-auto bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-center shadow-md hover:bg-green-700 transition-colors">
       + Agregar Categoría
     </a>
   </div>
 
-  @if (cargando) { <p class="text-gray-500">Cargando categorías...</p> }
-  @if (error) { <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p> }
+  @if (cargando) {
+    <p class="text-center text-gray-500 py-8">Cargando categorías...</p>
+  } @else {
 
-  @if (!cargando && !error) {
-    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <div class="hidden md:block bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
         <tr>
-          <th class->ID</th>
-          <th class->Nombre</th>
-          <th class->ID Padre</th>
-          <th class->Acciones</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase w-16">#</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nombre</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jerarquía</th>
+          <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acciones</th>
         </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          @for (cat of categorias; track cat.idCategoria) {
-            <tr>
-              <td class="px-6 py-4">#{{ cat.idCategoria }}</td>
-              <td class="px-6 py-4">{{ cat.nombre }}</td>
-              <td class="px-6 py-4">{{ cat.idCategoriaPadre || 'N/A (Es Padre)' }}</td>
-              <td class="px-6 py-4 text-right">
-                <a [routerLink]="['/admin/categorias/editar', cat.idCategoria]"
-                   class="text-indigo-600 hover:text-indigo-900 mr-4">
-                  Editar
-                </a>
-                <button (click)="eliminarCategoria(cat.idCategoria)"
-                        class="text-red-600 hover:text-red-900">
-                  Eliminar
-                </button>
+        <tbody class="divide-y divide-gray-200">
+          @for (cat of categorias; track cat.idCategoria; let i = $index) {
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-mono text-gray-400 font-bold">{{ i + 1 }}</td>
+              <td class="px-6 py-4 font-bold text-gray-900">{{ cat.nombre }}</td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                @if (cat.idCategoriaPadre) {
+                  <span class="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded text-xs">Subcategoría</span>
+                } @else {
+                  <span class="text-gray-500 italic bg-gray-100 px-2 py-1 rounded text-xs">Principal</span>
+                }
               </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="4" class="px-6 py-4 text-center text-gray-500">No se encontraron categorías.</td>
+              <td class="px-6 py-4 text-right space-x-3">
+                <a [routerLink]="['/admin/categorias/editar', cat.idCategoria]" class="text-indigo-600 font-bold hover:underline">Editar</a>
+                <button (click)="eliminarCategoria(cat.idCategoria)" class="text-red-500 font-bold hover:underline">Eliminar</button>
+              </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
+
+    <div class="md:hidden space-y-3 pb-20">
+      @for (cat of categorias; track cat.idCategoria; let i = $index) {
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+
+          <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 font-bold font-mono text-sm">
+            {{ i + 1 }}
+          </div>
+
+          <div class="flex-grow">
+            <h3 class="font-bold text-gray-900 text-lg">{{ cat.nombre }}</h3>
+            <p class="text-xs mt-1">
+              @if (cat.idCategoriaPadre) {
+                <span class="text-blue-600">Subcategoría</span>
+              } @else {
+                <span class="text-gray-400">Principal</span>
+              }
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2 border-l pl-3 ml-2 border-gray-100">
+            <a [routerLink]="['/admin/categorias/editar', cat.idCategoria]" class="text-indigo-600 text-xs font-bold uppercase tracking-wider">
+              Editar
+            </a>
+            <button (click)="eliminarCategoria(cat.idCategoria)" class="text-red-500 text-xs font-bold uppercase tracking-wider text-left">
+              Borrar
+            </button>
+          </div>
+
+        </div>
+      }
+    </div>
+
   }
 </div>

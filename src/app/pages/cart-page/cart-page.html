@@ -31,7 +31,9 @@
 
               <div class="flex-grow min-w-0">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ item.producto.marca?.nombre || 'Genérico' }}</span>
-                <h3 class="font-bold text-gray-900 text-lg truncate">{{ item.producto.nombre }}</h3>
+                <h3 class="font-bold text-gray-900 text-base md:text-lg leading-tight break-words mb-1">
+                  {{ item.producto.nombre }}
+                </h3>
 
                 @if (item.variante) {
                   <div class="flex items-center mt-1 space-x-2">

@@ -2,36 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- CORRECCIONES MÓVIL (DISEÑO FLEXBOX) --- */
+
+/* 1. La base: Pantalla Negra y sin scroll global */
 body.is-mobile {
-  background-color: #000000 !important; /* Fondo negro de seguridad */
-  height: 100vh; /* Forzamos altura exacta */
-  overflow: hidden; /* Evita que toda la app rebote */
+  background-color: #000000 !important;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* El body nunca scrollea */
 }
 
+/* 2. El Contenedor de la App (La tarjeta blanca/gris) */
 body.is-mobile app-root {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Elementos uno debajo del otro */
   height: 100%;
-  background-color: #f3f4f6; /* Fondo gris de tu app */
-  overflow-y: auto; /* El scroll ocurre AQUÍ, no en el body */
-}
-/* 1. ARREGLO DEL SIDEBAR (Para ver 'Cerrar Sesión') */
-body.is-mobile aside {
-  /* Restamos 50px (aprox barra nativa) a la altura total */
-  height: calc(100vh - 60px) !important;
-  padding-bottom: 80px !important; /* Colchón extra abajo para asegurar que el botón suba */
-  overflow-y: auto; /* Permitir scroll si el menú es muy largo */
+  background-color: #f3f4f6;
+
+  /* Los bordes negros de seguridad */
+  padding-top: 40px !important;
+  padding-bottom: 20px !important;
+
+  /* Bordes redondeados para efecto moderno */
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
 }
 
-/* 2. ARREGLO DEL HEADER (Para que no esté pegado arriba) */
-/* Aplica al Navbar y al Sidebar cuando están en móvil */
-body.is-mobile nav,
-body.is-mobile .bg-white.p-4.sticky {
-  padding-top: 15px !important; /* Un poco de aire extra arriba */
-  padding-bottom: 15px !important;
+/* 3. La Barra de Navegación (Pública) */
+/* Forzamos a que deje de flotar y ocupe su espacio sólido */
+body.is-mobile app-navbar,
+body.is-mobile app-navbar nav {
+  position: relative !important; /* Ya no fixed */
+  top: auto !important;
+  width: 100%;
+  flex-shrink: 0; /* No dejes que se aplaste */
+  z-index: 50;
 }
 
-/* 3. Ajuste extra para el contenedor principal */
+/* 4. El Contenido (Páginas) */
+/* Hacemos que la página ocupe todo el espacio sobrante y tenga su propio scroll */
+body.is-mobile app-root > :not(app-navbar):not(app-confirm-modal):not(router-outlet) {
+  flex: 1; /* Crece para llenar el hueco */
+  overflow-y: auto; /* El scroll vive aquí */
+  display: block;
+  position: relative;
+}
+
+/* Ajuste específico para cuando el RouterOutlet carga un componente directamente */
 body.is-mobile main {
-  padding-bottom: 100px !important; /* Espacio al final de la lista de productos */
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 5. Ajuste para el Admin Layout (que ya tiene su propia estructura) */
+body.is-mobile app-admin-layout {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body.is-mobile table {
+  width: 100% !important;
+  table-layout: fixed; /* Clave: Fuerza a la tabla a respetar los anchos */
+}
+
+body.is-mobile th,
+body.is-mobile td {
+  /* Permitir que el texto baje a la siguiente línea */
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+
+  /* Reducir un poco el texto para ganar espacio */
+  font-size: 11px !important;
+  padding: 5px 2px !important; /* Menos relleno lateral */
+  vertical-align: middle; /* Centrado vertical */
+}
+
+/* Ajuste de columnas específico (Asumiendo orden: 1.SKU, 2.Nombre, 3.Marca) */
+
+/* Columna SKU (1): Pequeña */
+body.is-mobile th:nth-child(1),
+body.is-mobile td:nth-child(1) {
+  width: 20% !important;
+  text-align: center;
+}
+
+/* Columna NOMBRE (2): La más ancha */
+body.is-mobile th:nth-child(2),
+body.is-mobile td:nth-child(2) {
+  width: 55% !important;
+}
+
+/* Columna MARCA (3): Pequeña */
+body.is-mobile th:nth-child(3),
+body.is-mobile td:nth-child(3) {
+  width: 25% !important;
+  text-align: center;
+}
+
+/* Asegurar que los enlaces (azul) dentro de la tabla también rompan */
+body.is-mobile td a,
+body.is-mobile td span {
+  display: inline-block;
+  width: 100%;
+  word-break: break-word;
+}
+
+/* ANIMACIONES PERSONALIZADAS */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Efecto rebote suave para el modal */
+@keyframes bounceSmall {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-bounce-small {
+  animation: bounceSmall 0.3s ease-out;
 }

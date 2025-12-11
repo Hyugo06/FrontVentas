@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router'; // <-- ¡Importa Router!
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Producto } from '../../../services/producto';
 import { forkJoin } from 'rxjs';
 
@@ -17,14 +17,17 @@ export class AdminProductoDetalleComponent implements OnInit {
   public imagenes: any[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
-  public baseUrl = 'http://localhost:8080'; // O tu IP
+  public baseUrl = 'http://192.168.1.34:8080'; // Asegúrate que sea tu IP correcta
 
   // Variables para la galería
   public imagenActual: string | null = null;
 
+  // Variable para el Modal de Eliminación
+  public productoAEliminar: any = null;
+
   constructor(
     private route: ActivatedRoute,
-    private router: Router, // <-- ¡INYECTA EL ROUTER!
+    private router: Router,
     private productoService: Producto
   ) {}
 
@@ -71,21 +74,31 @@ export class AdminProductoDetalleComponent implements OnInit {
     this.imagenActual = this.baseUrl + urlRelativa;
   }
 
-  // --- ¡MÉTODO PARA ELIMINAR! ---
-  eliminarProducto(): void {
-    if (!this.producto) return;
+  // --- LÓGICA DEL MODAL (NUEVA) ---
 
-    if (confirm(`¿Estás seguro de que quieres eliminar "${this.producto.nombre}" permanentemente?`)) {
+  // 1. Botón "Eliminar" abre el modal
+  confirmarEliminacion(producto: any): void {
+    this.productoAEliminar = producto;
+  }
 
-      this.productoService.deleteProducto(this.producto.idProducto).subscribe({
+  // 2. Botón "Cancelar" cierra el modal
+  cancelarEliminacion(): void {
+    this.productoAEliminar = null;
+  }
+
+  // 3. Botón "Sí, Eliminar" ejecuta el borrado
+  eliminarDefinitivamente(): void {
+    if (this.productoAEliminar) {
+      this.productoService.deleteProducto(this.productoAEliminar.idProducto).subscribe({
         next: () => {
-          alert('Producto eliminado con éxito.');
-          // --- ¡AQUÍ ESTÁ LA REDIRECCIÓN! ---
+          // Ya no necesitamos alert, simplemente redirigimos
+          this.productoAEliminar = null;
           this.router.navigate(['/admin/productos']);
         },
         error: (err: any) => {
           console.error('Error al eliminar:', err);
           alert('No se pudo eliminar el producto. Puede que tenga ventas asociadas.');
+          this.productoAEliminar = null;
         }
       });
     }

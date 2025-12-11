@@ -35,7 +35,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
 
         // 3. ¡CORRECCIÓN! Usamos Style.Light para tener ICONOS BLANCOS
-        await StatusBar.setStyle({ style: Style.Light });
+        await StatusBar.setStyle({ style: Style.Dark });
 
         // 4. Inyectamos clase para CSS
         document.body.classList.add('is-mobile');

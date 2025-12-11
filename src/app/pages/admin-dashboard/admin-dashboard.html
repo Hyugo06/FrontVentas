@@ -1,77 +1,191 @@
-<div class="container mx-auto p-8">
+<div class="container mx-auto p-4 md:p-8">
 
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Panel de Administración</h1>
+  <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Panel de Administración</h1>
     <a routerLink="/admin/productos/nuevo"
-       class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+       class="w-full md:w-auto text-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-md">
       + Agregar Producto
     </a>
   </div>
 
-  <form [formGroup]="searchForm" class="flex items-center space-x-4 mb-6">
+  <form [formGroup]="searchForm" class="flex items-center space-x-2 mb-6 bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+    <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
     <input
       formControlName="search"
       type="text"
-      placeholder="Buscar por SKU, Nombre, Marca, Color o Talla..."
-      class="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm">
+      placeholder="Buscar por SKU, nombre, color..."
+      class="flex-1 border-none focus:ring-0 text-sm md:text-base outline-none bg-transparent">
 
-    <button (click)="limpiarBusqueda()" type="button" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600">
-      Limpiar
+    <button (click)="limpiarBusqueda()" type="button" class="text-gray-500 hover:text-red-500 font-semibold text-sm px-3">
+      X
     </button>
   </form>
+
   @if (cargando) {
-    <p class="text-gray-500">Cargando productos de admin...</p>
+    <div class="flex justify-center py-8">
+      <p class="text-gray-500 animate-pulse">Cargando inventario...</p>
+    </div>
   }
+
   @if (error) {
-    <p class="text-red-500 bg-red-100 p-4 rounded-lg">{{ error }}</p>
+    <p class="text-red-500 bg-red-100 p-4 rounded-lg border border-red-200">{{ error }}</p>
   }
 
   @if (!cargando && !error) {
-    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
 
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-        <tr>
-          <th class->SKU</th>
-          <th class->Nombre</th>
-          <th class->Marca</th>
-          <th class->Color</th>
-          <th class->Talla/Medida</th>
-          <th class->P. Venta</th>
-          <th class->Stock</th>
-          <th class->Acciones</th>
-        </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+    <div class="hidden md:block bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">SKU</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Marca</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Color</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Talla</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">P. Venta</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Stock</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+          </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (prod of productos; track prod.idProducto) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 text-xs text-gray-500 font-mono">{{ prod.codigoSku }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-gray-900 max-w-xs truncate" title="{{prod.nombre}}">
+                  <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="text-blue-600 hover:underline">
+                    {{ prod.nombre }}
+                  </a>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">{{ prod.marca?.nombre || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 capitalize">{{ prod.caracteristicas?.color || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 uppercase">{{ prod.caracteristicas?.talla || prod.caracteristicas?.medidas || '-' }}</td>
+                <td class="px-6 py-4 text-sm font-bold text-green-600 whitespace-nowrap">S/ {{ prod.precioVenta | number: '1.2-2' }}</td>
+                <td class="px-6 py-4 text-sm font-bold" [class.text-red-500]="prod.stockActual <= 5">{{ prod.stockActual }}</td>
+                <td class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                  <a [routerLink]="['/admin/productos/editar', prod.idProducto]" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
 
-          @for (prod of productos; track prod.idProducto) {
-            <tr>
-              <td class="px-6 py-4">{{ prod.codigoSku }}</td>
-              <td class="px-6 py-4">
-                <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="text-blue-600 hover:underline">
-                  {{ prod.nombre }}
-                </a>
-              </td>
-              <td class="px-6 py-4">{{ prod.marca?.nombre || 'N/A' }}</td>
-              <td class="px-6 py-4 capitalize">{{ prod.caracteristicas?.color || 'N/A' }}</td>
-              <td class="px-6 py-4 capitalize">{{ prod.caracteristicas?.talla || prod.caracteristicas?.medidas || prod.caracteristicas?.tamano || 'N/A' }}</td>
-              <td class="px-6 py-4 font-semibold text-green-600">S/ {{ prod.precioVenta | number: '1.2-2' }}</td>
-              <td class="px-6 py-4">{{ prod.stockActual }}</td>
-              <td class="px-6 py-4 text-right">
-                <a [routerLink]="['/admin/productos/editar', prod.idProducto]" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</a>
-                <button (click)="eliminarProducto(prod.idProducto)" class="text-red-600 hover:text-red-900">Eliminar</button>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                No se encontraron productos que coincidan con la búsqueda.
-              </td>
-            </tr>
-          }
-
-        </tbody>
-      </table>
+                  <button (click)="confirmarEliminacion(prod)"
+                          class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded hover:bg-red-100">
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <div class="md:hidden space-y-4 pb-20">
+      @for (prod of productos; track prod.idProducto) {
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative">
+
+          <div class="flex justify-between items-start mb-2 gap-2">
+            <div class="min-w-0 flex-1">
+              <span class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block break-all">
+                {{ prod.codigoSku }}
+              </span>
+            </div>
+
+            <div class="flex space-x-2 flex-shrink-0">
+              <a [routerLink]="['/admin/productos/editar', prod.idProducto]"
+                 class="text-indigo-600 text-xs font-bold bg-indigo-50 px-2 py-1 rounded hover:bg-indigo-100">
+                Editar
+              </a>
+
+              <button (click)="confirmarEliminacion(prod)"
+                      class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded hover:bg-red-100">
+                Eliminar
+              </button>
+            </div>
+          </div>
+
+          <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="block mb-3">
+            <h3 class="text-lg font-bold text-gray-900 leading-tight break-words">
+              {{ prod.nombre }}
+            </h3>
+            <p class="text-xs text-gray-400 uppercase font-bold tracking-wide mt-1">
+              {{ prod.marca?.nombre || 'GENÉRICO' }}
+            </p>
+          </a>
+
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm border-t border-gray-100 pt-3">
+
+            <div>
+              <span class="text-gray-400 text-xs block mb-0.5">Precio Venta</span>
+              <span class="font-bold text-green-600 text-base">S/ {{ prod.precioVenta | number: '1.2-2' }}</span>
+            </div>
+
+            <div>
+              <span class="text-gray-400 text-xs block mb-0.5">Stock Total</span>
+              <span class="font-bold" [class.text-red-500]="prod.stockActual <= 5">{{ prod.stockActual }} un.</span>
+            </div>
+
+            @if (prod.caracteristicas?.color || prod.caracteristicas?.talla) {
+              <div class="col-span-2 flex flex-wrap gap-4 mt-1">
+                @if(prod.caracteristicas?.color) {
+                  <div class="flex items-center gap-1">
+                    <span class="text-gray-400 text-xs">Color:</span>
+                    <span class="font-medium text-gray-700 capitalize">{{ prod.caracteristicas.color }}</span>
+                  </div>
+                }
+                @if(prod.caracteristicas?.talla) {
+                  <div class="flex items-center gap-1">
+                    <span class="text-gray-400 text-xs">Talla:</span>
+                    <span class="font-medium text-gray-700 uppercase">{{ prod.caracteristicas.talla }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+        </div>
+      } @empty {
+        <div class="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300">
+          <p class="text-gray-400 font-medium">No se encontraron productos.</p>
+          <a routerLink="/admin/productos/nuevo" class="text-blue-500 text-sm hover:underline mt-2 inline-block">Agregar el primero</a>
+        </div>
+      }
+    </div>
+
   }
 </div>
+
+@if (productoAEliminar) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity">
+
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-100">
+
+      <div class="bg-red-50 p-4 flex justify-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center animate-bounce">
+          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </div>
+      </div>
+
+      <div class="p-6 text-center">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">¿Eliminar Producto?</h3>
+        <p class="text-gray-500 text-sm mb-4">Estás a punto de eliminar:</p>
+
+        <div class="bg-gray-100 p-3 rounded-lg border border-gray-200 mb-6">
+          <span class="font-bold text-gray-800 text-lg block break-words">"{{ productoAEliminar.nombre }}"</span>
+          <span class="text-xs text-gray-500 font-mono mt-1 block">{{ productoAEliminar.codigoSku }}</span>
+        </div>
+
+        <p class="text-xs text-red-500 font-semibold">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="flex border-t border-gray-100">
+        <button (click)="cancelarEliminacion()"
+                class="w-1/2 py-4 text-gray-600 font-bold hover:bg-gray-50 transition-colors border-r border-gray-100">
+          Cancelar
+        </button>
+        <button (click)="eliminarDefinitivamente()"
+                class="w-1/2 py-4 text-white bg-red-600 font-bold hover:bg-red-700 transition-colors">
+          Sí, Eliminar
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
