@@ -1,46 +1,65 @@
-<nav class="bg-gray-800 p-4 shadow-xl text-white">
-  <div class="container mx-auto flex justify-between items-center">
+<nav class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
 
-    <a routerLink="/productos" class="text-xl font-bold text-blue-300 hover:text-blue-100 transition duration-150">
-      Tienda Margaríta
-    </a>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
 
-    <div class="flex items-center space-x-4">
-
-      @if (!(isLoggedIn$ | async)) {
-        <a routerLink="/login" class="bg-blue-600 hover:bg-blue-700 py-1 px-3 rounded text-sm font-semibold">
-          Iniciar Sesión
+      <div class="flex items-center gap-2">
+        <a routerLink="/productos" class="flex items-center gap-2 group">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md group-hover:bg-indigo-700 transition-colors">
+            TM
+          </div>
+          <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-indigo-600 group-hover:to-indigo-800 transition-all">
+             Margaríta Store
+          </span>
         </a>
-      }
+      </div>
 
-      @if (isLoggedIn$ | async) {
+      <div class="flex items-center space-x-4">
 
-        @if (isAdministrator()) {
-          <a routerLink="/admin/productos"
-             class="py-1 px-3 rounded text-sm font-semibold bg-gray-600 hover:bg-gray-700">
-            Productos
+        @if (showLoginButton()) {
+          <a routerLink="/login"
+             class="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors px-3 py-2">
+            Iniciar Sesión
           </a>
-          <a routerLink="/admin/ventas"
-             class="py-1 px-3 rounded text-sm font-semibold bg-gray-600 hover:bg-gray-700">
-            Ventas
+          <a routerLink="/login"
+             class="hidden sm:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all transform hover:-translate-y-0.5">
+            Acceder
           </a>
-          <a routerLink="/admin/usuarios"
-             class="py-1 px-3 rounded text-sm font-semibold bg-gray-600 hover:bg-gray-700">
-            Usuarios
-          </a>
-        } @else {
-          <app-cart-status></app-cart-status>
         }
 
-        <span class="text-gray-300 text-sm font-medium">
-          Hola, {{ currentUsername }}
-        </span>
-        <button (click)="logout()"
-                class="bg-red-600 hover:bg-red-700 py-1 px-3 rounded text-sm font-semibold">
-          Cerrar Sesión
-        </button>
-      }
+        @if (isLoggedIn$ | async) {
 
+          @if (isAdministrator()) {
+            <div class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-lg">
+              <a routerLink="/admin/productos" routerLinkActive="bg-white text-indigo-600 shadow-sm"
+                 class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-600 hover:text-indigo-600 transition-all">
+                Productos
+              </a>
+              <a routerLink="/admin/ventas" routerLinkActive="bg-white text-indigo-600 shadow-sm"
+                 class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-600 hover:text-indigo-600 transition-all">
+                Ventas
+              </a>
+            </div>
+          } @else {
+            <app-cart-status></app-cart-status>
+          }
+
+          <div class="h-6 w-px bg-slate-200 mx-2"></div>
+
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Hola</p>
+              <p class="text-sm font-bold text-slate-700 leading-none">{{ currentUsername }}</p>
+            </div>
+
+            <button (click)="logout()" title="Cerrar Sesión"
+                    class="p-2 rounded-full bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors border border-slate-200">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+          </div>
+        }
+
+      </div>
     </div>
   </div>
 </nav>

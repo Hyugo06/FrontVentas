@@ -9,6 +9,12 @@ import { Observable, forkJoin } from 'rxjs';
 import { Cart } from '../../services/cart';
 import { Modal } from '../../services/modal';
 
+
+interface CategoriaTree extends CategoriaDTO {
+  children?: CategoriaDTO[];
+  isOpen?: boolean;
+}
+
 @Component({
   selector: 'app-producto-lista',
   standalone: true,
@@ -25,6 +31,7 @@ export class ProductoListaComponent implements OnInit {
   public cargandoProductos: boolean = true;
   public filtroForm: FormGroup;
   public showMobileMenu: boolean = false;
+  public categoriasTree: CategoriaTree[] = [];
 
   // Mapas para gestionar el estado visual de cada tarjeta independientemente
   public mapaImagenesProducto: { [idProducto: number]: string[] } = {};
@@ -254,9 +261,14 @@ export class ProductoListaComponent implements OnInit {
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data: CategoriaDTO[]) => {
-        this.categoriasPadre = data.filter(c => c.idCategoriaPadre == null);
-        this.categoriasHijo = data.filter(c => c.idCategoriaPadre != null);
         this.categorias = data;
+        const padres = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
+
+        padres.forEach(padre => {
+          padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria);
+          padre.isOpen = false;
+        });
+        this.categoriasTree = padres;
       },
       error: (err: any) => { console.error('Error al traer categorías:', err); }
     });

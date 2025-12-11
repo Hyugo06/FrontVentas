@@ -1,68 +1,112 @@
-<div class="container mx-auto p-8">
-  <h1 class="text-3xl font-bold mb-6">
-    @if (esEdicion) {
-      Editar Categoría: #{{ categoriaId }}
-    } @else {
-      Nueva Categoría
-    }
-  </h1>
+<div class="min-h-screen bg-slate-50/50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-start">
 
-  <a routerLink="/admin/categorias" class="text-blue-500 hover:underline mb-6 inline-block">
-    &larr; Volver a la lista de Categorías
-  </a>
+  <div class="w-full max-w-2xl mb-6">
+    <a routerLink="/admin/categorias"
+       class="group inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+      <svg class="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Volver al Listado
+    </a>
+  </div>
 
   @if (cargando) {
-    <p class="text-center text-gray-500 p-10">Cargando datos...</p>
-  }
-
-  @if (error) {
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-      <strong class="font-bold">Error:</strong>
-      <span class="block sm:inline">{{ error }}</span>
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-10 flex flex-col items-center justify-center space-y-4 animate-pulse">
+      <div class="w-12 h-12 bg-slate-200 rounded-full"></div>
+      <div class="h-4 bg-slate-200 rounded w-1/2"></div>
     </div>
-  }
+  } @else {
 
-  @if (!cargando) {
-    <form [formGroup]="categoriaForm" (ngSubmit)="onSubmit()" class="bg-white p-6 rounded-lg shadow-xl max-w-lg">
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
 
-      <div class="mb-4">
-        <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre (*)</label>
-        <input id="nombre" type="text" formControlName="nombre"
-               class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
-        @if (categoriaForm.get('nombre')?.invalid && categoriaForm.get('nombre')?.touched) {
-          <p class="text-xs text-red-500 mt-1">El nombre es obligatorio.</p>
-        }
+      <div class="bg-slate-900 px-8 py-6 border-b border-slate-800 flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">
+            @if (esEdicion) {
+              Editar Categoría
+            } @else {
+              Nueva Categoría
+            }
+          </h1>
+          <p class="mt-1 text-sm text-slate-400">
+            @if (esEdicion) {
+              Actualizando los datos del ID #{{ categoriaId }}
+            } @else {
+              Define una nueva sección para tu catálogo.
+            }
+          </p>
+        </div>
+        <div class="hidden sm:flex h-12 w-12 rounded-xl bg-slate-800 items-center justify-center text-indigo-400">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+        </div>
       </div>
 
-      <div class="mb-4">
-        <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
-        <textarea id="descripcion" formControlName="descripcion" rows="3"
-                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm"></textarea>
-      </div>
+      @if (error) {
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 m-6 mb-0 rounded-r shadow-sm flex items-start">
+          <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+      }
 
-      <div class="mb-6">
-        <label for="idCategoriaPadre" class="block text-sm font-medium text-gray-700">Categoría Padre (Opcional)</label>
-        <select id="idCategoriaPadre" formControlName="idCategoriaPadre"
-                class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
-          <option [ngValue]="null">-- Ninguna (Es una categoría raíz) --</option>
+      <form [formGroup]="categoriaForm" (ngSubmit)="onSubmit()" class="p-8 space-y-6">
 
-          @for (cat of listaCategoriasPadre; track cat.idCategoria) {
-            @if (cat.idCategoria !== categoriaId) {
-              <option [ngValue]="cat.idCategoria">{{ cat.nombre }}</option> }
+        <div>
+          <label for="nombre" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Nombre de la Categoría (*)
+          </label>
+          <input id="nombre" type="text" formControlName="nombre" placeholder="Ej: Zapatillas Deportivas"
+                 class="block w-full rounded-lg border-slate-200 bg-slate-50 p-3 text-sm focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm">
+
+          @if (categoriaForm.get('nombre')?.invalid && categoriaForm.get('nombre')?.touched) {
+            <p class="mt-2 text-xs text-red-500 flex items-center animate-bounce-short">
+              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              El nombre es obligatorio.
+            </p>
           }
-        </select>
-        <p class="text-xs text-gray-500 mt-1">Ej: 'Ropa' es padre de 'Pantalones'.</p>
-      </div>
+        </div>
 
-      <button type="submit"
-              [disabled]="categoriaForm.invalid"
-              class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400">
-        @if (esEdicion) {
-          Guardar Cambios
-        } @else {
-          Crear Categoría
-        }
-      </button>
-    </form>
+        <div>
+          <label for="idCategoriaPadre" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Pertenece a... (Opcional)
+          </label>
+          <div class="relative">
+            <select id="idCategoriaPadre" formControlName="idCategoriaPadre"
+                    class="block w-full appearance-none rounded-lg border-slate-200 bg-slate-50 p-3 text-sm focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm">
+              <option [ngValue]="null" class="text-slate-400">-- Es una Categoría Principal --</option>
+              @for (cat of listaCategoriasPadre; track cat.idCategoria) {
+                @if (cat.idCategoria !== categoriaId) {
+                  <option [ngValue]="cat.idCategoria">{{ cat.nombre }}</option>
+                }
+              }
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-slate-400 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Selecciona otra categoría solo si esta será una subcategoría (Hijo).
+          </p>
+        </div>
+
+        <div>
+          <label for="descripcion" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Descripción
+          </label>
+          <textarea id="descripcion" formControlName="descripcion" rows="4" placeholder="Breve descripción para mostrar en la tienda..."
+                    class="block w-full rounded-lg border-slate-200 bg-slate-50 p-3 text-sm focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm resize-none"></textarea>
+        </div>
+
+        <div class="pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <a routerLink="/admin/categorias"
+             class="w-full sm:w-auto text-center px-6 py-3 rounded-lg text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors border border-transparent">
+            Cancelar
+          </a>
+          <button type="submit" [disabled]="categoriaForm.invalid"
+                  class="w-full sm:w-auto px-8 py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-bold shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ esEdicion ? 'Guardar Cambios' : 'Crear Categoría' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
   }
 </div>

@@ -1,102 +1,126 @@
-<div class="flex h-screen bg-gray-100 overflow-hidden">
+<div class="flex h-screen bg-slate-50 overflow-hidden font-sans">
 
-  <aside class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white transition duration-300 transform md:relative md:translate-x-0 flex flex-col"
+  @if (isMobileMenuOpen) {
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+         (click)="toggleMenu()"></div>
+  }
+
+  <aside class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col shadow-2xl"
          [class.-translate-x-full]="!isMobileMenuOpen"
          [class.translate-x-0]="isMobileMenuOpen">
 
-    <div class="flex items-center justify-between p-4 h-16 bg-gray-900 border-b border-gray-700">
-      <h2 class="text-xl font-bold text-blue-400">Admin Panel</h2>
-      <button (click)="toggleMenu()" class="md:hidden text-gray-400 hover:text-white focus:outline-none">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <div class="flex items-center gap-3 px-6 pb-6 pt-10 md:pt-8 border-b border-slate-800 bg-slate-900 shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
+        TM
+      </div>
+      <div>
+        <h1 class="text-white font-bold text-lg leading-tight tracking-tight">Admin Panel</h1>
+        <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Tienda Margaríta</p>
+      </div>
+      <button (click)="toggleMenu()" class="ml-auto md:hidden text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-4">
-      <ul class="space-y-1 px-2">
-        <li>
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">📊</span> Resumen
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/productos" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">📦</span> Productos
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/ventas" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">💰</span> Ventas
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/usuarios" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">👥</span> Usuarios
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/marcas" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">🏷️</span> Marcas
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/categorias" routerLinkActive="bg-gray-800 text-white"
-             (click)="isMobileMenuOpen = false"
-             class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white">
-            <span class="mr-3">📂</span> Categorías
-          </a>
-        </li>
-      </ul>
+    <nav class="flex-1 overflow-y-auto custom-scrollbar py-6 px-4 space-y-1">
+
+      <a routerLink="/admin/dashboard" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+        <span class="font-medium text-sm">Resumen</span>
+      </a>
+
+      <a routerLink="/admin/productos" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+        <span class="font-medium text-sm">Productos</span>
+      </a>
+
+      <a routerLink="/admin/ventas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span class="font-medium text-sm">Ventas</span>
+      </a>
+
+      <a routerLink="/admin/usuarios" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+        <span class="font-medium text-sm">Usuarios</span>
+      </a>
+
+      <a routerLink="/admin/categorias" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+        <span class="font-medium text-sm">Categorías</span>
+      </a>
+
+      <a routerLink="/admin/marcas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+        <span class="font-medium text-sm">Marcas</span>
+      </a>
+
     </nav>
 
-    <div class="p-4 border-t border-gray-700 md:hidden">
-      <button (click)="logout()" class="flex items-center w-full px-4 py-2 text-red-400 hover:text-red-300 transition-colors">
-        <span class="mr-3">🚪</span> Cerrar Sesión
+    <div class="px-4 pt-4 pb-10 md:pb-4 border-t border-slate-800 bg-slate-900/50 shrink-0 relative">
+
+      @if (isUserMenuOpen) {
+        <div class="absolute bottom-full left-4 right-4 mb-3 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden transform transition-all origin-bottom animate-fadeIn z-50">
+
+          <div class="py-1">
+            <button (click)="logout()"
+                    class="w-full text-left px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-700/50 hover:text-red-300 transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+
+        <div class="fixed inset-0 z-40" (click)="toggleUserMenu()"></div>
+      }
+
+      <button (click)="toggleUserMenu()"
+              class="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-slate-800 border border-transparent hover:border-slate-700 group focus:outline-none">
+
+        <div class="h-10 w-10 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center text-slate-300 font-bold overflow-hidden group-hover:border-indigo-500 transition-colors">
+          {{ nombreMostrar ? nombreMostrar.charAt(0) : undefined | uppercase }}
+        </div>
+
+        <div class="overflow-hidden text-left flex-1">
+          <p class="text-sm font-bold text-white truncate group-hover:text-indigo-400 transition-colors">
+            {{ nombreMostrar || 'Usuario' }}
+          </p>
+          <p class="text-[10px] text-slate-500 truncate uppercase tracking-wider">Administrador</p>
+        </div>
+
+        <div class="text-slate-500 transition-transform duration-300" [class.rotate-180]="isUserMenuOpen">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+        </div>
+
       </button>
+
     </div>
   </aside>
 
-  @if (isMobileMenuOpen) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" (click)="toggleMenu()"></div>
-  }
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
-  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-
-    <header class="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10">
-
-      <button (click)="toggleMenu()" class="text-gray-500 focus:outline-none md:hidden p-2 rounded-md hover:bg-gray-100">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
-
-      <div class="flex items-center">
-        <h1 class="text-lg sm:text-xl font-bold text-gray-800 truncate ml-2 md:ml-0">Tienda Margaríta</h1>
-      </div>
-
-      <div class="flex items-center space-x-4">
-        <div class="hidden sm:flex flex-col items-end mr-2">
-          <span class="text-sm font-medium text-gray-700">Hola, {{ currentUsername }}</span>
-          <span class="text-xs text-gray-500">Administrador</span>
-        </div>
-        <button (click)="logout()"
-                class="hidden sm:inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-          Cerrar Sesión
+    <header class="md:hidden bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 z-20 shrink-0 shadow-sm">
+      <div class="flex items-center gap-3">
+        <button (click)="toggleMenu()" class="text-slate-500 hover:text-indigo-600 p-1">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
+        <span class="font-bold text-slate-800 text-lg">Tienda Margaríta</span>
+      </div>
+      <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-200">
+        {{ nombreMostrar ? nombreMostrar.charAt(0) : undefined | uppercase }}
       </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
-      <div class="max-w-7xl mx-auto">
+    <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8 scroll-smooth">
+      <div class="max-w-7xl mx-auto pb-10">
         <router-outlet></router-outlet>
       </div>
     </main>
+
   </div>
 </div>

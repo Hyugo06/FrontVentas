@@ -1,7 +1,7 @@
 <div class="flex flex-col md:flex-row min-h-screen bg-gray-50 relative">
 
   <div class="md:hidden bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-20">
-    <span class="font-bold text-lg text-gray-800">Tienda Margaríta</span>
+    <span class="font-bold text-lg text-gray-800">Prendas</span>
     <button (click)="toggleMobileMenu()" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center">
       <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
       Filtros
@@ -9,10 +9,10 @@
   </div>
 
   @if (showMobileMenu) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" (click)="toggleMobileMenu()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden" (click)="toggleMobileMenu()"></div>
   }
 
-  <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:block md:top-0 md:h-screen md:overflow-y-auto"
+  <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:block md:top-0 md:h-screen md:overflow-y-auto"
          [class.-translate-x-full]="!showMobileMenu"
          [class.translate-x-0]="showMobileMenu">
 
@@ -24,29 +24,69 @@
         </button>
       </div>
 
-      <nav>
+      <nav class="space-y-2">
+
         <button
           (click)="setCategoriaFiltro(''); showMobileMenu = false"
-          class="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 font-extrabold text-blue-600 mb-4"
-          [class.bg-blue-100]="filtroForm.get('categoria')?.value === ''">
-          Todas las Categorías
+          class="w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group border"
+          [class.bg-blue-600]="filtroForm.get('categoria')?.value === ''"
+          [class.text-white]="filtroForm.get('categoria')?.value === ''"
+          [class.shadow-md]="filtroForm.get('categoria')?.value === ''"
+          [class.border-transparent]="filtroForm.get('categoria')?.value === ''"
+          [class.bg-white]="filtroForm.get('categoria')?.value !== ''"
+          [class.text-gray-600]="filtroForm.get('categoria')?.value !== ''"
+          [class.border-gray-100]="filtroForm.get('categoria')?.value !== ''"
+          [class.hover:bg-gray-50]="filtroForm.get('categoria')?.value !== ''">
+          <span class="font-bold text-sm">Todas las Categorías</span>
+          <svg class="w-5 h-5" [class.opacity-50]="filtroForm.get('categoria')?.value !== ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
         </button>
 
-        @for (padre of categoriasPadre; track padre.idCategoria) {
-          <div class="mb-4">
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">
-              {{ padre.nombre }}
-            </h3>
-            @for (hijo of categoriasHijo; track hijo.idCategoria) {
-              @if (hijo.idCategoriaPadre === padre.idCategoria) {
-                <button
-                  (click)="setCategoriaFiltro(hijo.nombre); showMobileMenu = false"
-                  class="block w-full text-left py-1.5 px-3 rounded hover:bg-gray-100 text-gray-700 transition-colors"
-                  [class.bg-blue-100]="filtroForm.get('categoria')?.value === hijo.nombre"
-                  [class.font-semibold]="filtroForm.get('categoria')?.value === hijo.nombre">
-                  {{ hijo.nombre }}
-                </button>
-              }
+        @for (padre of categoriasTree; track padre.idCategoria) {
+          <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+
+            <button (click)="padre.isOpen = !padre.isOpen"
+                    class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group select-none">
+
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                  {{ padre.nombre.charAt(0) | uppercase }}
+                </div>
+                <span class="font-bold text-sm text-gray-700 group-hover:text-blue-700 transition-colors">
+                  {{ padre.nombre }}
+                </span>
+              </div>
+
+              <svg class="w-4 h-4 text-gray-400 transition-transform duration-300"
+                   [class.rotate-180]="padre.isOpen"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            @if (padre.isOpen) {
+              <div class="bg-gray-50/50 border-t border-gray-100 py-2 animate-fadeIn">
+
+                @if (padre.children && padre.children.length > 0) {
+                  @for (hijo of padre.children; track hijo.idCategoria) {
+                    <button
+                      (click)="setCategoriaFiltro(hijo.nombre); showMobileMenu = false"
+                      class="w-full text-left py-2 pl-14 pr-4 text-sm font-medium transition-colors relative"
+                      [class.text-blue-600]="filtroForm.get('categoria')?.value === hijo.nombre"
+                      [class.bg-blue-50]="filtroForm.get('categoria')?.value === hijo.nombre"
+                      [class.text-gray-500]="filtroForm.get('categoria')?.value !== hijo.nombre"
+                      [class.hover:text-gray-800]="filtroForm.get('categoria')?.value !== hijo.nombre">
+
+                      @if (filtroForm.get('categoria')?.value === hijo.nombre) {
+                        <div class="absolute left-10 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                      }
+
+                      {{ hijo.nombre }}
+                    </button>
+                  }
+                } @else {
+                  <p class="text-xs text-gray-400 italic pl-14 py-2">Sin subcategorías</p>
+                }
+              </div>
             }
           </div>
         }

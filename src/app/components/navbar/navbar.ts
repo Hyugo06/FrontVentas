@@ -33,6 +33,10 @@ export class NavbarComponent {
     });
   }
 
+  public showLoginButton(): boolean {
+    // Solo mostramos el botón si NO estamos logueados Y NO estamos en la página de login
+    return !this.authService.isLoggedIn() && this.router.url !== '/login';
+  }
 
   public isAdministrator(): boolean {
     return this.authService.isLoggedIn() && this.authService.getRole() === 'ADMIN';

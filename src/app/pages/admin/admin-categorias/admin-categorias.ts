@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Categoria, CategoriaDTO } from '../../../services/categoria'; // Tu servicio de Categoria
 
+interface CategoriaTree extends CategoriaDTO {
+  children?: CategoriaDTO[];
+  isOpen?: boolean;
+}
+
 @Component({
   selector: 'app-admin-categorias',
   standalone: true,
@@ -15,6 +20,7 @@ export class AdminCategoriasComponent implements OnInit {
   public categorias: CategoriaDTO[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
+  public categoriasTree: CategoriaTree[] = [];
 
   constructor(private categoriaService: Categoria) {}
 
@@ -26,9 +32,15 @@ export class AdminCategoriasComponent implements OnInit {
     this.cargando = true;
     this.error = null;
 
-    this.categoriaService.getCategoriasAdmin().subscribe({ // Llama al GET /api/admin/categorias
+    this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
         this.categorias = data;
+        const padres = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
+        padres.forEach(padre => {
+          padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria);
+          padre.isOpen = false;
+        });
+        this.categoriasTree = padres;
         this.cargando = false;
       },
       error: (err: any) => {
