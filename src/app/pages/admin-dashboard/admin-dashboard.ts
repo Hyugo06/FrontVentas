@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, tap,catchError } from 'rxjs/operators';
 import {Producto} from '../../services/producto';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -31,24 +32,34 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Suscripción al buscador "Blindada"
     this.searchForm.get('search')!.valueChanges.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      tap(() => this.cargando = true),
+      debounceTime(350),       // Espera a que termines de escribir
+      distinctUntilChanged(),  // No busca si escribes lo mismo
+      tap(() => {
+        this.cargando = true;
+        this.error = null;     // Limpiamos errores previos al buscar
+      }),
       switchMap(searchTerm => {
-        return this.productoService.getProductosAdmin(searchTerm);
+        return this.productoService.getProductosAdmin(searchTerm).pipe(
+          // --- AQUÍ ESTÁ EL TRUCO ---
+          // Si la búsqueda falla, atrapamos el error AQUÍ DENTRO.
+          // Esto evita que el buscador "muera" y deje de escuchar.
+          catchError(err => {
+            console.error('Error en búsqueda:', err);
+            this.error = 'Ocurrió un error al buscar.';
+            // Retornamos una lista vacía para que la interfaz sepa que terminó
+            return of([]);
+          })
+        );
       })
-    ).subscribe({
-      next: (data: any) => {
-        this.productos = data;
-        this.cargando = false;
-      },
-      error: (err: any) => {
-        this.error = 'No se pudieron cargar los productos.';
-        this.cargando = false;
-      }
+    ).subscribe((data: any) => {
+      // Como ya atrapamos el error arriba, aquí siempre llega data (vacía o llena)
+      this.productos = data;
+      this.cargando = false;
     });
 
+    // Disparar la carga inicial
     this.searchForm.get('search')!.setValue('');
   }
 

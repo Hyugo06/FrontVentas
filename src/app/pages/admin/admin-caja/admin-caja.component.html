@@ -1,0 +1,90 @@
+<div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+  <h1 class="text-3xl font-bold text-slate-800 mb-2">Gestión de Caja</h1>
+  <p class="text-slate-500 mb-8">Control de apertura y cierre de turno.</p>
+
+  @if (cargando) {
+    <div class="animate-pulse flex space-x-4">
+      <div class="h-12 bg-slate-200 rounded w-full"></div>
+    </div>
+  } @else {
+
+    @if (estadoCaja === 'CERRADA') {
+      <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+        <div class="bg-slate-900 p-6 text-white">
+          <h2 class="text-xl font-bold">🔴 Caja Cerrada</h2>
+          <p class="text-slate-400 text-sm">Debes abrir caja para empezar a vender.</p>
+        </div>
+
+        <div class="p-8 flex flex-col items-center justify-center space-y-6">
+          <div class="w-full max-w-xs">
+            <label class="block text-sm font-bold text-slate-700 mb-2">Monto Inicial (Sencillo)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-slate-400 font-bold">S/</span>
+              <input type="number" [(ngModel)]="montoInput" placeholder="0.00"
+                     class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-bold text-lg text-slate-800">
+            </div>
+          </div>
+
+          <button (click)="abrirCaja()"
+                  class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition-all w-full max-w-xs">
+            Abrir Turno
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (estadoCaja === 'ABIERTA') {
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-400 uppercase">Estado Actual</h3>
+              <p class="text-green-500 font-bold text-lg flex items-center gap-2">
+                <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                ABIERTA
+              </p>
+            </div>
+            <div class="text-right">
+              <h3 class="text-sm font-bold text-slate-400 uppercase">Inicio</h3>
+              <p class="text-slate-700 font-mono text-sm">{{ datosCaja.fechaApertura | date:'shortTime' }}</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between p-3 bg-slate-50 rounded-lg">
+              <span class="text-slate-600 font-medium">Base Inicial</span>
+              <span class="font-bold text-slate-800">S/ {{ datosCaja.montoInicial | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between p-3 bg-indigo-50 rounded-lg text-indigo-900">
+              <span class="font-medium">Ventas (Efectivo)</span>
+              <span class="font-bold">+ S/ {{ datosCaja.ventasActuales | number:'1.2-2' }}</span>
+            </div>
+            <div class="border-t border-slate-200 pt-3 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-400 uppercase">Total Esperado</span>
+              <span class="text-2xl font-extrabold text-slate-900">S/ {{ datosCaja.totalEsperado | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center">
+          <h3 class="text-lg font-bold mb-4">Cerrar Turno</h3>
+          <p class="text-slate-400 text-sm mb-6">Cuenta el dinero físico en el cajón e ingrésalo aquí.</p>
+
+          <label class="block text-xs font-bold text-indigo-400 uppercase mb-2">Monto Real (En mano)</label>
+          <div class="relative mb-6">
+            <span class="absolute left-3 top-3 text-slate-500 font-bold">S/</span>
+            <input type="number" [(ngModel)]="montoInput" placeholder="0.00"
+                   class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:border-indigo-500 outline-none font-bold text-xl">
+          </div>
+
+          <button (click)="cerrarCaja()"
+                  class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-red-900/50">
+            Realizar Arqueo y Cerrar
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -26,14 +26,9 @@ export class Auth { // Tu clase 'Auth'
   private http = inject(HttpClient);
 
   constructor() {
-    // El constructor ahora está casi vacío,
-    // porque el BehaviorSubject se inicializa arriba.
-    // (Ya no necesitamos this.loggedIn.next(this.isLoggedIn()); aquí)
+
   }
 
-  /**
-   * Guarda el token, llama a /me, y guarda el ROL y el USERNAME
-   */
   public login(username: string, password: string): Observable<any> {
     const tokenTemp = 'Basic ' + btoa(username + ':' + password);
     const headers = { 'Authorization': tokenTemp };

@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Categoria, CategoriaDTO } from '../../../services/categoria';
+import { Categoria, CategoriaDTO } from '../../../services/categoria'; // Asegúrate que la ruta sea correcta
 
-interface CategoriaTree extends CategoriaDTO {
-  children?: CategoriaDTO[];
-  isOpen?: boolean;
+// Extendemos la interfaz para la vista (añadimos propiedades visuales)
+interface CategoriaView extends CategoriaDTO {
+  subcategorias?: CategoriaDTO[];
+  isOpen?: boolean; // Para controlar el acordeón
 }
 
 @Component({
@@ -17,10 +18,9 @@ interface CategoriaTree extends CategoriaDTO {
 })
 export class AdminCategoriasComponent implements OnInit {
 
-  public categorias: CategoriaDTO[] = [];
+  public categoriasArbol: CategoriaView[] = []; // Lista organizada (Padres con hijos dentro)
   public cargando: boolean = true;
   public error: string | null = null;
-  public categoriasTree: CategoriaTree[] = [];
 
   constructor(private categoriaService: Categoria) {}
 
@@ -28,44 +28,51 @@ export class AdminCategoriasComponent implements OnInit {
     this.cargarCategorias();
   }
 
-  // --- MÉTODO REUTILIZABLE ---
   cargarCategorias(): void {
     this.cargando = true;
-    this.error = null;
-
     this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
-        this.categorias = data;
-        // Reconstruimos el árbol desde cero con los datos frescos
-        const padres = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
-        padres.forEach(padre => {
-          padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria);
-          padre.isOpen = false; // Opcional: Podrías guardar el estado abierto si quisieras ser muy pro
+        // --- MAGIA: ORGANIZAR EN ÁRBOL ---
+        // 1. Separamos Padres (los que no tienen idCategoriaPadre)
+        const padres = data.filter(c => !c.idCategoriaPadre);
+
+        // 2. Separamos Hijos
+        const hijos = data.filter(c => c.idCategoriaPadre);
+
+        // 3. Metemos los hijos dentro de sus padres
+        this.categoriasArbol = padres.map(padre => {
+          const misHijos = hijos.filter(h => h.idCategoriaPadre === padre.idCategoria);
+          return {
+            ...padre,
+            subcategorias: misHijos,
+            isOpen: false // Por defecto cerrados
+          };
         });
-        this.categoriasTree = padres;
+
         this.cargando = false;
       },
       error: (err: any) => {
-        console.error('Error cargando categorías:', err);
+        console.error(err);
         this.error = 'No se pudieron cargar las categorías.';
         this.cargando = false;
       }
     });
   }
 
-  eliminarCategoria(id: number): void {
-    if (confirm('¿Eliminar categoría?')) {
-      this.cargando = true; // Feedback visual
+  toggleAcordeon(categoria: CategoriaView): void {
+    categoria.isOpen = !categoria.isOpen;
+  }
 
-      this.categoriaService.deleteCategoria(id).subscribe({
+  eliminarCategoria(categoria: CategoriaDTO): void {
+    if (confirm(`¿Estás seguro de eliminar "${categoria.nombre}"?`)) {
+      this.cargando = true;
+      this.categoriaService.deleteCategoria(categoria.idCategoria).subscribe({
         next: () => {
-          // --- RECARGA AUTOMÁTICA ---
-          this.cargarCategorias();
+          this.cargarCategorias(); // Recargar la lista
         },
         error: (err: any) => {
           this.cargando = false;
-          console.error('Error al eliminar categoría:', err);
-          this.error = 'No se puede eliminar: La categoría tiene subcategorías o productos asignados.';
+          alert('No se puede eliminar: Probablemente tenga productos o subcategorías asociadas.');
         }
       });
     }

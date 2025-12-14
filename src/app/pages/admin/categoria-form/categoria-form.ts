@@ -19,6 +19,7 @@ export class CategoriaFormComponent implements OnInit {
   public categoriaId: number | null = null;
   public error: string | null = null;
   public cargando: boolean = true;
+  public dropdownOpen: boolean = false;
 
   // Lista para el dropdown de "Categoría Padre"
   public listaCategoriasPadre: CategoriaDTO[] = [];
@@ -38,6 +39,25 @@ export class CategoriaFormComponent implements OnInit {
     });
   }
 
+  toggleDropdown(): void {
+    this.dropdownOpen = !this.dropdownOpen;
+  }
+
+  seleccionarPadre(id: number | null): void {
+    this.categoriaForm.patchValue({ idCategoriaPadre: id });
+    this.dropdownOpen = false; // Cerramos al elegir
+  }
+
+  get nombrePadreSeleccionado(): string {
+    const idSeleccionado = this.categoriaForm.get('idCategoriaPadre')?.value;
+
+    if (idSeleccionado === null) return '-- Es una Categoría Principal --';
+
+    const categoria = this.listaCategoriasPadre.find(c => c.idCategoria === idSeleccionado);
+    return categoria ? categoria.nombre : '-- Es una Categoría Principal --';
+  }
+
+
   ngOnInit(): void {
     // 1. Cargar el dropdown de categorías padre
     this.cargarCategoriasPadre();
@@ -53,9 +73,6 @@ export class CategoriaFormComponent implements OnInit {
     }
   }
 
-  /**
-   * Carga la lista de categorías para el dropdown
-   */
   cargarCategoriasPadre(): void {
     this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
@@ -73,9 +90,6 @@ export class CategoriaFormComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga los datos de la categoría en el formulario (modo edición)
-   */
   cargarCategoria(id: number): void {
     this.categoriaService.getCategoriaPorId(id.toString()).subscribe({
       next: (data: any) => {
@@ -94,9 +108,6 @@ export class CategoriaFormComponent implements OnInit {
     });
   }
 
-  /**
-   * Se llama al presionar el botón de Guardar/Crear
-   */
   onSubmit(): void {
     if (this.categoriaForm.invalid) {
       this.error = 'El campo "Nombre" es obligatorio.';
@@ -104,13 +115,10 @@ export class CategoriaFormComponent implements OnInit {
     }
     this.error = null;
     this.cargando = true;
-
-    // Construimos el objeto que la API espera
     const data = this.categoriaForm.value;
     const categoriaData = {
       nombre: data.nombre,
       descripcion: data.descripcion,
-      // Construimos el objeto "categoriaPadre" que el backend espera
       categoriaPadre: data.idCategoriaPadre ? { idCategoria: data.idCategoriaPadre } : null
     };
 

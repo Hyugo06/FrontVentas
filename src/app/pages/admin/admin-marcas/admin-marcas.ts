@@ -40,19 +40,19 @@ export class AdminMarcasComponent implements OnInit {
     });
   }
 
-  eliminarMarca(id: number): void {
-    if (confirm('¿Estás seguro de eliminar esta marca?')) {
-      this.cargando = true; // Feedback visual
+  // Cambia la firma de la función para recibir el objeto completo
+  eliminarMarca(marca: MarcaDTO): void { // <--- Cambiado de 'id: number' a 'marca: MarcaDTO'
+    if (confirm(`¿Estás seguro de eliminar la marca "${marca.nombre}"?`)) {
+      this.cargando = true;
 
-      this.marcaService.deleteMarca(id).subscribe({
+      // Aquí extraemos el ID del objeto
+      this.marcaService.deleteMarca(marca.idMarca).subscribe({
         next: () => {
-          // --- RECARGA AUTOMÁTICA ---
           this.cargarMarcas();
         },
         error: (err: any) => {
           this.cargando = false;
           console.error('Error al eliminar marca:', err);
-          // Mensaje amigable si la marca está ocupada
           this.error = 'No se puede eliminar: Esta marca está asignada a productos.';
         }
       });

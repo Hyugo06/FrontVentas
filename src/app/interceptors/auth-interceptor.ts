@@ -1,27 +1,29 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core'; // ¡Importa inject!
-import { Auth } from '../services/auth'; // ¡Importa tu servicio!
+import { inject } from '@angular/core';
+import { Auth } from '../services/auth';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
-  // Inyectamos el servicio de autenticación
   const authService = inject(Auth);
-
-  // Obtenemos el token guardado
   const authToken = authService.getAuthToken();
 
-  // Si el token existe...
+  // --- 1. LA NUEVA REGLA DE SEGURIDAD (ANTI-FANTASMAS) ---
+  // Si la URL es para el login ("/me") Y ya trae una autorización manual...
+  // ¡DEJAMOS QUE PASE SIN TOCARLA!
+  if (req.url.includes('/me') && req.headers.has('Authorization')) {
+    return next(req);
+  }
+  // -------------------------------------------------------
+
+  // 2. Comportamiento normal para el resto de peticiones
   if (authToken) {
-    // Clonamos la petición (request) y le añadimos el header
     const authReq = req.clone({
       setHeaders: {
         Authorization: authToken
       }
     });
-    // Continuamos con la petición clonada (que ya tiene el header)
     return next(authReq);
   }
 
-  // Si no hay token, continuamos con la petición original
   return next(req);
 };

@@ -1,15 +1,15 @@
 <div class="flex h-screen bg-slate-50 overflow-hidden font-sans">
 
   @if (isMobileMenuOpen) {
-    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity"
          (click)="toggleMenu()"></div>
   }
 
-  <aside class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col shadow-2xl"
+  <aside class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl"
          [class.-translate-x-full]="!isMobileMenuOpen"
          [class.translate-x-0]="isMobileMenuOpen">
 
-    <div class="flex items-center gap-3 px-6 pb-6 pt-10 md:pt-8 border-b border-slate-800 bg-slate-900 shrink-0">
+    <div class="flex items-center gap-3 px-6 pb-6 pt-10 lg:pt-8 border-b border-slate-800 bg-slate-900 shrink-0">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
         TM
       </div>
@@ -17,18 +17,17 @@
         <h1 class="text-white font-bold text-lg leading-tight tracking-tight">Admin Panel</h1>
         <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Tienda Margaríta</p>
       </div>
-      <button (click)="toggleMenu()" class="ml-auto md:hidden text-slate-400 hover:text-white">
+      <button (click)="toggleMenu()" class="ml-auto lg:hidden text-slate-400 hover:text-white">
         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </div>
 
     <nav class="flex-1 overflow-y-auto custom-scrollbar py-6 px-4 space-y-1">
-
-      <a routerLink="/admin/dashboard" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
-         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
-        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-        <span class="font-medium text-sm">Resumen</span>
-      </a>
+      <ng-content></ng-content> <a routerLink="/admin/dashboard" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+                                   class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+      <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+      <span class="font-medium text-sm">Resumen</span>
+    </a>
 
       @if (can('GESTIONAR_PRODUCTOS')) {
         <a routerLink="/admin/productos" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
@@ -39,44 +38,49 @@
       }
 
       @if (can('GESTIONAR_VENTAS')) {
-      <a routerLink="/admin/ventas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
-         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
-        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span class="font-medium text-sm">Ventas</span>
-      </a>
+        <a routerLink="/admin/ventas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span class="font-medium text-sm">Ventas</span>
+        </a>
       }
 
+      <!--      @if (can('GESTIONAR_VENTAS')) {-->
+      <!--        <a routerLink="/admin/caja" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"-->
+      <!--           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">-->
+      <!--          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>-->
+      <!--          <span class="font-medium text-sm">Caja / Turno</span>-->
+      <!--        </a>-->
+      <!--      }-->
+
       @if (can('GESTIONAR_USUARIOS')) {
-      <a routerLink="/admin/usuarios" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
-         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
-        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-        <span class="font-medium text-sm">Usuarios</span>
-      </a>
+        <a routerLink="/admin/usuarios" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          <span class="font-medium text-sm">Usuarios</span>
+        </a>
       }
 
       @if (can('GESTIONAR_CATEGORIAS')) {
-      <a routerLink="/admin/categorias" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
-         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
-        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-        <span class="font-medium text-sm">Categorías</span>
-      </a>
+        <a routerLink="/admin/categorias" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+          <span class="font-medium text-sm">Categorías</span>
+        </a>
       }
 
       @if (can('GESTIONAR_MARCAS')) {
-      <a routerLink="/admin/marcas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
-         class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
-        <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-        <span class="font-medium text-sm">Marcas</span>
-      </a>
+        <a routerLink="/admin/marcas" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"
+           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+          <span class="font-medium text-sm">Marcas</span>
+        </a>
       }
-
     </nav>
 
     <div class="px-4 pt-4 pb-10 md:pb-4 border-t border-slate-800 bg-slate-900/50 shrink-0 relative">
-
       @if (isUserMenuOpen) {
         <div class="absolute bottom-full left-4 right-4 mb-3 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden transform transition-all origin-bottom animate-fadeIn z-50">
-
           <div class="py-1">
             <button (click)="logout()"
                     class="w-full text-left px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-700/50 hover:text-red-300 transition-colors flex items-center gap-2">
@@ -85,36 +89,31 @@
             </button>
           </div>
         </div>
-
         <div class="fixed inset-0 z-40" (click)="toggleUserMenu()"></div>
       }
 
       <button (click)="toggleUserMenu()"
               class="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-slate-800 border border-transparent hover:border-slate-700 group focus:outline-none">
-
         <div class="h-10 w-10 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center text-slate-300 font-bold overflow-hidden group-hover:border-indigo-500 transition-colors">
           {{ nombreMostrar ? nombreMostrar.charAt(0) : undefined | uppercase }}
         </div>
-
         <div class="overflow-hidden text-left flex-1">
           <p class="text-sm font-bold text-white truncate group-hover:text-indigo-400 transition-colors">
             {{ nombreMostrar || 'Usuario' }}
           </p>
           <p class="text-[10px] text-slate-500 truncate uppercase tracking-wider">Administrador</p>
         </div>
-
         <div class="text-slate-500 transition-transform duration-300" [class.rotate-180]="isUserMenuOpen">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
         </div>
-
       </button>
-
     </div>
+
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
-    <header class="md:hidden bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 z-20 shrink-0 shadow-sm">
+    <header class="lg:hidden bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 z-20 shrink-0 shadow-sm">
       <div class="flex items-center gap-3">
         <button (click)="toggleMenu()" class="text-slate-500 hover:text-indigo-600 p-1">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -127,7 +126,7 @@
     </header>
 
     <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8 scroll-smooth">
-      <div class="max-w-7xl mx-auto pb-10">
+      <div class="w-full pb-10">
         <router-outlet></router-outlet>
       </div>
     </main>

@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router'; // Importamos RouterLink
+import { Router, RouterLink } from '@angular/router';
 import { Cart, CartItem } from '../../services/cart';
 import { ClienteService } from '../../services/cliente';
 import { Venta } from '../../services/venta';
 import { Auth } from '../../services/auth';
 import { DetalleVentaDTO, VentaRequestDTO } from '../../model/venta-request.dto';
 
-// --- IMPORTAR CONFETI ---
 import confetti from 'canvas-confetti';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-checkout',
@@ -25,11 +25,12 @@ export class CheckoutComponent implements OnInit {
   public totalMonto: number = 0;
   public cargando: boolean = false;
   public error: string | null = null;
+  public esClienteAnonimo: boolean = false;
 
   // Variables para el Modal de Éxito
   public showSuccessModal: boolean = false;
-  public countdown: number = 5; // Segundos para redireccionar
-  public circleDashOffset: number = 0; // Para la animación del círculo SVG
+  public countdown: number = 5;
+  public circleDashOffset: number = 0;
   private timerInterval: any;
 
   constructor(
@@ -59,41 +60,123 @@ export class CheckoutComponent implements OnInit {
         sum + (item.producto.precioVenta * item.cantidad), 0
       );
 
-      // Solo redirigir si no hay items y NO estamos mostrando el modal de éxito
       if (items.length === 0 && !this.showSuccessModal) {
         this.router.navigate(['/productos']);
       }
     });
   }
 
-  public procesarCompra(): void {
-    if (this.checkoutForm.invalid || this.cartItems.length === 0) {
-      this.error = 'Por favor, completa los datos correctamente.';
+  // --- NUEVAS FUNCIONES DE VALIDACIÓN EN VIVO ---
+
+  validarSoloNumeros(event: any): void {
+    const input = event.target;
+    // Reemplaza todo lo que NO sea número (0-9) por vacío
+    input.value = input.value.replace(/[^0-9]/g, '');
+
+    // Actualizamos el valor en el formulario de Angular
+    const controlName = input.getAttribute('formControlName');
+    if (controlName) {
+      this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
+    }
+  }
+
+  validarSoloLetras(event: any): void {
+    const input = event.target;
+    // Reemplaza todo lo que NO sea letra o espacio (incluye tildes y ñ)
+    input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+
+    const controlName = input.getAttribute('formControlName');
+    if (controlName) {
+      this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
+    }
+  }
+  // ---------------------------------------------
+
+  toggleClienteAnonimo(): void {
+    this.esClienteAnonimo = !this.esClienteAnonimo;
+    const clienteGroup = this.checkoutForm.get('cliente');
+
+    if (this.esClienteAnonimo) {
+      clienteGroup?.get('nombres')?.clearValidators();
+      clienteGroup?.get('apellidos')?.clearValidators();
+      clienteGroup?.get('dni')?.clearValidators();
+      clienteGroup?.get('celular')?.clearValidators();
+    } else {
+      clienteGroup?.get('nombres')?.setValidators(Validators.required);
+      clienteGroup?.get('apellidos')?.setValidators(Validators.required);
+      clienteGroup?.get('dni')?.setValidators([Validators.required, Validators.pattern('^[0-9]{8}$')]);
+      clienteGroup?.get('celular')?.setValidators([Validators.required, Validators.pattern('^[0-9]{9}$')]);
+    }
+
+    clienteGroup?.get('nombres')?.updateValueAndValidity();
+    clienteGroup?.get('apellidos')?.updateValueAndValidity();
+    clienteGroup?.get('dni')?.updateValueAndValidity();
+    clienteGroup?.get('celular')?.updateValueAndValidity();
+  }
+
+  public intentarProcesarCompra(): void {
+    if (!this.esClienteAnonimo && this.checkoutForm.invalid) {
+      this.checkoutForm.markAllAsTouched();
+      this.error = 'Por favor, completa los datos del cliente correctamente.';
       return;
     }
 
+    if (this.cartItems.length === 0) {
+      this.error = 'El carrito está vacío.';
+      return;
+    }
+
+    Swal.fire({
+      title: '¿Confirmar Venta?',
+      text: `Monto Total: S/ ${this.totalMonto.toFixed(2)}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, cobrar',
+      cancelButtonText: 'Cancelar',
+      heightAuto: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.ejecutarVentaReal();
+      }
+    });
+  }
+
+  private ejecutarVentaReal(): void {
     this.cargando = true;
     this.error = null;
 
+    let clienteDataFinal;
+
+    if (this.esClienteAnonimo) {
+      clienteDataFinal = {
+        nombres: 'Cliente',
+        apellidos: 'General',
+        dni: '00000000',
+        celular: '999999999',
+        email: null
+      };
+    } else {
+      clienteDataFinal = this.checkoutForm.get('cliente')?.value;
+    }
+
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
-      idVariante: item.variante?.idVariante, // <-- ¡ENVIAMOS LA VARIANTE!
+      idVariante: item.variante?.idVariante,
       cantidad: item.cantidad
     }));
 
     const ventaData: VentaRequestDTO = {
-      clienteData: this.checkoutForm.get('cliente')?.value,
+      clienteData: clienteDataFinal,
       tipoComprobante: this.checkoutForm.get('tipoComprobante')?.value,
       detalles: detalles
     };
 
     this.ventaService.procesarVenta(ventaData).subscribe({
       next: (response: any) => {
-        // 1. Limpiar carrito y estado de carga
         this.cartService.clearCart();
         this.cargando = false;
-
-        // 2. Mostrar el modal y lanzar confeti
         this.showSuccessModal = true;
         this.lanzarConfeti();
         this.iniciarConteoRegresivo();
@@ -101,14 +184,12 @@ export class CheckoutComponent implements OnInit {
       error: (err: any) => {
         this.error = 'Error al procesar la venta. ' + (err.error?.message || err.message);
         this.cargando = false;
+        Swal.fire('Error', this.error || 'Algo salió mal', 'error');
       }
     });
   }
 
-  // --- LÓGICA VISUAL ---
-
   lanzarConfeti(): void {
-    // Lanza confeti desde el centro
     confetti({
       particleCount: 150,
       spread: 70,
@@ -118,23 +199,19 @@ export class CheckoutComponent implements OnInit {
   }
 
   iniciarConteoRegresivo(): void {
-    const totalTime = 5; // 5 segundos
+    const totalTime = 5;
     this.countdown = totalTime;
-
-    // Lógica para el círculo SVG (Circunferencia aprox de radio 18 = 113)
     const circumference = 113;
 
     this.timerInterval = setInterval(() => {
       this.countdown--;
-
-      // Calcular el offset para la animación del borde
       const progress = this.countdown / totalTime;
       this.circleDashOffset = circumference - (progress * circumference);
 
       if (this.countdown <= 0) {
         this.cerrarYRedirigir();
       }
-    }, 5000);
+    }, 1000);
   }
 
   cerrarYRedirigir(): void {

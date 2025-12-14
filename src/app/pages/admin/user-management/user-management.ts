@@ -40,19 +40,17 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  desactivarUsuario(id: number): void {
-    if (confirm('¿Estás seguro de que quieres DESACTIVAR este usuario?')) {
-      // Optimizamos la experiencia visual: Ponemos "cargando" mientras borra
+  eliminarUsuario(usuario: any): void { // <--- Aceptamos el objeto entero o el ID, pero mejor el objeto para confirmar
+    if (confirm(`¿Estás seguro de desactivar a ${usuario.nombreUsuario}?`)) {
       this.cargando = true;
-
-      this.authService.deleteUsuario(id).subscribe({
+      // Usamos el ID del usuario que recibimos
+      this.authService.deleteUsuario(usuario.idUsuario).subscribe({
         next: () => {
-          // --- AQUÍ ESTÁ LA MAGIA: RECARGAMOS LA LISTA ---
           this.cargarUsuarios();
         },
         error: (err: any) => {
-          this.cargando = false; // Quitamos el loading si falla
-          console.error('Error al desactivar usuario:', err);
+          this.cargando = false;
+          console.error('Error al desactivar:', err);
           this.error = 'Error al desactivar la cuenta.';
         }
       });
