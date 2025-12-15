@@ -45,6 +45,18 @@
         </a>
       }
 
+      @if (can('GESTIONAR_CUPONES')) {
+        <a routerLink="/admin/cupones/nuevo"
+           routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50"
+           (click)="closeMenu()"
+           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">
+          <svg class="w-5 h-5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2a3 3 0 003 3h2v4h-2a3 3 0 00-3 3v2H9v-2a3 3 0 00-3-3H4v-4h2a3 3 0 003-3V5h6z" />
+          </svg>
+          <span class="font-medium text-sm">Generar Cupón</span>
+        </a>
+      }
+
       <!--      @if (can('GESTIONAR_VENTAS')) {-->
       <!--        <a routerLink="/admin/caja" routerLinkActive="bg-indigo-600 text-white shadow-md shadow-indigo-900/50" (click)="closeMenu()"-->
       <!--           class="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white cursor-pointer">-->

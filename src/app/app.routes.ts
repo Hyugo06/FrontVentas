@@ -20,6 +20,7 @@ import { AdminVentaDetalleComponent } from './pages/admin/admin-venta-detalle/ad
 import { CartPageComponent } from './pages/cart-page/cart-page';
 import { AdminMetricsComponent } from './pages/admin/admin-metrics/admin-metrics';
 import { AdminClientesComponent } from './pages/admin/admin-clientes/admin-clientes';
+import {CuponFormComponent} from './pages/admin/cupon-form/cupon-form';
 // import {AdminCajaComponent} from './pages/admin/admin-caja/admin-caja.component';
 
 export const routes: Routes = [
@@ -76,6 +77,8 @@ export const routes: Routes = [
       { path: 'usuarios', component: UserManagementComponent },
       { path: 'usuarios/nuevo', component: UsuarioFormComponent },
       { path: 'usuarios/editar/:id', component: UsuarioFormComponent },
+
+      { path: 'cupones/nuevo', component: CuponFormComponent },
 
       { path: 'marcas', component: AdminMarcasComponent },
       { path: 'marcas/nuevo', component: MarcaFormComponent },
