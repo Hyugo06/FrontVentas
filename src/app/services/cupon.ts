@@ -27,4 +27,19 @@ export class CuponService {
   obtenerTodos(): Observable<Cupon[]> {
     return this.http.get<Cupon[]>(this.apiUrl);
   }
+
+  // Obtener un cupón específico (para editar)
+  obtenerPorId(id: number): Observable<Cupon> {
+    return this.http.get<Cupon>(`${this.apiUrl}/${id}`);
+  }
+
+  // Actualizar
+  actualizar(id: number, cupon: Cupon): Observable<Cupon> {
+    return this.http.put<Cupon>(`${this.apiUrl}/${id}`, cupon);
+  }
+
+  // Eliminar
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

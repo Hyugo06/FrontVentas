@@ -21,6 +21,7 @@ import { CartPageComponent } from './pages/cart-page/cart-page';
 import { AdminMetricsComponent } from './pages/admin/admin-metrics/admin-metrics';
 import { AdminClientesComponent } from './pages/admin/admin-clientes/admin-clientes';
 import {CuponFormComponent} from './pages/admin/cupon-form/cupon-form';
+import {CuponListComponent} from './pages/admin/cupon-list/cupon-list';
 // import {AdminCajaComponent} from './pages/admin/admin-caja/admin-caja.component';
 
 export const routes: Routes = [
@@ -78,7 +79,9 @@ export const routes: Routes = [
       { path: 'usuarios/nuevo', component: UsuarioFormComponent },
       { path: 'usuarios/editar/:id', component: UsuarioFormComponent },
 
+      { path: 'cupones', component: CuponListComponent },      // <--- RUTA DE LA LISTA
       { path: 'cupones/nuevo', component: CuponFormComponent },
+      { path: 'cupones/editar/:id', component: CuponFormComponent },
 
       { path: 'marcas', component: AdminMarcasComponent },
       { path: 'marcas/nuevo', component: MarcaFormComponent },

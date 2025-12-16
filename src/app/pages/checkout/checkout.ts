@@ -6,7 +6,9 @@ import { Cart, CartItem } from '../../services/cart';
 import { ClienteService } from '../../services/cliente';
 import { Venta } from '../../services/venta';
 import { Auth } from '../../services/auth';
-import { DetalleVentaDTO, VentaRequestDTO } from '../../model/venta-request.dto';
+import { DetalleVentaDTO } from '../../model/venta-request.dto';
+import { CuponService } from '../../services/cupon';
+import { Cupon } from '../../model/cupon';
 
 import confetti from 'canvas-confetti';
 import Swal from 'sweetalert2';
@@ -22,16 +24,23 @@ export class CheckoutComponent implements OnInit {
 
   public checkoutForm: FormGroup;
   public cartItems: CartItem[] = [];
-  public totalMonto: number = 0;
+  public totalMonto: number = 0; // Subtotal
   public cargando: boolean = false;
   public error: string | null = null;
   public esClienteAnonimo: boolean = false;
 
-  // Variables para el Modal de Éxito
+  // Modal de Éxito
   public showSuccessModal: boolean = false;
   public countdown: number = 5;
   public circleDashOffset: number = 0;
   private timerInterval: any;
+
+  // Variables Cupón
+  cuponAplicado: Cupon | null = null;
+  montoDescuento: number = 0;
+  mensajeCupon: string = '';
+  cuponValido: boolean = false;
+  cargandoCupon: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -39,7 +48,8 @@ export class CheckoutComponent implements OnInit {
     private authService: Auth,
     private router: Router,
     private clienteService: ClienteService,
-    private ventaService: Venta
+    private ventaService: Venta,
+    private cuponService: CuponService
   ) {
     this.checkoutForm = this.fb.group({
       tipoComprobante: ['boleta', Validators.required],
@@ -56,9 +66,15 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.cartService.items$.subscribe(items => {
       this.cartItems = items;
+
+      // Calculamos el total usando reduce (NO usamos cartService.total())
       this.totalMonto = this.cartItems.reduce((sum, item) =>
         sum + (item.producto.precioVenta * item.cantidad), 0
       );
+
+      if (this.cuponAplicado) {
+        this.calcularDescuento(this.totalMonto);
+      }
 
       if (items.length === 0 && !this.showSuccessModal) {
         this.router.navigate(['/productos']);
@@ -66,31 +82,24 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  // --- NUEVAS FUNCIONES DE VALIDACIÓN EN VIVO ---
+  // --- GETTERS & HELPERS ---
+  get totalFinal(): number {
+    return this.totalMonto - this.montoDescuento;
+  }
 
   validarSoloNumeros(event: any): void {
     const input = event.target;
-    // Reemplaza todo lo que NO sea número (0-9) por vacío
     input.value = input.value.replace(/[^0-9]/g, '');
-
-    // Actualizamos el valor en el formulario de Angular
     const controlName = input.getAttribute('formControlName');
-    if (controlName) {
-      this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
-    }
+    if (controlName) this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
   }
 
   validarSoloLetras(event: any): void {
     const input = event.target;
-    // Reemplaza todo lo que NO sea letra o espacio (incluye tildes y ñ)
     input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-
     const controlName = input.getAttribute('formControlName');
-    if (controlName) {
-      this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
-    }
+    if (controlName) this.checkoutForm.get('cliente')?.get(controlName)?.setValue(input.value);
   }
-  // ---------------------------------------------
 
   toggleClienteAnonimo(): void {
     this.esClienteAnonimo = !this.esClienteAnonimo;
@@ -107,20 +116,58 @@ export class CheckoutComponent implements OnInit {
       clienteGroup?.get('dni')?.setValidators([Validators.required, Validators.pattern('^[0-9]{8}$')]);
       clienteGroup?.get('celular')?.setValidators([Validators.required, Validators.pattern('^[0-9]{9}$')]);
     }
-
-    clienteGroup?.get('nombres')?.updateValueAndValidity();
-    clienteGroup?.get('apellidos')?.updateValueAndValidity();
-    clienteGroup?.get('dni')?.updateValueAndValidity();
-    clienteGroup?.get('celular')?.updateValueAndValidity();
+    ['nombres', 'apellidos', 'dni', 'celular'].forEach(field =>
+      clienteGroup?.get(field)?.updateValueAndValidity()
+    );
   }
 
+  // --- LÓGICA CUPONES ---
+  aplicarCupon(codigo: string) {
+    if (!codigo) return;
+    const codigoMayus = codigo.toUpperCase();
+    this.cargandoCupon = true;
+    this.mensajeCupon = '';
+
+    // AQUÍ ESTABA EL ERROR: Usamos this.totalMonto
+    const totalCompra = this.totalMonto;
+
+    this.cuponService.validarCupon(codigoMayus, totalCompra).subscribe({
+      next: (cupon) => {
+        this.cuponAplicado = cupon;
+        this.cuponValido = true;
+        this.mensajeCupon = `¡Descuento aplicado!`;
+        this.calcularDescuento(totalCompra);
+        this.cargandoCupon = false;
+      },
+      error: (err) => {
+        this.cuponAplicado = null;
+        this.cuponValido = false;
+        this.montoDescuento = 0;
+        this.cargandoCupon = false;
+        this.mensajeCupon = err.error?.mensaje || 'El cupón no es válido';
+      }
+    });
+  }
+
+  calcularDescuento(total: number) {
+    if (!this.cuponAplicado) return;
+
+    if (this.cuponAplicado.tipoDescuento === 'FIJO') {
+      this.montoDescuento = this.cuponAplicado.valor;
+    } else {
+      this.montoDescuento = (total * this.cuponAplicado.valor) / 100;
+    }
+
+    if (this.montoDescuento > total) this.montoDescuento = total;
+  }
+
+  // --- PROCESO DE VENTA ---
   public intentarProcesarCompra(): void {
     if (!this.esClienteAnonimo && this.checkoutForm.invalid) {
       this.checkoutForm.markAllAsTouched();
-      this.error = 'Por favor, completa los datos del cliente correctamente.';
+      this.error = 'Completa los datos correctamente.';
       return;
     }
-
     if (this.cartItems.length === 0) {
       this.error = 'El carrito está vacío.';
       return;
@@ -128,18 +175,13 @@ export class CheckoutComponent implements OnInit {
 
     Swal.fire({
       title: '¿Confirmar Venta?',
-      text: `Monto Total: S/ ${this.totalMonto.toFixed(2)}`,
+      text: `Monto a Pagar: S/ ${this.totalFinal.toFixed(2)}`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#16a34a',
-      cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, cobrar',
-      cancelButtonText: 'Cancelar',
-      heightAuto: false
+      confirmButtonColor: '#16a34a'
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.ejecutarVentaReal();
-      }
+      if (result.isConfirmed) this.ejecutarVentaReal();
     });
   }
 
@@ -147,19 +189,9 @@ export class CheckoutComponent implements OnInit {
     this.cargando = true;
     this.error = null;
 
-    let clienteDataFinal;
-
-    if (this.esClienteAnonimo) {
-      clienteDataFinal = {
-        nombres: 'Cliente',
-        apellidos: 'General',
-        dni: '00000000',
-        celular: '999999999',
-        email: null
-      };
-    } else {
-      clienteDataFinal = this.checkoutForm.get('cliente')?.value;
-    }
+    const clienteDataFinal = this.esClienteAnonimo ? {
+      nombres: 'Cliente', apellidos: 'General', dni: '00000000', celular: '999999999', email: null
+    } : this.checkoutForm.get('cliente')?.value;
 
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
@@ -167,50 +199,38 @@ export class CheckoutComponent implements OnInit {
       cantidad: item.cantidad
     }));
 
-    const ventaData: VentaRequestDTO = {
+    const ventaData: any = {
       clienteData: clienteDataFinal,
       tipoComprobante: this.checkoutForm.get('tipoComprobante')?.value,
-      detalles: detalles
+      detalles: detalles,
+      idCupon: this.cuponAplicado ? this.cuponAplicado.idCupom : null
     };
 
     this.ventaService.procesarVenta(ventaData).subscribe({
-      next: (response: any) => {
+      next: () => {
         this.cartService.clearCart();
         this.cargando = false;
         this.showSuccessModal = true;
         this.lanzarConfeti();
         this.iniciarConteoRegresivo();
       },
-      error: (err: any) => {
-        this.error = 'Error al procesar la venta. ' + (err.error?.message || err.message);
+      error: (err) => {
+        this.error = 'Error: ' + (err.error?.message || err.message);
         this.cargando = false;
-        Swal.fire('Error', this.error || 'Algo salió mal', 'error');
       }
     });
   }
 
   lanzarConfeti(): void {
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
-    });
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
   }
 
   iniciarConteoRegresivo(): void {
-    const totalTime = 5;
-    this.countdown = totalTime;
-    const circumference = 113;
-
+    this.countdown = 5;
     this.timerInterval = setInterval(() => {
       this.countdown--;
-      const progress = this.countdown / totalTime;
-      this.circleDashOffset = circumference - (progress * circumference);
-
-      if (this.countdown <= 0) {
-        this.cerrarYRedirigir();
-      }
+      this.circleDashOffset = 113 - ((this.countdown / 5) * 113);
+      if (this.countdown <= 0) this.cerrarYRedirigir();
     }, 1000);
   }
 
