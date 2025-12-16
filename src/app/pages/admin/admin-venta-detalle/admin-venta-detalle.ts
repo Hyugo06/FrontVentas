@@ -2,12 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Venta } from '../../../services/venta';
-import Swal from 'sweetalert2'; // Importamos SweetAlert para errores
-
-// --- IMPORTS DE PDF ---
+import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-// ----------------------
 
 @Component({
   selector: 'app-admin-venta-detalle',
@@ -41,6 +38,11 @@ export class AdminVentaDetalleComponent implements OnInit {
     this.cargando = true;
     this.ventaService.getVentaPorId(id).subscribe({
       next: (data: any) => {
+        // --- AGREGA ESTA LÍNEA ---
+        console.log("📦 DATA RECIBIDA DEL BACKEND:", data);
+        console.log("🔍 Primer detalle:", data.detalles[0]);
+        // -------------------------
+
         this.venta = data;
         this.cargando = false;
       },
@@ -51,7 +53,6 @@ export class AdminVentaDetalleComponent implements OnInit {
     });
   }
 
-  // --- LÓGICA DE ANULACIÓN (La que hicimos antes) ---
   public confirmarAnulacion(): void {
     if (!this.venta) return;
 
@@ -87,14 +88,9 @@ export class AdminVentaDetalleComponent implements OnInit {
     });
   }
 
-  // --- LÓGICA DE PDF MEJORADA ---
+  // --- LÓGICA DE PDF CORREGIDA ---
   public generarBoletaPDF(): void {
-    console.log("--> Iniciando generación de PDF..."); // CHIVATO 1
-
-    if (!this.venta) {
-      console.warn("--> No hay datos de venta cargados.");
-      return;
-    }
+    if (!this.venta) return;
 
     try {
       const doc = new jsPDF();
@@ -109,43 +105,33 @@ export class AdminVentaDetalleComponent implements OnInit {
       doc.setFont('helvetica', 'normal');
       doc.text(`Comprobante de Venta #${venta.idVenta}`, 105, 30, { align: 'center' });
 
-      // Estado (Si está anulada, lo ponemos en rojo en el PDF)
       if (venta.estado === 'ANULADA') {
-        doc.setTextColor(220, 38, 38); // Rojo
+        doc.setTextColor(220, 38, 38);
         doc.setFont('helvetica', 'bold');
         doc.text('-- VENTA ANULADA --', 105, 40, { align: 'center' });
-        doc.setTextColor(0, 0, 0); // Reset a negro
+        doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
       }
 
-      // 2. Datos del Cliente y Fecha
-      const fecha = new Date(venta.fechaVenta).toLocaleString('es-PE');
-      const clienteNombre = `${venta.cliente?.nombres || 'Cliente'} ${venta.cliente?.apellidos || 'General'}`;
-      const dni = venta.cliente?.dni || '-';
-
-      // Combinar nombre de vendedor
-      const vendedorNombre = `${venta.usuario?.nombres || ''} ${venta.usuario?.apellidos || venta.usuario?.nombreUsuario || 'Sistema'}`;
+      // 2. Datos del Cliente
+      const fecha = new Date(venta.fecha).toLocaleString('es-PE'); // 'fecha' viene del DTO
+      const clienteNombre = venta.nombreCliente || 'Cliente General';
+      const dni = venta.dniCliente || '-';
 
       doc.setFontSize(10);
       doc.text(`Fecha: ${fecha}`, 14, 50);
       doc.text(`Cliente: ${clienteNombre}`, 14, 56);
       doc.text(`DNI/RUC: ${dni}`, 14, 62);
-      doc.text(`Atendido por: ${vendedorNombre}`, 14, 68);
 
       // 3. Tabla de Productos
-      const head = [['Cant.', 'SKU', 'Producto', 'P. Unit', 'Subtotal']];
+      const head = [['Cant.', 'Descripción', 'Talla', 'Color', 'P. Unit', 'Total']];
 
       const body = venta.detalles.map((item: any) => {
-        let nombreProd = item.producto?.nombre || 'Producto';
-        // Agregar variante si existe
-        if (item.variante) {
-          nombreProd += ` (${item.variante.color} / ${item.variante.talla})`;
-        }
-
         return [
           item.cantidad,
-          item.producto?.codigoSku || '-',
-          nombreProd,
+          item.producto,             // Nombre
+          item.talla || '-',         // Talla
+          item.color || '-',         // Color
           `S/ ${item.precioUnitario.toFixed(2)}`,
           `S/ ${item.subtotal.toFixed(2)}`
         ];
@@ -160,19 +146,27 @@ export class AdminVentaDetalleComponent implements OnInit {
         styles: { fontSize: 9 },
       });
 
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      // Total y Descuento
+      let finalY = (doc as any).lastAutoTable.finalY + 10;
+
+      if(venta.montoDescuento > 0){
+        doc.setFontSize(10);
+        doc.setTextColor(22, 163, 74); // Verde
+        doc.text(`Descuento (${venta.codigoCupon}): - S/ ${venta.montoDescuento.toFixed(2)}`, 195, finalY, { align: 'right' });
+        finalY += 6;
+        doc.setTextColor(0,0,0);
+      }
+
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text(`TOTAL A PAGAR:  S/ ${venta.montoTotal.toFixed(2)}`, 195, finalY, { align: 'right' });
-
-      console.log("--> Generando Blob para móvil...");
+      doc.text(`TOTAL A PAGAR:  S/ ${venta.total.toFixed(2)}`, 195, finalY, { align: 'right' });
 
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
-
       window.open(url, '_blank');
+
     } catch (error) {
-      console.error("--> ERROR GENERANDO PDF:", error);
+      console.error("Error generando PDF:", error);
       Swal.fire('Error', 'Hubo un problema al generar el PDF.', 'error');
     }
   }
