@@ -135,8 +135,9 @@
             <span class="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
               #{{ venta.idVenta }}
             </span>
-            <span class="text-xs text-slate-400 ml-2 font-medium">
-              {{ venta.fechaVenta | date:'dd/MM/yyyy' }}
+            <span class="text-xs text-slate-500 ml-2 font-medium flex items-center gap-1 inline-flex">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {{ venta.fechaVenta | date:'dd/MM/yyyy' }} - {{ venta.fechaVenta | date:'h:mm a' }}
             </span>
           </div>
 
