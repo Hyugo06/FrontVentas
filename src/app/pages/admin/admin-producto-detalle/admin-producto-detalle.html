@@ -55,7 +55,7 @@
               <span class="px-3 py-1 text-xs font-bold rounded-full shadow-sm backdrop-blur-md"
                     [class.bg-green-100]="producto.stockActual > 5" [class.text-green-700]="producto.stockActual > 5"
                     [class.bg-red-100]="producto.stockActual <= 5" [class.text-red-700]="producto.stockActual <= 5">
-                Stock: {{ producto.stockActual }}
+                Stock Total: {{ producto.stockActual }}
               </span>
             </div>
           </div>
@@ -128,36 +128,66 @@
           </div>
         </div>
 
-        @if (producto.variantes && producto.variantes.length > 0) {
-          <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-              <h3 class="font-bold text-gray-800">Variantes</h3>
-              <span class="bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs font-bold">{{ producto.variantes.length }} opciones</span>
-            </div>
+        @if (variantesAgrupadas.length > 0) {
+          <div class="space-y-4">
+            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+              Variantes Disponibles
+            </h3>
 
-            <div class="divide-y divide-gray-100">
-              @for (variante of producto.variantes; track variante.idVariante) {
-                <div class="px-6 py-4 flex justify-between items-center hover:bg-gray-50">
-                  <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 rounded-full border border-gray-200 shadow-sm"
-                         [style.background-color]="variante.color.toLowerCase() === 'blanco' ? '#ffffff' : variante.color">
-                    </div>
+            @for (grupo of variantesAgrupadas; track grupo.color) {
+              <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+                <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    @if (grupo.imagenes.length > 0) {
+                      <div class="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:scale-110 transition-transform"
+                           (click)="cambiarImagen(grupo.imagenes[0])">
+                        <img [src]="baseUrl + grupo.imagenes[0]" class="w-full h-full object-cover">
+                      </div>
+                    } @else {
+                      <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
+                        <span class="text-xs font-bold text-slate-300">N/A</span>
+                      </div>
+                    }
+
                     <div>
-                      <p class="text-sm font-bold text-gray-900 capitalize">{{ variante.color }}</p>
-                      <p class="text-xs text-gray-500">Talla: <span class="font-bold uppercase">{{ variante.talla }}</span></p>
+                      <h4 class="font-bold text-slate-800 capitalize">{{ grupo.color }}</h4>
+                      @if (grupo.imagenes.length > 1) {
+                        <div class="flex gap-1 mt-1">
+                          @for (img of grupo.imagenes; track img) {
+                            <button (click)="cambiarImagen(img)" class="w-4 h-4 rounded-full border border-slate-300 overflow-hidden hover:ring-2 ring-indigo-300">
+                              <img [src]="baseUrl + img" class="w-full h-full object-cover">
+                            </button>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
-                  <div class="text-right">
-                    <span class="block font-bold text-gray-900">{{ variante.stockActual }} un.</span>
-                  </div>
+
+                  <span class="text-xs font-bold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+                    Total: {{ grupo.stockTotal }} un.
+                  </span>
                 </div>
-              }
-            </div>
+
+                <div class="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  @for (talla of grupo.tallas; track talla.talla) {
+                    <div class="flex flex-col items-center bg-slate-50 rounded-xl p-2 border border-slate-100">
+                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Talla</span>
+                      <span class="text-lg font-extrabold text-slate-800">{{ talla.talla }}</span>
+                      <span class="text-xs font-medium text-emerald-600 mt-1">
+                        {{ talla.stock }} stock
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
 
         @if (producto.caracteristicas && objectEntries(producto.caracteristicas).length > 0) {
-          <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+          <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 mt-6">
             <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Especificaciones</h3>
             <div class="grid grid-cols-2 gap-4">
               @for (spec of objectEntries(producto.caracteristicas); track spec[0]) {
@@ -190,13 +220,11 @@
 @if (productoAEliminar) {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity animate-fade-in">
     <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform scale-100 animate-bounce-small">
-
       <div class="bg-red-50 p-4 flex justify-center">
         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
           <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
         </div>
       </div>
-
       <div class="p-6 text-center">
         <h3 class="text-xl font-bold text-gray-900 mb-2">¿Eliminar Producto?</h3>
         <div class="bg-gray-100 p-3 rounded-lg border border-gray-200 mb-4 mt-4">
@@ -204,16 +232,9 @@
         </div>
         <p class="text-xs text-red-500 font-semibold">Esta acción no se puede deshacer.</p>
       </div>
-
       <div class="flex border-t border-gray-100">
-        <button (click)="cancelarEliminacion()"
-                class="w-1/2 py-4 text-gray-600 font-bold hover:bg-gray-50 transition-colors border-r border-gray-100">
-          Cancelar
-        </button>
-        <button (click)="eliminarDefinitivamente()"
-                class="w-1/2 py-4 text-white bg-red-600 font-bold hover:bg-red-700 transition-colors">
-          Sí, Eliminar
-        </button>
+        <button (click)="cancelarEliminacion()" class="w-1/2 py-4 text-gray-600 font-bold hover:bg-gray-50 transition-colors border-r border-gray-100">Cancelar</button>
+        <button (click)="eliminarDefinitivamente()" class="w-1/2 py-4 text-white bg-red-600 font-bold hover:bg-red-700 transition-colors">Sí, Eliminar</button>
       </div>
     </div>
   </div>

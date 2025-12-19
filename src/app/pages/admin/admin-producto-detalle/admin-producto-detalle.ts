@@ -17,13 +17,16 @@ export class AdminProductoDetalleComponent implements OnInit {
   public imagenes: any[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
-  public baseUrl = 'http://192.168.1.34:8080'; // Asegúrate que sea tu IP correcta
+  public baseUrl = 'http://192.168.1.34:8080'; // Ajusta tu IP
 
   // Variables para la galería
   public imagenActual: string | null = null;
 
   // Variable para el Modal de Eliminación
   public productoAEliminar: any = null;
+
+  // --- NUEVA VARIABLE PARA LA VISTA AGRUPADA ---
+  public variantesAgrupadas: any[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -56,6 +59,11 @@ export class AdminProductoDetalleComponent implements OnInit {
         } else if (this.imagenes.length > 0) {
           this.imagenActual = this.baseUrl + this.imagenes[0].urlImagen;
         }
+
+        // --- AQUÍ LLAMAMOS A LA FUNCIÓN DE AGRUPAR ---
+        if (this.producto.variantes) {
+          this.organizarVariantes(this.producto.variantes);
+        }
       },
       error: (err: any) => {
         console.error('Error:', err);
@@ -65,39 +73,75 @@ export class AdminProductoDetalleComponent implements OnInit {
     });
   }
 
+  // --- NUEVA FUNCIÓN PARA AGRUPAR POR COLOR ---
+  private organizarVariantes(variantes: any[]): void {
+    const grupos = new Map<string, any>();
+
+    variantes.forEach(v => {
+      const colorKey = v.color || 'Sin Color';
+
+      if (!grupos.has(colorKey)) {
+        grupos.set(colorKey, {
+          color: colorKey,
+          tallas: [],
+          stockTotal: 0,
+          imagenes: [] // Recolectamos fotos de todas las tallas de este color
+        });
+      }
+
+      const grupo = grupos.get(colorKey);
+
+      // Agregar talla
+      grupo.tallas.push({
+        talla: v.talla,
+        stock: v.stockActual
+      });
+      grupo.stockTotal += v.stockActual;
+
+      // Agregar imágenes (si existen en la variante)
+      // 1. Galería nueva
+      if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
+        v.galeriaImagenes.forEach((url: string) => {
+          if (!grupo.imagenes.includes(url)) grupo.imagenes.push(url);
+        });
+      }
+      // 2. Imagen legacy
+      if (v.urlImagen && !grupo.imagenes.includes(v.urlImagen)) {
+        grupo.imagenes.push(v.urlImagen);
+      }
+    });
+
+    this.variantesAgrupadas = Array.from(grupos.values());
+  }
+
   public objectEntries(obj: any): [string, any][] {
     if (!obj) return [];
     return Object.entries(obj);
   }
 
   cambiarImagen(urlRelativa: string): void {
-    this.imagenActual = this.baseUrl + urlRelativa;
+    this.imagenActual = this.baseUrl + urlRelativa; // Se asegura de usar la base correcta
   }
 
-  // --- LÓGICA DEL MODAL (NUEVA) ---
-
-  // 1. Botón "Eliminar" abre el modal
+  // --- LÓGICA DEL MODAL ---
   confirmarEliminacion(producto: any): void {
     this.productoAEliminar = producto;
   }
 
-  // 2. Botón "Cancelar" cierra el modal
   cancelarEliminacion(): void {
     this.productoAEliminar = null;
   }
 
-  // 3. Botón "Sí, Eliminar" ejecuta el borrado
   eliminarDefinitivamente(): void {
     if (this.productoAEliminar) {
       this.productoService.deleteProducto(this.productoAEliminar.idProducto).subscribe({
         next: () => {
-          // Ya no necesitamos alert, simplemente redirigimos
           this.productoAEliminar = null;
           this.router.navigate(['/admin/productos']);
         },
         error: (err: any) => {
           console.error('Error al eliminar:', err);
-          alert('No se pudo eliminar el producto. Puede que tenga ventas asociadas.');
+          alert('No se pudo eliminar el producto.');
           this.productoAEliminar = null;
         }
       });
