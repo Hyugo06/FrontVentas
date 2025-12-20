@@ -16,6 +16,11 @@
 
       <div class="flex items-center space-x-4">
 
+        <!-- Carrito: Visible para todos EXCEPTO administradores -->
+        @if (!isAdministrator()) {
+          <app-cart-status></app-cart-status>
+        }
+
         @if (showLoginButton()) {
           <a routerLink="/login"
              class="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors px-3 py-2">
@@ -40,8 +45,6 @@
                 Ventas
               </a>
             </div>
-          } @else {
-            <app-cart-status></app-cart-status>
           }
 
           <div class="h-6 w-px bg-slate-200 mx-2"></div>

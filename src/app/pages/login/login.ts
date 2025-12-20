@@ -20,6 +20,7 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
   };
 
   public error: string | null = null;
+  public showPassword: boolean = false; // Variable para controlar la visibilidad
 
   constructor(
     private authService: Auth,
@@ -34,6 +35,10 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
     console.log("--> [LOGIN INIT] Memoria limpia. Listo para nuevo usuario.");
   }
   // -----------------------------------
+
+  public togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   public login(): void {
     console.log("--> 1. [LOGIN] Iniciando...");

@@ -1,59 +1,50 @@
 @if (cargando) {
-  <p class="text-center text-gray-500 p-8">Cargando...</p>
+  <div class="flex justify-center items-center min-h-[60vh]">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  </div>
 }
 
 @if (producto) {
-  <div class="container mx-auto p-8">
+  <div class="container mx-auto p-4 md:p-8 animate-fadeIn">
 
-    <a routerLink="/productos" class="text-blue-500 hover:underline mb-4 inline-block">
-      &larr; Volver a la tienda
-    </a>
+    <nav class="flex mb-6 text-sm text-gray-500">
+      <a routerLink="/productos" class="hover:text-indigo-600 transition-colors flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Volver a la tienda
+      </a>
+      <span class="mx-2">/</span>
+      <span class="text-gray-800 font-medium">{{ producto.nombre }}</span>
+    </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
-      <div>
-        <div class="aspect-square w-full bg-white rounded-xl shadow-sm border overflow-hidden flex items-center justify-center mb-4 relative group">
+      <div class="space-y-4">
+        <div class="aspect-square w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex items-center justify-center relative group">
           @if (imagenActual) {
             <img [src]="imagenActual"
                  [alt]="producto.nombre"
-                 class="w-full h-full object-contain p-4 transition-opacity duration-300">
+                 class="w-full h-full object-contain p-2 transition-transform duration-500 hover:scale-105">
 
             @if (imagenesFiltradas.length > 1) {
-              <button (click)="navegarImagen(-1)"
-                      class="absolute left-0 top-0 h-full w-16 flex items-center justify-center text-gray-400 hover:text-gray-800 hover:bg-gray-100/30 transition-all duration-300 z-10 opacity-0 group-hover:opacity-100">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-10 h-10">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                </svg>
+              <button (click)="navegarImagen(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white transition-all opacity-0 group-hover:opacity-100">
+                <svg class="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button (click)="navegarImagen(1)"
-                      class="absolute right-0 top-0 h-full w-16 flex items-center justify-center text-gray-400 hover:text-gray-800 hover:bg-gray-100/30 transition-all duration-300 z-10 opacity-0 group-hover:opacity-100">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-10 h-10">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
+              <button (click)="navegarImagen(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white transition-all opacity-0 group-hover:opacity-100">
+                <svg class="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </button>
             }
           } @else {
-            <div class="text-gray-400 flex flex-col items-center">
-              <span class="text-sm">Sin imagen</span>
-            </div>
+            <span class="text-gray-300 font-bold uppercase tracking-widest">Sin Imagen</span>
           }
         </div>
 
-        @if (producto.urlImagen || imagenesFiltradas.length > 0) {
-          <div class="flex gap-3 overflow-x-auto pb-2">
-            @if (producto.urlImagen) {
-              <button (click)="cambiarImagen(producto.urlImagen)"
-                      class="w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
-                      [class.border-blue-600]="imagenActual === (baseUrl + producto.urlImagen)"
-                      [class.border-gray-200]="imagenActual !== (baseUrl + producto.urlImagen)">
-                <img [src]="baseUrl + producto.urlImagen" class="w-full h-full object-cover">
-              </button>
-            }
-            @for (img of imagenesFiltradas; track img.idImagen) {
+        @if (imagenesFiltradas.length > 1) {
+          <div class="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+            @for (img of imagenesFiltradas; track img.urlImagen) {
               <button (click)="cambiarImagen(img.urlImagen)"
-                      class="w-20 h-20 border-2 rounded-lg overflow-hidden flex-shrink-0 hover:border-blue-500 transition-colors cursor-pointer"
-                      [class.border-blue-600]="imagenActual === (baseUrl + img.urlImagen)"
-                      [class.border-gray-200]="imagenActual !== (baseUrl + img.urlImagen)">
+                      class="w-20 h-20 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all"
+                      [class.border-indigo-600]="imagenActual === baseUrl + img.urlImagen"
+                      [class.border-transparent]="imagenActual !== baseUrl + img.urlImagen">
                 <img [src]="baseUrl + img.urlImagen" class="w-full h-full object-cover">
               </button>
             }
@@ -62,91 +53,99 @@
       </div>
 
       <div>
-        <span class="text-sm text-gray-500">{{ producto.codigoSku }}</span>
-        <h1 class="text-4xl font-bold mb-4">{{ producto.nombre }}</h1>
-        <p class="text-gray-700 text-lg mb-6">{{ producto.descripcion }}</p>
+        <div class="mb-6">
+          <span class="text-sm font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-3 py-1 rounded-full">
+            {{ producto.marca?.nombre || 'Genérico' }}
+          </span>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mt-4 mb-2 leading-tight">
+            {{ producto.nombre }}
+          </h1>
+          <div class="flex items-end gap-3 mb-6">
+            <span class="text-3xl font-bold text-slate-800">S/ {{ producto.precioVenta | number:'1.2-2' }}</span>
+            @if (producto.precioRegular > producto.precioVenta) {
+              <span class="text-lg text-gray-400 line-through mb-1">S/ {{ producto.precioRegular | number:'1.2-2' }}</span>
+            }
+          </div>
 
-        @if (producto.precioRegular) {
-          <p class="text-xl text-gray-500 line-through">
-            S/ {{ producto.precioRegular | number: '1.2-2' }}
+          <p class="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
+            {{ producto.descripcion || 'Sin descripción disponible.' }}
           </p>
-        }
-        <p class="text-5xl font-extrabold text-blue-600 mb-6">
-          S/ {{ producto.precioVenta | number: '1.2-2' }}
-        </p>
+        </div>
 
-        <p class="text-lg">
-          Stock disponible:
-          <span class="font-semibold">{{ getStockTotalReal() }}</span>
-        </p>
+        <div class="border-t border-gray-100 my-6 pt-6 space-y-6">
 
-        @if (producto.variantes && producto.variantes.length > 0) {
-          <div class="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-100">
-
-            <div class="mb-4">
-              <p class="text-sm font-bold text-gray-700 mb-2">Color: <span class="text-gray-900">{{ colorSeleccionado }}</span></p>
-              <div class="flex gap-3 flex-wrap">
+          @if (getColoresUnicos().length > 0) {
+            <div>
+              <span class="text-xs font-bold text-gray-900 uppercase tracking-wider block mb-3">
+                Color Seleccionado: <span class="text-indigo-600">{{ colorSeleccionado }}</span>
+              </span>
+              <div class="flex flex-wrap gap-3">
                 @for (color of getColoresUnicos(); track color) {
                   <button (click)="seleccionarColor(color)"
-                          class="w-8 h-8 rounded-full border border-gray-300 shadow-sm transition-all hover:scale-110 relative"
-                          [style.background-color]="getColorHex(color)"
-                          [class.ring-2]="colorSeleccionado === color"
-                          [class.ring-offset-2]="colorSeleccionado === color"
-                          [class.opacity-50]="tallaSeleccionada && !isCombinacionDisponible(color, tallaSeleccionada)"
-                          [title]="color">
+                          class="px-4 py-2 rounded-lg border-2 text-sm font-bold transition-all transform active:scale-95"
+                          [class.border-indigo-600]="colorSeleccionado === color"
+                          [class.text-indigo-600]="colorSeleccionado === color"
+                          [class.bg-indigo-50]="colorSeleccionado === color"
+                          [class.border-gray-200]="colorSeleccionado !== color"
+                          [class.text-gray-600]="colorSeleccionado !== color"
+                          [class.hover:border-gray-300]="colorSeleccionado !== color">
+                    {{ color }}
                   </button>
                 }
               </div>
             </div>
+          }
 
-            <div class="mb-4">
-              <p class="text-sm font-bold text-gray-700 mb-2">
-                Talla: <span class="text-gray-900 font-normal">{{ tallaSeleccionada }}</span>
-              </p>
-              <div class="flex gap-3 flex-wrap">
+          @if (colorSeleccionado) {
+            <div class="animate-fadeIn">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-bold text-gray-900 uppercase tracking-wider">Tallas Disponibles</span>
 
-                @if (getTallasVisibles().length === 0) {
-                  <p class="text-sm text-gray-400 italic">No hay tallas disponibles para este color.</p>
-                }
+                <span class="text-xs font-bold px-2 py-1 rounded bg-green-100 text-green-700 animate-pulse">
+                  @if (varianteSeleccionada) {
+                    {{ varianteSeleccionada.stockActual }} unid. en {{ varianteSeleccionada.talla }}
+                  } @else {
+                    {{ getStockTotalColor(colorSeleccionado) }} unid. total en {{ colorSeleccionado }}
+                  }
+                </span>
+              </div>
 
-                @for (talla of getTallasVisibles(); track talla) {
+              <div class="flex flex-wrap gap-3">
+                @for (talla of getTallasPorColor(colorSeleccionado); track talla) {
                   <button (click)="seleccionarTalla(talla)"
-                          class="px-4 py-2 text-sm font-medium border rounded-md transition-all shadow-sm"
-                          [class.bg-gray-900]="tallaSeleccionada === talla"
+                          [disabled]="!isTallaDisponible(talla)"
+                          class="w-12 h-12 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all"
+                          [class.border-indigo-600]="tallaSeleccionada === talla"
+                          [class.bg-indigo-600]="tallaSeleccionada === talla"
                           [class.text-white]="tallaSeleccionada === talla"
-                          [class.bg-white]="tallaSeleccionada !== talla"
-                          [class.text-gray-700]="tallaSeleccionada !== talla"
-                          [class.hover:bg-gray-100]="tallaSeleccionada !== talla">
+                          [class.border-gray-200]="tallaSeleccionada !== talla && isTallaDisponible(talla)"
+                          [class.hover:border-indigo-300]="tallaSeleccionada !== talla && isTallaDisponible(talla)"
+                          [class.bg-gray-100]="!isTallaDisponible(talla)"
+                          [class.text-gray-400]="!isTallaDisponible(talla)"
+                          [class.cursor-not-allowed]="!isTallaDisponible(talla)">
                     {{ talla }}
                   </button>
                 }
               </div>
             </div>
+          }
 
-            <p class="text-sm text-green-600 font-semibold h-5">
-              @if (varianteSeleccionada) {
-                {{ varianteSeleccionada.stockActual }} unidades disponibles
-              }
-            </p>
-          </div>
-        }
+          <button (click)="agregarAlCarrito()"
+                  [disabled]="producto.variantes?.length > 0 && !varianteSeleccionada"
+                  class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-xl shadow-xl hover:bg-indigo-600 hover:shadow-indigo-200 transition-all transform hover:-translate-y-1 active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex justify-center items-center gap-2">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+            {{ (!varianteSeleccionada && producto.variantes?.length > 0) ? 'Selecciona una talla' : 'Añadir al Carrito' }}
+          </button>
 
-        <button
-          (click)="agregarAlCarrito()"
-          [disabled]="producto.variantes?.length > 0 && !varianteSeleccionada"
-          class="mt-6 w-full bg-blue-600 text-white text-lg font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition-colors transform hover:-translate-y-1 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
-          Añadir al Carrito
-        </button>
+        </div>
       </div>
     </div>
   </div>
 }
 
 @if (!producto && !cargando) {
-  <div class="text-center p-8">
-    <h2 class="text-2xl font-bold text-red-600">Producto no encontrado</h2>
-    <a routerLink="/productos" class="text-blue-500 hover:underline mt-4 inline-block">
-      Volver a la tienda
-    </a>
+  <div class="text-center p-20">
+    <p class="text-gray-400 text-lg">Producto no encontrado.</p>
+    <a routerLink="/productos" class="text-indigo-600 font-bold hover:underline mt-4 block">Volver a la tienda</a>
   </div>
 }

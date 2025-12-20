@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { Cart } from '../../services/cart';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-producto-detalle',
@@ -16,38 +17,18 @@ import { FormsModule } from '@angular/forms';
 export class ProductoDetalleComponent implements OnInit {
 
   public producto: any = null;
-  public imagenes: any[] = [];            // Todas las imágenes (sin filtrar)
-  public imagenesFiltradas: any[] = [];   // Imágenes que se ven actualmente (filtradas)
+  public imagenes: any[] = [];
+  public imagenesFiltradas: any[] = [];
   public cargando: boolean = true;
-  public activeTab: string = 'details';
-  public tallaSeleccionada: string | null = null;
 
-  // --- VARIABLES DE SELECCIÓN DE VARIANTES ---
+  // Selección
   public colorSeleccionado: string | null = null;
+  public tallaSeleccionada: string | null = null;
   public varianteSeleccionada: ProductoVariante | null = null;
 
-  // --- VARIABLES PARA GALERÍA ---
+  // Galería
   public imagenActual: string | null = null;
-  public baseUrl = 'http://localhost:8080'; // O tu IP
-
-  // --- ¡NUEVO! MAPA DE COLORES (Traducción Español -> CSS) ---
-  private colorMap: { [key: string]: string } = {
-    'rojo': '#EF4444',    // Red
-    'negro': '#000000',   // Black
-    'blanco': '#FFFFFF',  // White
-    'azul': '#3B82F6',    // Blue
-    'verde': '#22C55E',   // Green
-    'amarillo': '#EAB308',// Yellow
-    'gris': '#9CA3AF',    // Gray
-    'rosa': '#EC4899',    // Pink
-    'morado': '#A855F7',  // Purple
-    'azul marino': '#1E3A8A', // Dark Blue
-    'celeste': '#38BDF8',
-    'beige': '#F5F5DC',
-    'marrón': '#78350F',
-    'naranja': '#F97316',
-    'vino': '#722F37'
-  };
+  public baseUrl = 'http://192.168.1.34:8080'; // Asegúrate que esta IP sea correcta
 
   constructor(
     private route: ActivatedRoute,
@@ -65,125 +46,74 @@ export class ProductoDetalleComponent implements OnInit {
         next: (resultado: any) => {
           this.producto = resultado.producto;
           this.imagenes = resultado.imagenes;
-
-          // Inicialmente mostramos TODAS las imágenes (Generales + Variantes)
-          this.imagenesFiltradas = this.imagenes;
-
           this.cargando = false;
 
-          // 1. Lógica de Imagen Inicial
-          if (this.producto.urlImagen) {
-            this.imagenActual = this.baseUrl + this.producto.urlImagen;
-          } else if (this.imagenes.length > 0) {
-            this.imagenActual = this.baseUrl + this.imagenes[0].urlImagen;
+          const colores = this.getColoresUnicos();
+          if (colores.length > 0) {
+            this.seleccionarColor(colores[0]);
+          } else {
+            // Si no hay variantes, usamos las imágenes globales
+            this.imagenesFiltradas = this.imagenes;
+            if (this.producto?.urlImagen) {
+              this.imagenActual = this.baseUrl + this.producto.urlImagen;
+            } else if (this.imagenes.length > 0) {
+              this.imagenActual = this.baseUrl + this.imagenes[0].urlImagen;
+            }
           }
         },
-        error: (err) => { console.error(err); this.cargando = false; }
+        error: (err) => {
+          console.error(err);
+          this.cargando = false;
+        }
       });
     }
   }
 
-  // --- ¡MÉTODO HELPER PARA EL COLOR! ---
-  getColorHex(nombreColor: string): string {
-    if (!nombreColor) return 'transparent';
-    const key = nombreColor.toLowerCase().trim();
-    // Retorna el valor del mapa, o el nombre original si no existe (por si acaso es "red" o hex)
-    return this.colorMap[key] || nombreColor;
-  }
+  // --- LÓGICA DE FILTRADO Y SELECCIÓN (CORREGIDA) ---
 
-  getTallasUnicas(): string[] {
-    if (!this.producto?.variantes) return [];
-    const tallas = this.producto.variantes.map((v: any) => v.talla);
-    // Ordenar tallas si es necesario (S, M, L, XL...)
-    return [...new Set(tallas)] as string[];
-  }
-
-  getTallasVisibles(): string[] {
-    if (!this.producto?.variantes) return [];
-
-    let variantesAConsiderar = this.producto.variantes;
-
-    // Si hay color seleccionado, filtramos primero por ese color
-    if (this.colorSeleccionado) {
-      variantesAConsiderar = variantesAConsiderar.filter((v: any) => v.color === this.colorSeleccionado);
-    }
-
-    const tallas = variantesAConsiderar.map((v: any) => v.talla);
-    return [...new Set(tallas)] as string[];
-  }
-
-  isCombinacionDisponible(color: string | null, talla: string | null): boolean {
-    if (!this.producto?.variantes) return false;
-
-    // Si falta alguno, no podemos validar la combinación final, pero el botón individual está activo
-    if (!color && !talla) return true;
-
-    return this.producto.variantes.some((v: any) => {
-      const matchColor = color ? v.color === color : true;
-      const matchTalla = talla ? v.talla === talla : true;
-      return matchColor && matchTalla && v.stockActual > 0;
-    });
-  }
-  // --- LÓGICA DE GALERÍA ---
-
-  cambiarImagen(urlRelativa: string): void {
-    this.imagenActual = this.baseUrl + urlRelativa;
-  }
-
-  navegarImagen(direccion: number): void {
-    if (!this.imagenActual || this.imagenesFiltradas.length <= 1) return;
-
-    const currentUrlRelativa = this.imagenActual.replace(this.baseUrl, '');
-    const currentIndex = this.imagenesFiltradas.findIndex(img => img.urlImagen === currentUrlRelativa);
-
-    if (currentIndex !== -1) {
-      const totalImages = this.imagenesFiltradas.length;
-      let newIndex = (currentIndex + direccion) % totalImages;
-      if (newIndex < 0) newIndex = totalImages - 1;
-
-      this.cambiarImagen(this.imagenesFiltradas[newIndex].urlImagen);
-    }
-  }
-
-  // --- LÓGICA DE SELECTORES Y FILTRADO ---
-
-  getColoresUnicos(): string[] {
-    if (!this.producto?.variantes) return [];
-    const colores = this.producto.variantes.map((v: any) => v.color);
-    return [...new Set(colores)] as string[];
-  }
-
-  getTallasPorColor(color: string): any[] {
-    if (!this.producto?.variantes) return [];
-    return this.producto.variantes.filter((v: any) => v.color === color);
-  }
-
-  // --- ¡MÉTODO ACTUALIZADO CON FILTRADO ESTRICTO! ---
   seleccionarColor(color: string): void {
+    if (!this.producto?.variantes) return;
+
     this.colorSeleccionado = color;
-    this.varianteSeleccionada = null; // Resetea talla
+    this.tallaSeleccionada = null;
+    this.varianteSeleccionada = null;
 
-    // 1. Identificar las variantes que corresponden a este color
+    // 1. Filtramos las variantes que coinciden con el color
     const variantesDeColor = this.producto.variantes.filter((v: any) => v.color === color);
-    const idsVariantesDeColor = variantesDeColor.map((v: any) => v.idVariante);
 
-    // 2. Filtrar la galería de imágenes
-    this.imagenesFiltradas = this.imagenes.filter(img => {
-      if (img.idVariante && idsVariantesDeColor.includes(img.idVariante)) {
-        return true;
+    // 2. Recolectamos las fotos DIRECTAMENTE de las variantes (esto arregla el problema)
+    let fotosDelColor: any[] = [];
+
+    variantesDeColor.forEach((v: any) => {
+      // A. Fotos de la galería nueva
+      if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
+        v.galeriaImagenes.forEach((url: string) => {
+          fotosDelColor.push({ urlImagen: url, idVariante: v.idVariante });
+        });
       }
-      if (img.idVariante == null) {
-        return true;
+      // B. Foto legacy (por si acaso)
+      if (v.urlImagen) {
+        fotosDelColor.push({ urlImagen: v.urlImagen, idVariante: v.idVariante });
       }
-      return false;
     });
 
-    // 3. Actualizar la imagen principal (Visor)
-    const primeraFotoVariante = this.imagenesFiltradas.find(img => img.idVariante != null);
+    // 3. Eliminar duplicados (por si varias tallas tienen la misma foto)
+    const fotosUnicas = new Map();
+    fotosDelColor.forEach(foto => {
+      if (!fotosUnicas.has(foto.urlImagen)) {
+        fotosUnicas.set(foto.urlImagen, foto);
+      }
+    });
 
-    if (primeraFotoVariante) {
-      this.cambiarImagen(primeraFotoVariante.urlImagen);
-    } else if (this.imagenesFiltradas.length > 0) {
+    this.imagenesFiltradas = Array.from(fotosUnicas.values());
+
+    // 4. Si después de todo no hay fotos, usamos la principal del producto
+    if (this.imagenesFiltradas.length === 0 && this.producto?.urlImagen) {
+      this.imagenesFiltradas = [{ urlImagen: this.producto.urlImagen, idVariante: null }];
+    }
+
+    // 5. Poner la primera foto en el visor
+    if (this.imagenesFiltradas.length > 0) {
       this.cambiarImagen(this.imagenesFiltradas[0].urlImagen);
     }
   }
@@ -203,24 +133,83 @@ export class ProductoDetalleComponent implements OnInit {
     }
   }
 
-  getStockTotalReal(): number {
-    if (this.producto?.variantes && this.producto.variantes.length > 0) {
-      return this.producto.variantes.reduce((sum: number, v: any) => sum + v.stockActual, 0);
+  // --- HELPERS ---
+
+  getColoresUnicos(): string[] {
+    if (!this.producto?.variantes) return [];
+    const colores = this.producto.variantes.map((v: any) => v.color).filter((c: any) => c);
+    return [...new Set(colores)] as string[];
+  }
+
+  getTallasPorColor(color: string | null): string[] {
+    if (!this.producto?.variantes || !color) return [];
+    const tallas = this.producto.variantes
+      .filter((v: any) => v.color === color)
+      .map((v: any) => v.talla);
+    return [...new Set(tallas)] as string[];
+  }
+
+  getStockTotalColor(color: string | null): number {
+    if (!this.producto?.variantes || !color) return 0;
+    return this.producto.variantes
+      .filter((v: any) => v.color === color)
+      .reduce((acc: number, v: any) => acc + v.stockActual, 0);
+  }
+
+  isTallaDisponible(talla: string): boolean {
+    if (!this.colorSeleccionado || !this.producto?.variantes) return false;
+    const variante = this.producto.variantes.find((v: any) =>
+      v.color === this.colorSeleccionado && v.talla === talla
+    );
+    return variante ? variante.stockActual > 0 : false;
+  }
+
+  // --- GALERÍA ---
+
+  cambiarImagen(urlRelativa: string): void {
+    this.imagenActual = this.baseUrl + urlRelativa;
+  }
+
+  navegarImagen(direccion: number): void {
+    if (!this.imagenActual || this.imagenesFiltradas.length <= 1) return;
+    const currentUrlRelativa = this.imagenActual.replace(this.baseUrl, '');
+    const currentIndex = this.imagenesFiltradas.findIndex(img => img.urlImagen === currentUrlRelativa);
+
+    if (currentIndex !== -1) {
+      const total = this.imagenesFiltradas.length;
+      let newIndex = (currentIndex + direccion) % total;
+      if (newIndex < 0) newIndex = total - 1;
+      this.cambiarImagen(this.imagenesFiltradas[newIndex].urlImagen);
     }
-    return this.producto?.stockActual || 0;
   }
 
   // --- CARRITO ---
-  public agregarAlCarrito(): void {
-    if (this.producto.variantes?.length > 0 && !this.varianteSeleccionada) {
-      alert("Por favor, selecciona una Talla.");
+
+  agregarAlCarrito(): void {
+    if (this.producto?.variantes?.length > 0 && !this.varianteSeleccionada) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Selecciona una talla',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
       return;
     }
-    this.cartService.addItem(this.producto, this.varianteSeleccionada);
-  }
 
-  public objectEntries(obj: any): [string, any][] {
-    if (!obj) return [];
-    return Object.entries(obj);
+
+    this.cartService.addToCart(this.producto, this.varianteSeleccionada, 1);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Agregado al carrito',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      background: '#ffffff',
+      iconColor: '#10b981'
+    });
   }
 }

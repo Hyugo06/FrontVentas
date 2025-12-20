@@ -1,78 +1,88 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ProductoVariante } from './producto';
 
-// --- INTERFAZ EXPORTADA ---
 export interface CartItem {
+  uid: string;
   producto: any;
+  variante: any | null;
   cantidad: number;
-  variante?: ProductoVariante | null;
 }
 
 @Injectable({
   providedIn: 'root'
 })
-export class Cart {
+export class Cart { // Mantengo el nombre 'Cart' para no romper tus imports
+  private key = 'margarita_cart_storage';
 
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   public items$ = this.itemsSubject.asObservable();
 
-  public totalItems$: Observable<number> = this.items$.pipe(
-    map(items => items.reduce((total, item) => total + item.cantidad, 0))
-  );
-
-  constructor() { }
-
-  public addItem(producto: any, variante: ProductoVariante | null = null): void {
-    const itemsActuales = this.itemsSubject.getValue();
-    const itemEnCarrito = itemsActuales.find(item => {
-      const mismoProducto = item.producto.idProducto === producto.idProducto;
-      const mismaVariante = item.variante?.idVariante === variante?.idVariante;
-      return mismoProducto && mismaVariante;
-    });
-
-    if (itemEnCarrito) {
-      itemEnCarrito.cantidad++;
-    } else {
-      itemsActuales.push({
-        producto: producto,
-        cantidad: 1,
-        variante: variante
-      });
-    }
-    this.itemsSubject.next(itemsActuales);
+  constructor() {
+    this.cargarDeLocalStorage();
   }
 
-  // --- MÉTODOS QUE RECIBEN EL ITEM COMPLETO ---
+  // MÉTODO PRINCIPAL
+  addToCart(producto: any, variante: any | null, cantidad: number = 1) {
+    const items = this.itemsSubject.value;
+    const uid = variante ? `${producto.idProducto}-${variante.idVariante}` : `${producto.idProducto}-base`;
 
-  public decrementItem(item: CartItem): void {
-    let itemsActuales = this.itemsSubject.getValue();
-    const targetItem = itemsActuales.find(i =>
-      i.producto.idProducto === item.producto.idProducto &&
-      i.variante?.idVariante === item.variante?.idVariante
-    );
+    const existing = items.find(i => i.uid === uid);
 
-    if (targetItem) {
-      if (targetItem.cantidad > 1) {
-        targetItem.cantidad--;
+    if (existing) {
+      existing.cantidad += cantidad;
+    } else {
+      items.push({ uid, producto, variante, cantidad });
+    }
+
+    this.actualizar(items);
+  }
+
+  // Alias para compatibilidad con tus componentes
+  addItem(producto: any, variante: any | null) {
+    this.addToCart(producto, variante, 1);
+  }
+
+  decrementItem(item: CartItem) {
+    const items = this.itemsSubject.value;
+    const index = items.findIndex(i => i.uid === item.uid);
+
+    if (index > -1) {
+      if (items[index].cantidad > 1) {
+        items[index].cantidad--;
       } else {
-        this.removeItem(item);
-        return;
+        items.splice(index, 1);
+      }
+      this.actualizar(items);
+    }
+  }
+
+  removeItem(item: CartItem) {
+    const items = this.itemsSubject.value.filter(i => i.uid !== item.uid);
+    this.actualizar(items);
+  }
+
+  clearCart() {
+    this.actualizar([]);
+  }
+
+  private actualizar(items: CartItem[]) {
+    this.itemsSubject.next([...items]); // El '[...]' es vital para que Angular detecte el cambio
+    localStorage.setItem(this.key, JSON.stringify(items));
+  }
+
+  private cargarDeLocalStorage() {
+    const saved = localStorage.getItem(this.key);
+    if (saved) {
+      try {
+        this.itemsSubject.next(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error al cargar carrito", e);
       }
     }
-    this.itemsSubject.next(itemsActuales);
   }
 
-  public removeItem(item: CartItem): void {
-    const itemsActuales = this.itemsSubject.getValue();
-    const itemsFiltrados = itemsActuales.filter(i =>
-      !(i.producto.idProducto === item.producto.idProducto && i.variante?.idVariante === item.variante?.idVariante)
-    );
-    this.itemsSubject.next(itemsFiltrados);
-  }
-
-  public clearCart(): void {
-    this.itemsSubject.next([]);
+  get totalItems$() {
+    return this.items$.pipe(map(items => items.reduce((acc, i) => acc + i.cantidad, 0)));
   }
 }
