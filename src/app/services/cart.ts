@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 export interface CartItem {
   uid: string;
@@ -12,33 +13,70 @@ export interface CartItem {
 @Injectable({
   providedIn: 'root'
 })
-export class Cart { // Mantengo el nombre 'Cart' para no romper tus imports
+export class Cart {
   private key = 'margarita_cart_storage';
-
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   public items$ = this.itemsSubject.asObservable();
 
+  // Convertimos el getter en una propiedad pública real
+  public totalItems$: Observable<number>;
+
   constructor() {
     this.cargarDeLocalStorage();
+
+    // Inicializamos el observable derivado una sola vez
+    this.totalItems$ = this.items$.pipe(
+      map(items => items.reduce((acc, i) => acc + i.cantidad, 0))
+    );
   }
 
-  // MÉTODO PRINCIPAL
-  addToCart(producto: any, variante: any | null, cantidad: number = 1) {
+  // MÉTODO BLINDADO: Verifica Stock antes de agregar
+  addToCart(producto: any, variante: any | null, cantidad: number = 1): boolean {
     const items = this.itemsSubject.value;
     const uid = variante ? `${producto.idProducto}-${variante.idVariante}` : `${producto.idProducto}-base`;
+
+    // 1. Determinar el Stock Máximo Real
+    const stockDisponible = variante ? variante.stockActual : producto.stockActual;
 
     const existing = items.find(i => i.uid === uid);
 
     if (existing) {
+      // 2. Validación: ¿La suma supera el stock?
+      if (existing.cantidad + cantidad > stockDisponible) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Stock Insuficiente',
+          text: `Solo quedan ${stockDisponible} unidades disponibles.`,
+          toast: true,
+          position: 'top-end',
+          timer: 3000,
+          showConfirmButton: false
+        });
+        return false;
+      }
       existing.cantidad += cantidad;
     } else {
+      // 2. Validación para item nuevo
+      if (cantidad > stockDisponible) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Stock Insuficiente',
+          text: `Solo quedan ${stockDisponible} unidades disponibles.`,
+          toast: true,
+          position: 'top-end',
+          timer: 3000,
+          showConfirmButton: false
+        });
+        return false;
+      }
       items.push({ uid, producto, variante, cantidad });
     }
 
     this.actualizar(items);
+    return true;
   }
 
-  // Alias para compatibilidad con tus componentes
+  // Alias compatible
   addItem(producto: any, variante: any | null) {
     this.addToCart(producto, variante, 1);
   }
@@ -67,7 +105,7 @@ export class Cart { // Mantengo el nombre 'Cart' para no romper tus imports
   }
 
   private actualizar(items: CartItem[]) {
-    this.itemsSubject.next([...items]); // El '[...]' es vital para que Angular detecte el cambio
+    this.itemsSubject.next([...items]);
     localStorage.setItem(this.key, JSON.stringify(items));
   }
 
@@ -80,9 +118,5 @@ export class Cart { // Mantengo el nombre 'Cart' para no romper tus imports
         console.error("Error al cargar carrito", e);
       }
     }
-  }
-
-  get totalItems$() {
-    return this.items$.pipe(map(items => items.reduce((acc, i) => acc + i.cantidad, 0)));
   }
 }

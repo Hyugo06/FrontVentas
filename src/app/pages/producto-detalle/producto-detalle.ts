@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Producto, ProductoVariante } from '../../services/producto';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
+import { take } from 'rxjs/operators'; // <--- Importante
 import { Cart } from '../../services/cart';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -198,18 +199,46 @@ export class ProductoDetalleComponent implements OnInit {
       return;
     }
 
+    // Validación de Stock vs Carrito
+    this.cartService.items$.pipe(take(1)).subscribe(items => {
+      const uid = this.varianteSeleccionada
+        ? `${this.producto.idProducto}-${this.varianteSeleccionada.idVariante}`
+        : `${this.producto.idProducto}-base`;
 
-    this.cartService.addToCart(this.producto, this.varianteSeleccionada, 1);
+      const itemEnCarrito = items.find(i => i.uid === uid);
+      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+      const stockMaximo = this.varianteSeleccionada
+        ? this.varianteSeleccionada.stockActual
+        : this.producto.stockActual;
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Agregado al carrito',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      background: '#ffffff',
-      iconColor: '#10b981'
+      if (cantidadEnCarrito + 1 > stockMaximo) {
+        Swal.fire({
+          title: '¡Stock Máximo Alcanzado!',
+          text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`,
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          background: '#fff5f5',
+          iconColor: '#ef4444'
+        });
+        return;
+      }
+
+      // Si pasa la validación, agregamos
+      this.cartService.addToCart(this.producto, this.varianteSeleccionada, 1);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Agregado al carrito',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#ffffff',
+        iconColor: '#10b981'
+      });
     });
   }
 }

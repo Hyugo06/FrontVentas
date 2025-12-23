@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router'; // <--- Importante para que funcione el enlace
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { Producto } from '../../services/producto';
@@ -157,6 +157,7 @@ export class ProductoListaComponent implements OnInit {
 
   agregarAlCarrito(event: Event, producto: any, varianteSeleccionada: any): void {
     event.stopPropagation();
+
     if (producto.variantes?.length > 0 && !varianteSeleccionada) {
       Swal.fire({
         title: 'Falta la talla',
@@ -169,17 +170,47 @@ export class ProductoListaComponent implements OnInit {
       });
       return;
     }
-    this.cartService.addToCart(producto, varianteSeleccionada, 1);
-    Swal.fire({
-      title: '¡Agregado!',
-      text: `${producto.nombre} se agregó al carrito`,
-      icon: 'success',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      background: '#ffffff',
-      iconColor: '#10b981'
+
+    // Verificamos el stock disponible vs lo que ya tiene en el carrito
+    this.cartService.items$.pipe(take(1)).subscribe(items => {
+      const uid = varianteSeleccionada
+        ? `${producto.idProducto}-${varianteSeleccionada.idVariante}`
+        : `${producto.idProducto}-base`;
+
+      const itemEnCarrito = items.find(i => i.uid === uid);
+      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+      const stockMaximo = varianteSeleccionada
+        ? varianteSeleccionada.stockActual
+        : producto.stockActual;
+
+      if (cantidadEnCarrito + 1 > stockMaximo) {
+        Swal.fire({
+          title: '¡Stock Máximo Alcanzado!',
+          text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`,
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          background: '#fff5f5',
+          iconColor: '#ef4444'
+        });
+        return;
+      }
+
+      // Si pasa la validación, agregamos
+      this.cartService.addToCart(producto, varianteSeleccionada, 1);
+      Swal.fire({
+        title: '¡Agregado!',
+        text: `${producto.nombre} se agregó al carrito`,
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#ffffff',
+        iconColor: '#10b981'
+      });
     });
   }
 
