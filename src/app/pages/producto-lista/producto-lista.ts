@@ -35,7 +35,7 @@ export class ProductoListaComponent implements OnInit {
   public colorSeleccionado: { [id: number]: string } = {};
   public seleccion: { [id: number]: any } = {};
 
-  public baseUrl = 'http://192.168.1.34:8080';
+  public baseUrl = 'https://apiventas-1.onrender.com';
 
   constructor(
     private productoService: Producto,

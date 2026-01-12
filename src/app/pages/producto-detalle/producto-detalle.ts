@@ -29,7 +29,7 @@ export class ProductoDetalleComponent implements OnInit {
 
   // Galería
   public imagenActual: string | null = null;
-  public baseUrl = 'http://192.168.1.34:8080'; // Asegúrate que esta IP sea correcta
+  public baseUrl = 'https://apiventas-1.onrender.com'; // Asegúrate que esta IP sea correcta
 
   constructor(
     private route: ActivatedRoute,

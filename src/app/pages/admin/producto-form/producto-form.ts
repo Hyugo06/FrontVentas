@@ -273,7 +273,7 @@ export class ProductoFormComponent implements OnInit {
           urlImagen: producto.urlImagen
         });
 
-        if (producto.urlImagen) this.previewUrl = 'http://192.168.1.34:8080' + producto.urlImagen;
+        if (producto.urlImagen) this.previewUrl = 'https://apiventas-1.onrender.com' + producto.urlImagen;
 
         if (producto.variantes && producto.variantes.length > 0) {
           this.reconstruirGruposDesdeBackend(producto.variantes);

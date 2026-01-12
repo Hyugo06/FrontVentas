@@ -1,0 +1,99 @@
+<div class="container mx-auto p-4 md:p-8 animate-fade-in-up">
+
+  <div class="mb-6">
+    <a routerLink="/admin/clientes" class="inline-flex items-center text-slate-500 hover:text-indigo-600 transition-colors font-medium mb-4">
+      <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+      Volver a Clientes
+    </a>
+
+    @if (cliente) {
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
+            {{ cliente.nombres.charAt(0) }}{{ cliente.apellidos.charAt(0) }}
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">{{ cliente.nombres }} {{ cliente.apellidos }}</h1>
+            <div class="flex flex-wrap gap-3 mt-1 text-sm text-slate-500">
+              <span class="flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.956 1-1 1h-2.5" /></svg>
+                DNI: {{ cliente.dni }}
+              </span>
+              <span class="flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                {{ cliente.celular }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-right min-w-[200px]">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda Total</p>
+          <p class="text-3xl font-extrabold text-slate-800">S/ {{ deudaTotal | number:'1.2-2' }}</p>
+          <button class="mt-2 w-full py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+            Registrar Abono
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (cargando) {
+    <div class="flex justify-center py-12">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+    </div>
+  } @else {
+    <div class="bg-white shadow-md rounded-xl overflow-hidden border border-slate-100">
+      <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h3 class="font-bold text-slate-700">Historial de Movimientos</h3>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-white">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Concepto</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Comprobante</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Monto</th>
+            <th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+          </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            @for (venta of ventas; track venta.idVenta) {
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {{ venta.fecha | date:'medium' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">
+                  Compra #{{ venta.idVenta }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {{ venta.tipoComprobante }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-800">
+                  S/ {{ venta.total | number:'1.2-2' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <span class="px-2 py-1 text-xs font-bold rounded-full"
+                        [class.bg-green-100]="venta.estado === 'COMPLETADO'"
+                        [class.text-green-700]="venta.estado === 'COMPLETADO'"
+                        [class.bg-red-100]="venta.estado === 'ANULADO'"
+                        [class.text-red-700]="venta.estado === 'ANULADO'">
+                    {{ venta.estado }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">
+                  Este cliente no tiene movimientos registrados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

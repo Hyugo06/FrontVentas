@@ -8,9 +8,9 @@ import { HttpClient } from '@angular/common/http'; // Asegúrate de que esto est
 export class Auth { // Tu clase 'Auth'
 
   //APIWEB
-  //private apiUrl = 'https://apiventas-1.onrender.com/api/usuarios';
+  private apiUrl = 'https://apiventas-1.onrender.com/api/usuarios';
   //APILOCAL-MOBIL
-  apiUrl = 'http://192.168.1.34:8080/api/usuarios';
+  //apiUrl = 'http://192.168.1.34:8080/api/usuarios';
   //APIPC
   //private apiUrl = 'http://localhost:8080/api/usuarios'; // (O 8081)
 

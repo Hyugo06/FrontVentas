@@ -17,7 +17,7 @@ export class AdminProductoDetalleComponent implements OnInit {
   public imagenesGlobales: any[] = []; // Guardamos todas las del backend aquí
   public cargando: boolean = true;
   public error: string | null = null;
-  public baseUrl = 'http://192.168.1.34:8080';
+  public baseUrl = 'https://apiventas-1.onrender.com';
 
   // --- VARIABLES PARA LA GALERÍA DINÁMICA ---
   public imagenActual: string | null = null;
@@ -72,37 +72,36 @@ export class AdminProductoDetalleComponent implements OnInit {
   mostrarTodasLasFotos(): void {
     this.colorSeleccionado = null;
 
-    // 1. Creamos una lista temporal para acumular TODO lo que encontremos
     let todasLasUrls: string[] = [];
 
-    // A) Agregamos la Imagen Principal (si existe)
+    // A) Imagen Principal
     if (this.producto.urlImagen) {
-      todasLasUrls.push(this.baseUrl + this.producto.urlImagen);
+      // CAMBIO AQUÍ:
+      todasLasUrls.push(this.resolverUrlImagen(this.producto.urlImagen));
     }
 
-    // B) Agregamos la Galería Global (si existe)
+    // B) Galería Global
     if (this.imagenesGlobales.length > 0) {
       this.imagenesGlobales.forEach(img => {
-        todasLasUrls.push(this.baseUrl + img.urlImagen);
+        // CAMBIO AQUÍ:
+        todasLasUrls.push(this.resolverUrlImagen(img.urlImagen));
       });
     }
 
-    // C) Agregamos las imágenes de CADA variante
-    // (Esto asegura que si subiste una foto solo a una variante, también salga en "Ver todas")
+    // C) Variantes
     if (this.variantesAgrupadas.length > 0) {
       this.variantesAgrupadas.forEach(grupo => {
         if (grupo.imagenes && grupo.imagenes.length > 0) {
           grupo.imagenes.forEach((urlRelativa: string) => {
-            todasLasUrls.push(this.baseUrl + urlRelativa);
+            // CAMBIO AQUÍ:
+            todasLasUrls.push(this.resolverUrlImagen(urlRelativa));
           });
         }
       });
     }
 
-    // 2. EL TRUCO DE MAGIA: Eliminamos duplicados exactos usando Set 🪄
     this.imagenesMostradas = [...new Set(todasLasUrls)];
 
-    // 3. Reseteamos la imagen principal a la primera de la lista limpia
     if (this.imagenesMostradas.length > 0) {
       this.imagenActual = this.imagenesMostradas[0];
     } else {
@@ -110,8 +109,10 @@ export class AdminProductoDetalleComponent implements OnInit {
     }
   }
 
+
+
+
   filtrarPorColor(grupo: any): void {
-    // Si ya estaba seleccionado, lo deseleccionamos (volvemos a ver todas)
     if (this.colorSeleccionado === grupo.color) {
       this.mostrarTodasLasFotos();
       return;
@@ -119,14 +120,14 @@ export class AdminProductoDetalleComponent implements OnInit {
 
     this.colorSeleccionado = grupo.color;
 
-    // Si el grupo tiene fotos, las mostramos
     if (grupo.imagenes && grupo.imagenes.length > 0) {
-      this.imagenesMostradas = grupo.imagenes.map((url: string) => this.baseUrl + url);
+      // CAMBIO AQUÍ: Usamos resolverUrlImagen
+      this.imagenesMostradas = grupo.imagenes.map((url: string) => this.resolverUrlImagen(url));
       this.imagenActual = this.imagenesMostradas[0];
     } else {
-      // Si el grupo NO tiene fotos específicas, mostramos la imagen principal del producto como fallback
       if (this.producto.urlImagen) {
-        this.imagenesMostradas = [this.baseUrl + this.producto.urlImagen];
+        // CAMBIO AQUÍ:
+        this.imagenesMostradas = [this.resolverUrlImagen(this.producto.urlImagen)];
         this.imagenActual = this.imagenesMostradas[0];
       } else {
         this.imagenesMostradas = [];
@@ -167,6 +168,20 @@ export class AdminProductoDetalleComponent implements OnInit {
       }
     });
     this.variantesAgrupadas = Array.from(grupos.values());
+  }
+
+  // Función auxiliar para saber si concatenar la base URL o usar la de Cloudinary
+  private resolverUrlImagen(url: string | null): string {
+    if (!url) return 'assets/img/sin-imagen.png'; // O tu imagen por defecto
+
+    // Si la url ya tiene "http", es de Cloudinary -> La dejamos tal cual
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    // Si no, es una imagen antigua o local -> Le pegamos la baseUrl
+    // Nota: Asegúrate de si necesitas agregar '/media/' o no, dependiendo de cómo guardabas antes
+    return this.baseUrl + url;
   }
 
   public objectEntries(obj: any): [string, any][] {
