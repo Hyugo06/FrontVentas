@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router'; // <--- Importante para que funcione el enlace
+import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
@@ -35,7 +35,7 @@ export class ProductoListaComponent implements OnInit {
   public colorSeleccionado: { [id: number]: string } = {};
   public seleccion: { [id: number]: any } = {};
 
-  public baseUrl = 'https://apiventas-1.onrender.com';
+  // public baseUrl = 'https://apiventas-1.onrender.com'; // YA NO LO USAREMOS DIRECTAMENTE
 
   constructor(
     private productoService: Producto,
@@ -59,7 +59,7 @@ export class ProductoListaComponent implements OnInit {
       switchMap(val => this.productoService.getProductosPublicos(val.search, val.categoria))
     ).subscribe({
       next: (data) => {
-        this.inicializarCarruseles(data); // <--- Aquí ocurre la magia de preselección
+        this.inicializarCarruseles(data);
         this.productos = data;
         this.cargandoProductos = false;
       },
@@ -72,6 +72,19 @@ export class ProductoListaComponent implements OnInit {
   // ==========================================
   // 🧠 LÓGICA DE PRESELECCIÓN Y GALERÍA
   // ==========================================
+
+  // --- NUEVA FUNCIÓN INTELIGENTE ---
+  resolverUrlImagen(url: string | null): string {
+    if (!url) return 'assets/img/sin-imagen.png'; // Imagen por defecto si es null
+
+    // 1. Si ya es de Cloudinary (empieza con http), la dejamos tal cual
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
+    return 'https://apiventas-1.onrender.com' + url;
+  }
 
   inicializarCarruseles(productos: any[]): void {
     productos.forEach(prod => {
@@ -107,23 +120,25 @@ export class ProductoListaComponent implements OnInit {
 
   construirGaleria(prod: any, colorFiltro: string | null): void {
     let urls: string[] = [];
+
+    // LÓGICA CORREGIDA USANDO resolverUrlImagen
     if (!colorFiltro) {
-      if (prod.urlImagen) urls.push(this.baseUrl + prod.urlImagen);
-      if (prod.imagenes) prod.imagenes.forEach((img: any) => urls.push(this.baseUrl + img.urlImagen));
+      if (prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
+      if (prod.imagenes) prod.imagenes.forEach((img: any) => urls.push(this.resolverUrlImagen(img.urlImagen)));
       if (prod.variantes) {
         prod.variantes.forEach((v: any) => {
-          if (v.urlImagen) urls.push(this.baseUrl + v.urlImagen);
-          if (v.galeriaImagenes) v.galeriaImagenes.forEach((u: string) => urls.push(this.baseUrl + u));
+          if (v.urlImagen) urls.push(this.resolverUrlImagen(v.urlImagen));
+          if (v.galeriaImagenes) v.galeriaImagenes.forEach((u: string) => urls.push(this.resolverUrlImagen(u)));
         });
       }
     } else {
       const variantesColor = prod.variantes.filter((v: any) => v.color === colorFiltro);
       variantesColor.forEach((v: any) => {
-        if (v.galeriaImagenes) v.galeriaImagenes.forEach((u: string) => urls.push(this.baseUrl + u));
-        if (v.urlImagen) urls.push(this.baseUrl + v.urlImagen);
+        if (v.galeriaImagenes) v.galeriaImagenes.forEach((u: string) => urls.push(this.resolverUrlImagen(u)));
+        if (v.urlImagen) urls.push(this.resolverUrlImagen(v.urlImagen));
       });
       // Fallback si el color no tiene foto
-      if (urls.length === 0 && prod.urlImagen) urls.push(this.baseUrl + prod.urlImagen);
+      if (urls.length === 0 && prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
     }
     this.mapaImagenes[prod.idProducto] = [...new Set(urls)];
     this.indiceImagen[prod.idProducto] = 0;
@@ -142,12 +157,10 @@ export class ProductoListaComponent implements OnInit {
   // --- SELECCIÓN ---
   seleccionarColor(prod: any, color: string): void {
     const id = prod.idProducto;
-
-    // Si da click al mismo color, NO lo deseleccionamos (siempre debe haber uno activo)
     if (this.colorSeleccionado[id] === color) return;
 
     this.colorSeleccionado[id] = color;
-    this.seleccion[id] = null; // Reseteamos la talla porque cambió el color
+    this.seleccion[id] = null;
     this.construirGaleria(prod, color);
   }
 
@@ -171,7 +184,6 @@ export class ProductoListaComponent implements OnInit {
       return;
     }
 
-    // Verificamos el stock disponible vs lo que ya tiene en el carrito
     this.cartService.items$.pipe(take(1)).subscribe(items => {
       const uid = varianteSeleccionada
         ? `${producto.idProducto}-${varianteSeleccionada.idVariante}`
@@ -191,14 +203,14 @@ export class ProductoListaComponent implements OnInit {
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
-          timer: 3000,
+          showCloseButton: true,
+          timer: 4000,
           background: '#fff5f5',
           iconColor: '#ef4444'
         });
         return;
       }
 
-      // Si pasa la validación, agregamos
       this.cartService.addToCart(producto, varianteSeleccionada, 1);
       Swal.fire({
         title: '¡Agregado!',
@@ -207,7 +219,8 @@ export class ProductoListaComponent implements OnInit {
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
-        timer: 2000,
+        showCloseButton: true,
+        timer: 3000,
         background: '#ffffff',
         iconColor: '#10b981'
       });

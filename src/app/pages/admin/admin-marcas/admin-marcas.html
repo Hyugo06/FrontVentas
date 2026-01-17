@@ -11,53 +11,84 @@
       Agregar Marca
     </a>
   </div>
+  @if (cargando) {
+    <div class="flex flex-col items-center justify-center py-20">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mb-4"></div>
+      <p class="text-slate-400 font-medium">Cargando catálogo...</p>
+    </div>
+  } @else {
 
-  <div class="hidden lg:block bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 overflow-hidden max-w-4xl">
-    <table class="min-w-full divide-y divide-slate-100">
-      <thead class="bg-slate-50/80">
-      <tr>
-        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-20">ID</th>
-        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre de la Marca</th>
-        <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
-      </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-slate-100">
-        @for (marca of marcas; track marca.idMarca) {
-          <tr class="hover:bg-slate-50 transition-colors">
-            <td class="px-6 py-4">
-              <span class="bg-slate-100 text-slate-500 font-mono text-xs font-bold px-2 py-1 rounded">#{{ marca.idMarca }}</span>
-            </td>
-            <td class="px-6 py-4 text-sm font-bold text-slate-800">
-              {{ marca.nombre }}
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex justify-end gap-3">
-                <a [routerLink]="['/admin/marcas/editar', marca.idMarca]" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">Editar</a>
-                <button (click)="eliminarMarca(marca)" class="text-red-500 hover:text-red-700 font-medium text-sm">Eliminar</button>
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+    @if (marcas.length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center animate-fadeIn mx-auto max-w-2xl mt-8">
 
-  <div class="lg:hidden grid grid-cols-2 md:grid-cols-3 gap-4">
-    @for (marca of marcas; track marca.idMarca) {
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center hover:shadow-md transition-all">
-
-        <div class="h-10 w-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-2">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 shadow-sm border border-green-100">
+          <svg class="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
         </div>
 
-        <h3 class="font-bold text-slate-800 text-sm mb-3">{{ marca.nombre }}</h3>
+        <h3 class="text-xl md:text-2xl font-bold text-slate-800 mb-3">No hay marcas registradas</h3>
+        <p class="text-slate-500 mb-8 max-w-md mx-auto">
+          Registra las marcas o proveedores de tus productos (ej: "Adidas", "Samsung") para que tus clientes puedan filtrar por ellas.
+        </p>
 
-        <div class="flex gap-3 w-full border-t border-slate-100 pt-3 justify-center">
-          <a [routerLink]="['/admin/marcas/editar', marca.idMarca]" class="text-indigo-600 text-xs font-bold p-1">Editar</a>
-          <button (click)="eliminarMarca(marca)" class="text-red-500 text-xs font-bold p-1">Eliminar</button>
-        </div>
+        <a routerLink="/admin/marcas/nuevo"
+           class="text-green-600 font-bold hover:text-green-800 transition-colors text-lg hover:underline flex items-center gap-2">
+          Registrar primera marca
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        </a>
       </div>
     }
-  </div>
 
+    @else {
+
+      <div class="hidden lg:block bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 overflow-hidden max-w-4xl mx-auto mt-6">
+        <table class="min-w-full divide-y divide-slate-100">
+          <thead class="bg-slate-50/80">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-20">ID</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre de la Marca</th>
+            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
+          </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            @for (marca of marcas; track marca.idMarca; let i = $index) {
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4">
+                  <span class="bg-slate-100 text-slate-500 font-mono text-xs font-bold px-2 py-1 rounded">#{{ i + 1 }}</span>
+                </td>
+                <td class="px-6 py-4 text-sm font-bold text-slate-800">
+                  {{ marca.nombre }}
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex justify-end gap-3">
+                    <a [routerLink]="['/admin/marcas/editar', marca.idMarca]" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">Editar</a>
+                    <button (click)="eliminarMarca(marca)" class="text-red-500 hover:text-red-700 font-medium text-sm">Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lg:hidden grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+        @for (marca of marcas; track marca.idMarca) {
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center hover:shadow-md transition-all">
+
+            <div class="h-10 w-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+            </div>
+
+            <h3 class="font-bold text-slate-800 text-sm mb-3">{{ marca.nombre }}</h3>
+
+            <div class="flex gap-3 w-full border-t border-slate-100 pt-3 justify-center">
+              <a [routerLink]="['/admin/marcas/editar', marca.idMarca]" class="text-indigo-600 text-xs font-bold p-1">Editar</a>
+              <button (click)="eliminarMarca(marca)" class="text-red-500 text-xs font-bold p-1">Eliminar</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
 </div>

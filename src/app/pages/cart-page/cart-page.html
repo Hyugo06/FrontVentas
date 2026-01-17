@@ -19,12 +19,11 @@
 
               <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
 
-                @if (item.variante?.urlImagen) {
-                  <img [src]="'https://apiventas-1.onrender.com' + (item.variante?.urlImagen || item.producto.urlImagen)" class="w-full h-full object-cover">
-                } @else if (item.producto.urlImagen) {
-                  <img [src]="'https://apiventas-1.onrender.com' + (item.variante?.urlImagen || item.producto.urlImagen)" class="w-full h-full object-cover">
+                @if (item.variante?.urlImagen || item.producto.urlImagen) {
+                  <img [src]="resolverUrlImagen(item.variante?.urlImagen || item.producto.urlImagen)"
+                       class="w-full h-full object-cover">
                 } @else {
-                  <span class="text-gray-400 text-xs">Sin foto</span>
+                  <span class="text-gray-400 text-xs font-bold uppercase">Sin foto</span>
                 }
 
               </div>
@@ -83,10 +82,6 @@
             <div class="flex justify-between mb-3 text-gray-600">
               <span>Subtotal:</span>
               <span class="font-medium">S/ {{ total$ | async | number: '1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between mb-6 text-gray-600">
-              <span>Envío:</span>
-              <span class="text-green-600 font-medium">Gratis</span>
             </div>
 
             <div class="flex justify-between items-center border-t pt-4 mb-8">

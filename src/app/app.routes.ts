@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import {Router, Routes} from '@angular/router';
 import { ProductoDetalleComponent } from './pages/producto-detalle/producto-detalle';
 import { ProductoListaComponent } from './pages/producto-lista/producto-lista';
 import { LoginComponent } from './pages/login/login';
@@ -18,10 +18,13 @@ import { MarcaFormComponent } from './pages/admin/marca-form/marca-form';
 import { AdminProductoDetalleComponent } from './pages/admin/admin-producto-detalle/admin-producto-detalle';
 import { AdminVentaDetalleComponent } from './pages/admin/admin-venta-detalle/admin-venta-detalle';
 import { CartPageComponent } from './pages/cart-page/cart-page';
-import { AdminMetricsComponent } from './pages/admin/admin-metrics/admin-metrics';
+
 import { AdminClientesComponent } from './pages/admin/admin-clientes/admin-clientes';
 import {CuponFormComponent} from './pages/admin/cupon-form/cupon-form';
 import {CuponListComponent} from './pages/admin/cupon-list/cupon-list';
+import {Auth} from './services/auth';
+import {inject} from '@angular/core';
+import {AdminMetricsComponent} from './pages/admin/admin-metrics/admin-metrics';
 // import {AdminCajaComponent} from './pages/admin/admin-caja/admin-caja.component';
 
 export const routes: Routes = [
@@ -65,7 +68,27 @@ export const routes: Routes = [
     canActivate: [adminGuard],
     children: [
       { path: '', redirectTo: 'productos', pathMatch: 'full' },
-      { path: 'dashboard', component: AdminMetricsComponent },
+      {
+        path: 'dashboard',
+        component: AdminMetricsComponent,
+        // GUARDIA ESPECÍFICO PARA ESTA RUTA
+        canActivate: [
+          () => {
+            const auth = inject(Auth);
+            const router = inject(Router);
+
+            // Si es ADMIN o tiene el permiso, pasa.
+            if (auth.esAdmin() || auth.tienePermiso('VER_DASHBOARD')) {
+              return true;
+            }
+
+            // Si no, lo rebotamos a la lista de productos (o ventas)
+            // No usamos navigate(['/']) para no sacarlo del admin si es moderador
+            router.navigate(['/admin/ventas']);
+            return false;
+          }
+        ]
+      },
       { path: 'productos', component: AdminDashboardComponent },
       { path: 'productos/nuevo', component: ProductoFormComponent },
       { path: 'productos/editar/:id', component: ProductoFormComponent },

@@ -182,7 +182,7 @@
 
                       @for (imgUrl of getImagenesControls(i).value; track $index; let imgIndex = $index) {
                         <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 group/img">
-                          <img [src]="'https://apiventas-1.onrender.com' + imgUrl" class="w-full h-full object-cover">
+                          <img [src]="resolverUrlImagen(imgUrl)" class="w-full h-full object-cover">
 
                           <button type="button" (click)="eliminarImagenDeGrupo(i, imgIndex)"
                                   class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white hover:bg-black/60">
@@ -247,7 +247,7 @@
           <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
             @for (img of imagenesProducto; track img.idImagen) {
               <div class="relative group rounded-xl overflow-hidden shadow-sm aspect-square bg-slate-100">
-                <img [src]="'http://192.168.1.34:8080' + img.urlImagen" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <img [src]="resolverUrlImagen(img.urlImagen)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                   <button type="button" (click)="eliminarImagenGaleria(img.idImagen)"
                           class="bg-white/90 text-red-600 rounded-full p-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-white shadow-lg">

@@ -43,9 +43,9 @@
             @for (img of imagenesFiltradas; track img.urlImagen) {
               <button (click)="cambiarImagen(img.urlImagen)"
                       class="w-20 h-20 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all"
-                      [class.border-indigo-600]="imagenActual === baseUrl + img.urlImagen"
-                      [class.border-transparent]="imagenActual !== baseUrl + img.urlImagen">
-                <img [src]="baseUrl + img.urlImagen" class="w-full h-full object-cover">
+                      [class.border-indigo-600]="imagenActual === resolverUrlImagen(img.urlImagen)"
+                      [class.border-transparent]="imagenActual !== resolverUrlImagen(img.urlImagen)">
+                <img [src]="resolverUrlImagen(img.urlImagen)" class="w-full h-full object-cover">
               </button>
             }
           </div>

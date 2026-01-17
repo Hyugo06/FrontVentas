@@ -93,6 +93,19 @@ export class ProductoFormComponent implements OnInit {
     });
   }
 
+  // --- FUNCIÓN PARA CORREGIR LAS URLs ---
+  public resolverUrlImagen(url: string | null): string {
+    if (!url) return 'assets/img/sin-imagen.png';
+
+    // 1. Si ya es de Cloudinary (empieza con http), la dejamos tal cual
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
+    return 'https://apiventas-1.onrender.com' + url;
+  }
+
   crearTallaGroup(talla: string = '', stock: number = 0, idVariante: number | null = null): FormGroup {
     return this.fb.group({
       idVariante: [idVariante],

@@ -9,12 +9,13 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
   const rol = authService.getRole();
 
-  if (authService.isLoggedIn() && (rol === 'ADMIN' || rol === 'MODERADOR')) {
-    return true; // ¡Pase usted!
+  // 👇 AQUÍ AGREGAMOS AL VENDEDOR 👇
+  if (authService.isLoggedIn() && (rol === 'ADMIN' || rol === 'MODERADOR' || rol === 'VENDEDOR')) {
+    return true; // ¡Pase usted también!
   }
 
-  // Si no es ninguno de los dos, fuera.
-  console.warn('Acceso denegado: Se requiere nivel de administración');
+  // Si no es ninguno de los tres, fuera.
+  console.warn('Acceso denegado: Rol no autorizado para el panel');
   router.navigate(['/login']);
   return false;
 };

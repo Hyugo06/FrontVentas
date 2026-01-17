@@ -171,7 +171,7 @@ export class AdminProductoDetalleComponent implements OnInit {
   }
 
   // Función auxiliar para saber si concatenar la base URL o usar la de Cloudinary
-  private resolverUrlImagen(url: string | null): string {
+  public resolverUrlImagen(url: string | null): string {
     if (!url) return 'assets/img/sin-imagen.png'; // O tu imagen por defecto
 
     // Si la url ya tiene "http", es de Cloudinary -> La dejamos tal cual

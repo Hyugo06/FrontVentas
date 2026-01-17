@@ -42,6 +42,33 @@ export class Auth { // Tu clase 'Auth'
     );
   }
 
+  public esAdmin(): boolean {
+    return this.getRole() === 'ADMIN';
+  }
+
+  public tienePermiso(permiso: string): boolean {
+    // Si es Admin, tiene permiso para todo automáticamente
+    if (this.esAdmin()) return true;
+
+    // Recuperamos la lista de permisos que guardamos en login.ts
+    const permisosGuardados = localStorage.getItem('misPermisos');
+
+    if (permisosGuardados) {
+      try {
+        // Convertimos el texto JSON a un array real
+        const listaPermisos = JSON.parse(permisosGuardados);
+
+        // Verificamos si la lista existe y contiene el permiso
+        return Array.isArray(listaPermisos) && listaPermisos.includes(permiso);
+      } catch (e) {
+        console.error('Error leyendo permisos:', e);
+        return false;
+      }
+    }
+
+    return false;
+  }
+
   public logout(): void {
     localStorage.removeItem(this.AUTH_TOKEN_KEY);
     localStorage.removeItem(this.USER_ROLE_KEY);

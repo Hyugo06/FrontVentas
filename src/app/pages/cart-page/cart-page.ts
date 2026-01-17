@@ -19,13 +19,26 @@ export class CartPageComponent {
   public total$: Observable<number>;
 
   constructor(
-    protected cartService: Cart,
+    public cartService: Cart, // Cambiado a public para usarlo en el HTML si hace falta
     private modalService: Modal
   ) {
     this.items$ = this.cartService.items$;
     this.total$ = this.items$.pipe(
       map(items => items.reduce((total, item) => total + (item.producto.precioVenta * item.cantidad), 0))
     );
+  }
+
+  // --- NUEVA FUNCIÓN INTELIGENTE ---
+  resolverUrlImagen(url: string | null | undefined): string {
+    if (!url) return 'assets/img/sin-imagen.png';
+
+    // 1. Si ya es de Cloudinary (empieza con http), la dejamos tal cual
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
+    return 'https://apiventas-1.onrender.com' + url;
   }
 
   incrementar(item: CartItem): void {
@@ -45,7 +58,6 @@ export class CartPageComponent {
     }
   }
 
-  // ESTO ES LO QUE FALTABA
   eliminar(item: CartItem): void {
     this.modalService.open(`¿Deseas quitar "${item.producto.nombre}" del carrito?`)
       .subscribe(result => {

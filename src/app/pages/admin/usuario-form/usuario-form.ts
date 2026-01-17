@@ -9,6 +9,7 @@ import { Auth } from '../../../services/auth'; //
 
 
 const PERMISOS_DISPONIBLES = [
+  { key: 'VER_DASHBOARD', label: 'Ver Dashboard / Resumen' },
   { key: 'GESTIONAR_PRODUCTOS', label: 'Gestionar Productos' },
   { key: 'GESTIONAR_VENTAS', label: 'Gestionar Ventas' },
   { key: 'GESTIONAR_USUARIOS', label: 'Gestionar Usuarios' },

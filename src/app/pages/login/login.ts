@@ -40,6 +40,8 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
     this.showPassword = !this.showPassword;
   }
 
+  // En login.ts
+
   public login(): void {
     console.log("--> 1. [LOGIN] Iniciando...");
 
@@ -55,22 +57,76 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
       next: (usuario) => {
         console.log("--> [LOGIN] ¡Éxito! Bienvenido:", usuario.nombreUsuario);
 
-        // Guardamos datos (auth.ts ya guardó token y rol, aquí guardamos extras)
+        // Guardamos datos auxiliares
         localStorage.setItem('nombreUsuarioReal', usuario.nombres);
         localStorage.setItem('misPermisos', JSON.stringify(usuario.permisos || []));
 
-        const rol = usuario.rol;
-        // Redirección basada en el ROL FRESCO que acaba de llegar
-        if (rol === 'ADMIN' || rol === 'MODERADOR') {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.router.navigate(['/productos']);
-        }
+        // --- LÓGICA DE ATERRIZAJE INTELIGENTE ---
+        this.redirigirSegunPermisos(usuario);
       },
       error: (err: HttpErrorResponse) => {
-        console.error("--> [LOGIN] Error:", err);
-        this.error = "Usuario o contraseña incorrectos.";
+        console.error("--> [LOGIN ERROR]:", err);
+        if (err.status === 401) {
+          this.error = "Usuario o contraseña incorrectos";
+        } else {
+          this.error = "Error de conexión con el servidor";
+        }
       }
     });
+  }
+
+  // --- NUEVA FUNCIÓN PRIVADA ---
+  private redirigirSegunPermisos(usuario: any): void {
+    const rol = usuario.rol;
+    const permisos = usuario.permisos || [];
+
+    // 1. ADMIN: Pase VIP directo al Dashboard
+    if (rol === 'ADMIN') {
+      this.router.navigate(['/admin/dashboard']);
+      return;
+    }
+
+    // 2. MODERADOR: Verificar a dónde puede ir
+    if (rol === 'MODERADOR') {
+      // ¿Tiene permiso explícito para Dashboard?
+      if (permisos.includes('VER_DASHBOARD')) {
+        this.router.navigate(['/admin/dashboard']);
+        return;
+      }
+      // Si no, buscamos la primera puerta abierta (Orden de prioridad)
+      if (permisos.includes('GESTIONAR_PRODUCTOS')) {
+        this.router.navigate(['/admin/productos']);
+        return;
+      }
+      if (permisos.includes('GESTIONAR_VENTAS')) {
+        this.router.navigate(['/admin/ventas']);
+        return;
+      }
+      if (permisos.includes('GESTIONAR_CUPONES')) {
+        this.router.navigate(['/admin/cupones']);
+        return;
+      }
+      if (permisos.includes('GESTIONAR_USUARIOS')) {
+        this.router.navigate(['/admin/usuarios']);
+        return;
+      }
+      if (permisos.includes('GESTIONAR_CATEGORIAS')) {
+        this.router.navigate(['/admin/categorias']);
+        return;
+      }
+      if (permisos.includes('GESTIONAR_MARCAS')) {
+        this.router.navigate(['/admin/marcas']);
+        return;
+      }
+    }
+
+    // 3. VENDEDOR o cualquier otro: A su zona de trabajo
+    if (rol === 'VENDEDOR') {
+      this.router.navigate(['/productos']);
+      return;
+    }
+
+    // 4. CLIENTE o Fallback
+    this.router.navigate(['/productos']);
   }
 }
