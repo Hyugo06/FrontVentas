@@ -34,6 +34,7 @@ export class ProductoListaComponent implements OnInit {
   public indiceImagen: { [id: number]: number } = {};
   public colorSeleccionado: { [id: number]: string } = {};
   public seleccion: { [id: number]: any } = {};
+  public categoriaHover: CategoriaTree | null = null;
 
   // public baseUrl = 'https://apiventas-1.onrender.com'; // YA NO LO USAREMOS DIRECTAMENTE
 
@@ -270,4 +271,19 @@ export class ProductoListaComponent implements OnInit {
   setCategoriaFiltro(nombre: string): void { this.filtroForm.patchValue({ categoria: nombre }); }
   verTodo(): void { this.filtroForm.patchValue({ categoria: '', search: '' }); this.showMobileMenu = false; }
   limpiarFiltros(): void { this.filtroForm.reset({ search: '', categoria: '' }); }
+
+  onMouseEnter(cat: CategoriaTree): void {
+    this.categoriaHover = cat;
+  }
+
+  onMouseLeave(): void {
+    this.categoriaHover = null;
+  }
+
+  // Mantenemos este para cerrar el panel si hacen clic
+  seleccionarCategoriaYcerrar(nombre: string): void {
+    this.setCategoriaFiltro(nombre);
+    this.categoriaHover = null;
+    this.showMobileMenu = false;
+  }
 }
