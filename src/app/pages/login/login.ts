@@ -110,6 +110,10 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
         this.router.navigate(['/admin/usuarios']);
         return;
       }
+      if (permisos.includes('GESTIONAR_CLIENTES')) {
+        this.router.navigate(['/admin/clientes']);
+        return;
+      }
       if (permisos.includes('GESTIONAR_CATEGORIAS')) {
         this.router.navigate(['/admin/categorias']);
         return;

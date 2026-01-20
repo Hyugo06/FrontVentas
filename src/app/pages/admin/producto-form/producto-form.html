@@ -177,7 +177,12 @@
                     <div class="flex flex-wrap gap-2">
                       <label class="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-indigo-200 bg-white rounded-lg cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-colors">
                         <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <input type="file" (change)="onFileSelectedGrupo($event, i)" accept="image/*" class="hidden">
+
+                        <input type="file"
+                               (change)="onFileSelectedGrupo($event, i)"
+                               accept="image/*"
+                               class="hidden"
+                               multiple>
                       </label>
 
                       @for (imgUrl of getImagenesControls(i).value; track $index; let imgIndex = $index) {
@@ -241,8 +246,40 @@
           }
         </section>
 
-        <section>
-          <h3 class="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2 mb-6">Galería Principal</h3>
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+          <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Galería de Imágenes
+            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+              {{ imagenesProducto.length }} seleccionadas
+            </span>
+          </h3>
+
+          @if (esEdicion) {
+            <div class="mb-6">
+              <label for="galeria_input" class="group flex flex-col items-center justify-center w-full h-44 border-2 border-slate-300 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition-all">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                  <svg class="w-12 h-12 text-slate-400 group-hover:text-indigo-500 transition-colors mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  <p class="mb-2 text-sm font-bold text-slate-500 group-hover:text-indigo-600">
+                    <span class="font-extrabold">Haz clic para seleccionar</span> o arrastra tus imágenes aquí
+                  </p>
+                  <p class="text-xs text-slate-400">PNG, JPG o WEBP (Máximo 5 fotos recomendadas)</p>
+                </div>
+
+                <input type="file"
+                       id="galeria_input"
+                       (change)="onFileSelected($event)"
+                       class="hidden"
+                       accept="image/*"
+                       multiple>
+              </label>
+            </div>
+          } @else {
+            <div class="mt-4 p-4 bg-yellow-50 text-yellow-800 text-sm rounded-lg flex items-center gap-2 mb-6">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Guarda el producto primero para habilitar la galería completa.
+            </div>
+          }
 
           <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
             @for (img of imagenesProducto; track img.idImagen) {
@@ -256,28 +293,12 @@
                 </div>
               </div>
             }
-
-            @if (esEdicion) {
-              <label class="relative flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
-                <div class="p-3 bg-white rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform text-indigo-500">
-                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                </div>
-                <span class="text-xs font-bold text-indigo-600 uppercase">Subir Foto</span>
-                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
-                @if (uploading) {
-                  <div class="absolute inset-0 bg-white/80 flex items-center justify-center">
-                    <span class="text-xs font-bold text-indigo-600 animate-pulse">...</span>
-                  </div>
-                }
-              </label>
+            @if (uploading) {
+              <div class="relative flex flex-col items-center justify-center aspect-square rounded-xl bg-slate-50 animate-pulse">
+                <span class="text-xs font-bold text-slate-400">Subiendo...</span>
+              </div>
             }
           </div>
-          @if (!esEdicion) {
-            <div class="mt-4 p-4 bg-yellow-50 text-yellow-800 text-sm rounded-lg flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Guarda el producto primero para habilitar la galería completa.
-            </div>
-          }
         </section>
 
       </div>

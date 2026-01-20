@@ -25,6 +25,10 @@ import {CuponListComponent} from './pages/admin/cupon-list/cupon-list';
 import {Auth} from './services/auth';
 import {inject} from '@angular/core';
 import {AdminMetricsComponent} from './pages/admin/admin-metrics/admin-metrics';
+import {AdminClienteFormComponent} from './pages/admin/admin-clientes-form/admin-cliente-form';
+import {AdminClientesHistorialdeabonosComponent} from './pages/admin/admin-clientes-historialdeabonos/admin-clientes-historialdeabonos';
+
+
 // import {AdminCajaComponent} from './pages/admin/admin-caja/admin-caja.component';
 
 export const routes: Routes = [
@@ -92,7 +96,6 @@ export const routes: Routes = [
       { path: 'productos', component: AdminDashboardComponent },
       { path: 'productos/nuevo', component: ProductoFormComponent },
       { path: 'productos/editar/:id', component: ProductoFormComponent },
-      { path: 'clientes', component: AdminClientesComponent },
 
       // { path: 'caja', component: AdminCajaComponent },
 
@@ -109,6 +112,12 @@ export const routes: Routes = [
       { path: 'marcas', component: AdminMarcasComponent },
       { path: 'marcas/nuevo', component: MarcaFormComponent },
       { path: 'marcas/editar/:id', component: MarcaFormComponent },
+
+      { path: 'clientes', component: AdminClientesComponent },
+      { path: 'clientes/nuevo', component: AdminClienteFormComponent },
+      { path: 'clientes/editar/:id', component: AdminClienteFormComponent },
+
+      { path: 'clientes/historial/:id', component: AdminClientesHistorialdeabonosComponent },
 
       { path: 'categorias', component: AdminCategoriasComponent },
       { path: 'categorias/nuevo', component: CategoriaFormComponent },

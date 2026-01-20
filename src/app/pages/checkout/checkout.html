@@ -99,15 +99,19 @@
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">DNI (8 dígitos)</label>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">DNI (Opcional)</label>
+
                   <input type="text" formControlName="dni" maxlength="8" (input)="validarSoloNumeros($event)"
-                         class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                         class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                         placeholder="8 dígitos">
+
                   @if (checkoutForm.get('cliente.dni')?.invalid && checkoutForm.get('cliente.dni')?.touched) {
-                    <p class="text-red-500 text-xs mt-1 font-bold">DNI inválido (8 números)</p>
+                    <p class="text-red-500 text-xs mt-1 font-bold">Si ingresas DNI, deben ser 8 números</p>
                   }
                 </div>
+
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Celular (9 dígitos)</label>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Celular (9 dígitos) (*)</label>
                   <input type="text" formControlName="celular" maxlength="9" (input)="validarSoloNumeros($event)"
                          class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                   @if (checkoutForm.get('cliente.celular')?.invalid && checkoutForm.get('cliente.celular')?.touched) {

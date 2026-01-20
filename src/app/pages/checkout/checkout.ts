@@ -57,7 +57,7 @@ export class CheckoutComponent implements OnInit {
         nombres: ['', Validators.required],
         apellidos: ['', Validators.required],
         celular: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
-        dni: ['', [Validators.required, Validators.pattern('^[0-9]{8}$')]],
+        dni: ['', [Validators.pattern('^[0-9]{8}$')]],
         email: ['', [Validators.email]]
       })
     });
@@ -189,16 +189,40 @@ export class CheckoutComponent implements OnInit {
     this.cargando = true;
     this.error = null;
 
-    const clienteDataFinal = this.esClienteAnonimo ? {
-      nombres: 'Cliente', apellidos: 'General', dni: '00000000', celular: '999999999', email: null
-    } : this.checkoutForm.get('cliente')?.value;
+    // 1. Preparamos los datos del cliente
+    let clienteDataFinal;
 
+    if (this.esClienteAnonimo) {
+      // Caso A: Cliente Anónimo (Datos por defecto)
+      clienteDataFinal = {
+        nombres: 'Cliente',
+        apellidos: 'General',
+        dni: '00000000',
+        celular: '999999999',
+        email: null
+      };
+    } else {
+      // Caso B: Cliente Real (Datos del formulario con limpieza)
+      const rawCliente = this.checkoutForm.get('cliente')?.value;
+
+      clienteDataFinal = {
+        ...rawCliente,
+        // Si el DNI está vacío o son solo espacios, enviamos null. Si no, enviamos el valor.
+        dni: rawCliente.dni && rawCliente.dni.trim() !== '' ? rawCliente.dni : null,
+        // Lo mismo para el Email
+        email: rawCliente.email && rawCliente.email.trim() !== '' ? rawCliente.email : null
+      };
+    }
+
+    console.log("Enviando cliente al backend:", clienteDataFinal);
+    // 2. Preparamos los detalles de la venta
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
       idVariante: item.variante?.idVariante,
       cantidad: item.cantidad
     }));
 
+    // 3. Armamos el objeto completo para el Backend
     const ventaData: any = {
       clienteData: clienteDataFinal,
       tipoComprobante: this.checkoutForm.get('tipoComprobante')?.value,
@@ -206,6 +230,7 @@ export class CheckoutComponent implements OnInit {
       idCupon: this.cuponAplicado ? this.cuponAplicado.idCupom : null
     };
 
+    // 4. Enviamos al servicio
     this.ventaService.procesarVenta(ventaData).subscribe({
       next: () => {
         this.cartService.clearCart();

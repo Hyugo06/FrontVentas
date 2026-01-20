@@ -145,19 +145,33 @@ export class ProductoFormComponent implements OnInit {
   }
 
   onFileSelectedGrupo(event: any, grupoIndex: number): void {
-    const file: File = event.target.files[0];
-    if (file) {
+    // 1. Obtenemos TODOS los archivos, no solo el [0]
+    const files = event.target.files;
+
+    if (files && files.length > 0) {
       this.uploading = true;
-      this.mediaService.uploadFile(file).subscribe({
-        next: (response) => {
-          this.getImagenesControls(grupoIndex).push(this.fb.control(response.url));
-          this.uploading = false;
-        },
-        error: () => {
-          alert('Error al subir imagen');
-          this.uploading = false;
-        }
-      });
+      let archivosPendientes = files.length; // Contador para saber cuándo apagar el loading
+
+      // 2. Recorremos cada archivo seleccionado
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        this.mediaService.uploadFile(file).subscribe({
+          next: (response) => {
+            // Agregamos la URL recibida al array de imágenes
+            this.getImagenesControls(grupoIndex).push(this.fb.control(response.url));
+
+            // Restamos uno al contador
+            archivosPendientes--;
+            if (archivosPendientes === 0) this.uploading = false;
+          },
+          error: () => {
+            console.error('Error al subir una de las imágenes');
+            archivosPendientes--;
+            if (archivosPendientes === 0) this.uploading = false;
+          }
+        });
+      }
     }
   }
 
