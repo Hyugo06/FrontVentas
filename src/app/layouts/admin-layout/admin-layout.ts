@@ -15,10 +15,7 @@ export class AdminLayoutComponent implements OnInit {
 
   public nombreMostrar: string | null = null;
   public isMobileMenuOpen: boolean = false;
-
-  // --- NUEVA LÓGICA PARA EL MENÚ DE USUARIO ---
   public isUserMenuOpen: boolean = false;
-  // --------------------------------------------
 
   constructor(
     private authService: Auth,
@@ -35,8 +32,13 @@ export class AdminLayoutComponent implements OnInit {
     }
   }
 
+  // --- AQUÍ ESTÁ LA CORRECCIÓN ---
   public logout(): void {
-    // Esta función la llamaremos desde el nuevo menú desplegable
+    // 1. ¡PRIMERO! Cerramos todos los menús para que no estorben visualmente
+    this.isMobileMenuOpen = false;
+    this.isUserMenuOpen = false;
+
+    // 2. Ahora sí, lanzamos la modal. Al no haber menú, se verá perfecta.
     this.modalService.open('¿Estás seguro de que deseas cerrar sesión?')
       .subscribe((result: any) => {
         if (result) {
@@ -45,6 +47,7 @@ export class AdminLayoutComponent implements OnInit {
         }
       });
   }
+  // -------------------------------
 
   public toggleMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
@@ -54,23 +57,18 @@ export class AdminLayoutComponent implements OnInit {
     this.isMobileMenuOpen = false;
   }
 
-  // --- NUEVA FUNCIÓN ---
   public toggleUserMenu(): void {
     this.isUserMenuOpen = !this.isUserMenuOpen;
   }
 
   public can(permisoRequerido: string): boolean {
-    // 1. Si es ADMIN, tiene llave maestra (siempre true)
-    // (Asegúrate de tener acceso al rol, ya sea por authService o localStorage)
     const rol = this.authService.getRole();
     if (rol === 'ADMIN') return true;
 
-    // 2. Si no es admin, buscamos en su lista de permisos
     const permisosGuardados = localStorage.getItem('misPermisos');
     if (!permisosGuardados) return false;
 
     const listaPermisos: string[] = JSON.parse(permisosGuardados);
-    console.log('Soy', rol, 'y mis permisos son:', listaPermisos);
     return listaPermisos.includes(permisoRequerido);
   }
 }

@@ -10,7 +10,7 @@ export class CuponService {
 
   // Ajusta la URL si es necesario (ej. localhost o render)
   // private apiUrl = 'http://192.168.1.34:8080/api/cupones';
-  private apiUrl = 'https://apiventas-1.onrender.com/api/clientes';
+  private apiUrl = 'https://apiventas-1.onrender.com/api/cupones';
 
   private http = inject(HttpClient);
 

@@ -46,7 +46,8 @@ export class ProductoFormComponent implements OnInit {
       codigoSku: [''],
       nombre: ['', Validators.required],
       descripcion: [''],
-      precioRegular: [0, [Validators.required, Validators.min(0)]],
+      tieneOferta: [false],
+      precioRegular: [{ value: null, disabled: true }, [Validators.required, Validators.min(0)]],
       precioVenta: [0, [Validators.required, Validators.min(0)]],
       precioCompra: [0, [Validators.required, Validators.min(0)]],
       stockActual: [0],
@@ -67,13 +68,20 @@ export class ProductoFormComponent implements OnInit {
     this.productoForm.get('idCategoria')?.valueChanges.subscribe(id => {
       if (id) this.actualizarCamposCaracteristicas(id);
     });
-
+    this.productoForm.get('tieneOferta')?.valueChanges.subscribe(checked => {
+      const regularControl = this.productoForm.get('precioRegular');
+      if (checked) {
+        regularControl?.enable();
+      } else {
+        regularControl?.disable();
+      }
+    });
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.esEdicion = true;
       this.productoId = +id;
       this.cargarDatosProducto(this.productoId);
-      this.cargarImagenesGlobales(this.productoId);
+      this.cargarImagenesGlobales(this.productoId); // (Si usas esta función)
     } else {
       this.cargando = false;
       this.agregarGrupoVariante();
@@ -287,11 +295,13 @@ export class ProductoFormComponent implements OnInit {
   cargarDatosProducto(id: number): void {
     this.productoService.getProductoAdminPorId(id.toString()).subscribe({
       next: (producto: any) => {
+        const estaEnOferta = producto.enOferta === true;
         this.productoForm.patchValue({
           idProducto: producto.idProducto,
           codigoSku: producto.codigoSku,
           nombre: producto.nombre,
           descripcion: producto.descripcion,
+          tieneOferta: estaEnOferta,// Marcamos el check si corresponde
           precioRegular: producto.precioRegular,
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
@@ -306,6 +316,9 @@ export class ProductoFormComponent implements OnInit {
           this.reconstruirGruposDesdeBackend(producto.variantes);
         } else {
           this.agregarGrupoVariante();
+        }
+        if (!estaEnOferta) {
+          this.productoForm.get('precioRegular')?.disable();
         }
 
         this.actualizarStockTotal();
@@ -329,14 +342,14 @@ export class ProductoFormComponent implements OnInit {
       return;
     }
     this.cargando = true;
-
-    const formValue = this.productoForm.value;
+    const formValue = this.productoForm.getRawValue();
     const productoData = {
       ...formValue,
+      enOferta: formValue.tieneOferta,
       variantes: this.aplanarGruposParaBackend()
     };
     delete productoData.gruposVariantes;
-
+    delete productoData.tieneOferta;
     if (this.esEdicion && this.productoId) {
       this.productoService.updateProducto(this.productoId, productoData).subscribe({
         next: () => this.router.navigate(['/admin/productos']),

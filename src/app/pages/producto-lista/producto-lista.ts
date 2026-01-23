@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router'; // <--- Importar Router
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { Producto } from '../../services/producto';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { Cart } from '../../services/cart';
+import { Auth } from '../../services/auth'; // <--- Importar Auth
 
 interface CategoriaTree extends CategoriaDTO {
   children?: CategoriaDTO[];
@@ -36,13 +37,13 @@ export class ProductoListaComponent implements OnInit {
   public seleccion: { [id: number]: any } = {};
   public categoriaHover: CategoriaTree | null = null;
 
-  // public baseUrl = 'https://apiventas-1.onrender.com'; // YA NO LO USAREMOS DIRECTAMENTE
-
   constructor(
     private productoService: Producto,
-    private cartService: Cart,
+    public cartService: Cart, // <--- CAMBIO: Debe ser PUBLIC para usarse en el HTML
     private fb: FormBuilder,
-    private categoriaService: Categoria
+    private categoriaService: Categoria,
+    private authService: Auth, // <--- INYECCIÓN: Auth
+    private router: Router     // <--- INYECCIÓN: Router
   ) {
     this.filtroForm = this.fb.group({
       search: [''],
@@ -70,39 +71,43 @@ export class ProductoListaComponent implements OnInit {
     this.filtroForm.updateValueAndValidity({ emitEvent: true });
   }
 
-  // ==========================================
-  // 🧠 LÓGICA DE PRESELECCIÓN Y GALERÍA
-  // ==========================================
+  // --- NUEVA FUNCIÓN LOGOUT ---
+  logout(): void {
+    Swal.fire({
+      title: '¿Cerrar sesión?',
+      text: "¿Estás seguro que deseas salir?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+      }
+    });
+  }
 
-  // --- NUEVA FUNCIÓN INTELIGENTE ---
+  // ... (EL RESTO DEL CÓDIGO PERMANECE EXACTAMENTE IGUAL) ...
+  // resolverUrlImagen, inicializarCarruseles, getImagenActual, etc.
+
   resolverUrlImagen(url: string | null): string {
-    if (!url) return 'assets/img/sin-imagen.png'; // Imagen por defecto si es null
-
-    // 1. Si ya es de Cloudinary (empieza con http), la dejamos tal cual
-    if (url.startsWith('http')) {
-      return url;
-    }
-
-    // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
+    if (!url) return 'assets/img/sin-imagen.png';
+    if (url.startsWith('http')) return url;
     return 'https://apiventas-1.onrender.com' + url;
   }
 
   inicializarCarruseles(productos: any[]): void {
     productos.forEach(prod => {
       this.indiceImagen[prod.idProducto] = 0;
-
-      // 1. Buscamos los colores disponibles
       const colores = this.getColoresUnicos(prod);
-
       if (colores.length > 0) {
-        // 2. ¡PRESELECCIONAMOS EL PRIMERO AUTOMÁTICAMENTE! 🎯
         const primerColor = colores[0];
         this.colorSeleccionado[prod.idProducto] = primerColor;
-
-        // 3. Construimos la galería filtrada por ese color inicial
         this.construirGaleria(prod, primerColor);
       } else {
-        // Si no tiene variantes, mostramos todo normal
         this.colorSeleccionado[prod.idProducto] = '';
         this.construirGaleria(prod, null);
       }
@@ -121,8 +126,6 @@ export class ProductoListaComponent implements OnInit {
 
   construirGaleria(prod: any, colorFiltro: string | null): void {
     let urls: string[] = [];
-
-    // LÓGICA CORREGIDA USANDO resolverUrlImagen
     if (!colorFiltro) {
       if (prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
       if (prod.imagenes) prod.imagenes.forEach((img: any) => urls.push(this.resolverUrlImagen(img.urlImagen)));
@@ -138,7 +141,6 @@ export class ProductoListaComponent implements OnInit {
         if (v.galeriaImagenes) v.galeriaImagenes.forEach((u: string) => urls.push(this.resolverUrlImagen(u)));
         if (v.urlImagen) urls.push(this.resolverUrlImagen(v.urlImagen));
       });
-      // Fallback si el color no tiene foto
       if (urls.length === 0 && prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
     }
     this.mapaImagenes[prod.idProducto] = [...new Set(urls)];
@@ -155,11 +157,9 @@ export class ProductoListaComponent implements OnInit {
     this.indiceImagen[id] = nuevoIndice;
   }
 
-  // --- SELECCIÓN ---
   seleccionarColor(prod: any, color: string): void {
     const id = prod.idProducto;
     if (this.colorSeleccionado[id] === color) return;
-
     this.colorSeleccionado[id] = color;
     this.seleccion[id] = null;
     this.construirGaleria(prod, color);
@@ -171,7 +171,6 @@ export class ProductoListaComponent implements OnInit {
 
   agregarAlCarrito(event: Event, producto: any, varianteSeleccionada: any): void {
     event.stopPropagation();
-
     if (producto.variantes?.length > 0 && !varianteSeleccionada) {
       Swal.fire({
         title: 'Falta la talla',
@@ -184,51 +183,21 @@ export class ProductoListaComponent implements OnInit {
       });
       return;
     }
-
     this.cartService.items$.pipe(take(1)).subscribe(items => {
-      const uid = varianteSeleccionada
-        ? `${producto.idProducto}-${varianteSeleccionada.idVariante}`
-        : `${producto.idProducto}-base`;
-
+      const uid = varianteSeleccionada ? `${producto.idProducto}-${varianteSeleccionada.idVariante}` : `${producto.idProducto}-base`;
       const itemEnCarrito = items.find(i => i.uid === uid);
       const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
-      const stockMaximo = varianteSeleccionada
-        ? varianteSeleccionada.stockActual
-        : producto.stockActual;
+      const stockMaximo = varianteSeleccionada ? varianteSeleccionada.stockActual : producto.stockActual;
 
       if (cantidadEnCarrito + 1 > stockMaximo) {
-        Swal.fire({
-          title: '¡Stock Máximo Alcanzado!',
-          text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`,
-          icon: 'error',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          showCloseButton: true,
-          timer: 4000,
-          background: '#fff5f5',
-          iconColor: '#ef4444'
-        });
+        Swal.fire({ title: '¡Stock Máximo Alcanzado!', text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`, icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, showCloseButton: true, timer: 4000, background: '#fff5f5', iconColor: '#ef4444' });
         return;
       }
-
       this.cartService.addToCart(producto, varianteSeleccionada, 1);
-      Swal.fire({
-        title: '¡Agregado!',
-        text: `${producto.nombre} se agregó al carrito`,
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        showCloseButton: true,
-        timer: 3000,
-        background: '#ffffff',
-        iconColor: '#10b981'
-      });
+      Swal.fire({ title: '¡Agregado!', text: `${producto.nombre} se agregó al carrito`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, showCloseButton: true, timer: 3000, background: '#ffffff', iconColor: '#10b981' });
     });
   }
 
-  // --- HELPERS ---
   getColoresUnicos(prod: any): string[] {
     if (!prod.variantes) return [];
     return [...new Set(prod.variantes.map((v: any) => v.color).filter((c: any) => c))] as string[];
@@ -250,7 +219,6 @@ export class ProductoListaComponent implements OnInit {
     return prod.stockActual || 0;
   }
 
-  // --- RESTO IGUAL ---
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data) => {
@@ -272,18 +240,7 @@ export class ProductoListaComponent implements OnInit {
   verTodo(): void { this.filtroForm.patchValue({ categoria: '', search: '' }); this.showMobileMenu = false; }
   limpiarFiltros(): void { this.filtroForm.reset({ search: '', categoria: '' }); }
 
-  onMouseEnter(cat: CategoriaTree): void {
-    this.categoriaHover = cat;
-  }
-
-  onMouseLeave(): void {
-    this.categoriaHover = null;
-  }
-
-  // Mantenemos este para cerrar el panel si hacen clic
-  seleccionarCategoriaYcerrar(nombre: string): void {
-    this.setCategoriaFiltro(nombre);
-    this.categoriaHover = null;
-    this.showMobileMenu = false;
-  }
+  onMouseEnter(cat: CategoriaTree): void { this.categoriaHover = cat; }
+  onMouseLeave(): void { this.categoriaHover = null; }
+  seleccionarCategoriaYcerrar(nombre: string): void { this.setCategoriaFiltro(nombre); this.categoriaHover = null; this.showMobileMenu = false; }
 }

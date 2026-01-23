@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Tienda Margarita</string>
-    <string name="title_activity_main">Tienda Margarita</string>
+    <string name="app_name">MargaShop</string>
+    <string name="title_activity_main">MargaShop</string>
     <string name="package_name">com.margarita.app</string>
     <string name="custom_url_scheme">com.margarita.app</string>
 </resources>

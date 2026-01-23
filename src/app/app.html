@@ -1,7 +1,15 @@
-@if (showPublicNavbar) {
-  <app-navbar></app-navbar>
-}
-
-<router-outlet></router-outlet>
-
 <app-confirm-modal></app-confirm-modal>
+
+<div class="fixed top-0 left-0 right-0 z-[9999] w-full bg-white transition-transform duration-300"
+     style="padding-top: env(safe-area-inset-top);"
+     [hidden]="!showPublicNavbar">
+  <app-navbar></app-navbar>
+</div>
+
+<main [ngClass]="showPublicNavbar ? 'bg-gray-50 min-h-screen' : 'h-screen w-full overflow-hidden p-0 m-0'"
+      [style.padding-top]="showPublicNavbar ? 'calc(4rem + env(safe-area-inset-top))' : '0'"
+      [style.padding-bottom]="showPublicNavbar ? 'calc(5rem + env(safe-area-inset-bottom))' : '0'">
+
+  <router-outlet></router-outlet>
+
+</main>

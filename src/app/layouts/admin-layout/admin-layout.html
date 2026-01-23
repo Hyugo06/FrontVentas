@@ -102,7 +102,8 @@
       }
     </nav>
 
-    <div class="px-4 pt-4 pb-10 md:pb-4 border-t border-slate-800 bg-slate-900/50 shrink-0 relative">
+    <div class="px-4 pt-4 border-t border-slate-800 bg-slate-900/50 shrink-0 relative"
+         style="padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));">
       @if (isUserMenuOpen) {
         <div class="absolute bottom-full left-4 right-4 mb-3 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden transform transition-all origin-bottom animate-fadeIn z-50">
           <div class="py-1">
@@ -137,14 +138,16 @@
 
   <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
-    <header class="lg:hidden bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 z-20 shrink-0 shadow-sm">
-      <div class="flex items-center gap-3">
-        <button (click)="toggleMenu()" class="text-slate-500 hover:text-indigo-600 p-1">
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
+    <header class="lg:hidden bg-white border-b border-slate-200 flex items-end justify-between px-4 z-20 shrink-0 shadow-sm"
+            style="padding-top: max(1rem, env(safe-area-inset-top)); height: calc(3.5rem + env(safe-area-inset-top));">
+
+      <div class="flex items-center gap-3 pb-2"> <button (click)="toggleMenu()" class="text-slate-500 hover:text-indigo-600 p-1">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
         <span class="font-bold text-slate-800 text-lg">Tienda Margaríta</span>
       </div>
-      <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-200">
+
+      <div class="h-8 w-8 mb-2 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold border border-indigo-200">
         {{ nombreMostrar ? nombreMostrar.charAt(0) : undefined | uppercase }}
       </div>
     </header>

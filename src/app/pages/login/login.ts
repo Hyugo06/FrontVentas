@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'; // <--- 1. Importa OnInit
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
-export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
+export class LoginComponent implements OnInit {
 
   public credenciales = {
     username: '',
@@ -20,27 +20,24 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
   };
 
   public error: string | null = null;
-  public showPassword: boolean = false; // Variable para controlar la visibilidad
+  public showPassword: boolean = false;
+
+  // 1. NUEVA VARIABLE (Único cambio estructural)
+  public cargando: boolean = false;
 
   constructor(
     private authService: Auth,
     private router: Router
   ) {}
 
-  // --- 3. AGREGA ESTE BLOQUE NUEVO ---
   ngOnInit(): void {
-    // Apenas carga la pantalla de Login, borramos cualquier rastro del usuario anterior.
-    // Esto evita que el Interceptor use un token viejo por error.
     this.authService.logout();
     console.log("--> [LOGIN INIT] Memoria limpia. Listo para nuevo usuario.");
   }
-  // -----------------------------------
 
   public togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
-
-  // En login.ts
 
   public login(): void {
     console.log("--> 1. [LOGIN] Iniciando...");
@@ -53,19 +50,28 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
       return;
     }
 
+    // 2. ACTIVAR CARGA (Bloquea el botón)
+    this.cargando = true;
+
+    // TU SERVICIO ORIGINAL SE MANTIENE INTACTO
     this.authService.login(username, this.credenciales.password).subscribe({
       next: (usuario) => {
         console.log("--> [LOGIN] ¡Éxito! Bienvenido:", usuario.nombreUsuario);
 
-        // Guardamos datos auxiliares
         localStorage.setItem('nombreUsuarioReal', usuario.nombres);
         localStorage.setItem('misPermisos', JSON.stringify(usuario.permisos || []));
 
-        // --- LÓGICA DE ATERRIZAJE INTELIGENTE ---
+        // TU LÓGICA DE REDIRECCIÓN ORIGINAL SE MANTIENE INTACTA
         this.redirigirSegunPermisos(usuario);
+
+        // No ponemos cargando = false aquí para que el botón siga bloqueado mientras redirige
       },
       error: (err: HttpErrorResponse) => {
         console.error("--> [LOGIN ERROR]:", err);
+
+        // 3. DESACTIVAR CARGA SI FALLA (Para permitir intentar de nuevo)
+        this.cargando = false;
+
         if (err.status === 401) {
           this.error = "Usuario o contraseña incorrectos";
         } else {
@@ -75,25 +81,21 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
     });
   }
 
-  // --- NUEVA FUNCIÓN PRIVADA ---
+  // ESTA FUNCIÓN ES LA TUYA ORIGINAL, NO SE HA TOCADO NADA
   private redirigirSegunPermisos(usuario: any): void {
     const rol = usuario.rol;
     const permisos = usuario.permisos || [];
 
-    // 1. ADMIN: Pase VIP directo al Dashboard
     if (rol === 'ADMIN') {
       this.router.navigate(['/admin/dashboard']);
       return;
     }
 
-    // 2. MODERADOR: Verificar a dónde puede ir
     if (rol === 'MODERADOR') {
-      // ¿Tiene permiso explícito para Dashboard?
       if (permisos.includes('VER_DASHBOARD')) {
         this.router.navigate(['/admin/dashboard']);
         return;
       }
-      // Si no, buscamos la primera puerta abierta (Orden de prioridad)
       if (permisos.includes('GESTIONAR_PRODUCTOS')) {
         this.router.navigate(['/admin/productos']);
         return;
@@ -124,13 +126,11 @@ export class LoginComponent implements OnInit { // <--- 2. Implementa OnInit
       }
     }
 
-    // 3. VENDEDOR o cualquier otro: A su zona de trabajo
     if (rol === 'VENDEDOR') {
       this.router.navigate(['/productos']);
       return;
     }
 
-    // 4. CLIENTE o Fallback
     this.router.navigate(['/productos']);
   }
 }
