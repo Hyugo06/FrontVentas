@@ -27,3 +27,22 @@ div.swal2-top-end,
 div.swal2-top-right {
   top: 80px !important; /* 64px del navbar + un poco de aire */
 }
+/* Asegura que los modales de SweetAlert estén por encima del navbar fixed */
+.swal2-container {
+  z-index: 10000 !important; /* Subimos el nivel para ganar a cualquier aside */
+}
+
+@keyframes logoutArrowMove {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px); /* Mueve la flecha a la derecha */
+  }
+}
+
+.logout-animate-icon polyline,
+.logout-animate-icon line {
+  animation: logoutArrowMove 1.5s ease-in-out infinite;
+}
+/* Si usas un modal propio, asegúrate que su z-index sea > 50 */

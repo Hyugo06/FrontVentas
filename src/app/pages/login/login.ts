@@ -31,8 +31,10 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log("--> [LOGIN] Limpiando sesión anterior para nuevo ingreso...");
     this.authService.logout();
-    console.log("--> [LOGIN INIT] Memoria limpia. Listo para nuevo usuario.");
+
+    this.cargando = false;
   }
 
   public togglePasswordVisibility(): void {
@@ -85,49 +87,50 @@ export class LoginComponent implements OnInit {
   private redirigirSegunPermisos(usuario: any): void {
     const rol = usuario.rol;
     const permisos = usuario.permisos || [];
+    const navOptions = { replaceUrl: true };
 
     if (rol === 'ADMIN') {
-      this.router.navigate(['/admin/dashboard']);
+      this.router.navigate(['/admin/dashboard'], navOptions);
       return;
     }
 
     if (rol === 'MODERADOR') {
       if (permisos.includes('VER_DASHBOARD')) {
-        this.router.navigate(['/admin/dashboard']);
+        this.router.navigate(['/admin/dashboard'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_PRODUCTOS')) {
-        this.router.navigate(['/admin/productos']);
+        this.router.navigate(['/admin/productos'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_VENTAS')) {
-        this.router.navigate(['/admin/ventas']);
+        this.router.navigate(['/admin/ventas'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_CUPONES')) {
-        this.router.navigate(['/admin/cupones']);
+        this.router.navigate(['/admin/cupones'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_USUARIOS')) {
-        this.router.navigate(['/admin/usuarios']);
+        this.router.navigate(['/admin/usuarios'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_CLIENTES')) {
-        this.router.navigate(['/admin/clientes']);
+        this.router.navigate(['/admin/clientes'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_CATEGORIAS')) {
-        this.router.navigate(['/admin/categorias']);
+        this.router.navigate(['/admin/categorias'], navOptions);
         return;
       }
       if (permisos.includes('GESTIONAR_MARCAS')) {
-        this.router.navigate(['/admin/marcas']);
+        this.router.navigate(['/admin/marcas'], navOptions);
         return;
       }
     }
 
     if (rol === 'VENDEDOR') {
-      this.router.navigate(['/productos']);
+      this.router.navigate(['/productos'], navOptions);
       return;
     }
 

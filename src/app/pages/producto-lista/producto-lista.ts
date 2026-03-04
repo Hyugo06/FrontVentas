@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router'; // <--- Importar Router
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,8 @@ import Swal from 'sweetalert2';
 import { Producto } from '../../services/producto';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { Cart } from '../../services/cart';
-import { Auth } from '../../services/auth'; // <--- Importar Auth
+import { Auth } from '../../services/auth';
+import {UiService} from '../../services/ui.service'; // <--- Importar Auth
 
 interface CategoriaTree extends CategoriaDTO {
   children?: CategoriaDTO[];
@@ -31,6 +32,9 @@ export class ProductoListaComponent implements OnInit {
   public filtroForm: FormGroup;
   public showMobileMenu: boolean = false;
 
+  public isHidden: boolean = false;
+  private lastScrollTop: number = 0;
+
   public mapaImagenes: { [id: number]: string[] } = {};
   public indiceImagen: { [id: number]: number } = {};
   public colorSeleccionado: { [id: number]: string } = {};
@@ -43,7 +47,8 @@ export class ProductoListaComponent implements OnInit {
     private fb: FormBuilder,
     private categoriaService: Categoria,
     private authService: Auth, // <--- INYECCIÓN: Auth
-    private router: Router     // <--- INYECCIÓN: Router
+    private router: Router,// <--- INYECCIÓN: Router
+    private uiService: UiService
   ) {
     this.filtroForm = this.fb.group({
       search: [''],
@@ -52,8 +57,10 @@ export class ProductoListaComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.uiService.menuOpen$.subscribe(estado => {
+      this.showMobileMenu = estado;
+    });
     this.cargarCategorias();
-
     this.filtroForm.valueChanges.pipe(
       debounceTime(400),
       distinctUntilChanged(),
@@ -67,12 +74,25 @@ export class ProductoListaComponent implements OnInit {
       },
       error: () => this.cargandoProductos = false
     });
-
     this.filtroForm.updateValueAndValidity({ emitEvent: true });
   }
 
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    if (currentScroll > this.lastScrollTop && currentScroll > 80) {
+      this.isHidden = true;
+    } else {
+      this.isHidden = false;
+    }
+    this.lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+  }
+
+
   // --- NUEVA FUNCIÓN LOGOUT ---
   logout(): void {
+    this.showMobileMenu = false;
+
     Swal.fire({
       title: '¿Cerrar sesión?',
       text: "¿Estás seguro que deseas salir?",
@@ -81,7 +101,10 @@ export class ProductoListaComponent implements OnInit {
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, salir',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      // --- ESTA ES LA LÍNEA CLAVE ---
+      allowOutsideClick: true,
+      allowEscapeKey: true // También permite cerrar con la tecla 'Esc'
     }).then((result) => {
       if (result.isConfirmed) {
         this.authService.logout();
@@ -233,7 +256,10 @@ export class ProductoListaComponent implements OnInit {
       error: (err) => console.error(err)
     });
   }
-  toggleMobileMenu(): void { this.showMobileMenu = !this.showMobileMenu; }
+  toggleMobileMenu(): void {
+    if (this.showMobileMenu) this.uiService.closeMenu();
+    else this.uiService.toggleMenu();
+  }
   toggleCategoria(cat: CategoriaTree): void { cat.isOpen = !cat.isOpen; }
   filtrarPorCategoria(id: any): void { this.filtroForm.patchValue({ categoria: id }); this.showMobileMenu = false; }
   setCategoriaFiltro(nombre: string): void { this.filtroForm.patchValue({ categoria: nombre }); }

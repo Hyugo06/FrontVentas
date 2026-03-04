@@ -5,6 +5,9 @@ import { Observable } from 'rxjs';
 import { Auth } from '../../services/auth';
 import { CartStatusComponent } from '../cart-status/cart-status';
 import { Modal } from '../../services/modal';
+import {UiService} from '../../services/ui.service';
+
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-navbar',
@@ -23,7 +26,8 @@ export class NavbarComponent implements OnInit {
   constructor(
     private authService: Auth,
     private router: Router,
-    private modalService: Modal
+    private modalService: Modal,
+    private uiService: UiService
   ) {}
 
   ngOnInit(): void {
@@ -60,13 +64,40 @@ export class NavbarComponent implements OnInit {
   }
 
   public logout(): void {
-    this.modalService.open('¿Estás seguro de que deseas cerrar sesión?')
-      .subscribe((result: any) => {
-        if (result) {
-          this.authService.logout();
-          this.isLogged = false; // Forzamos actualización visual
-          this.router.navigate(['/login']);
-        }
-      });
+    this.uiService.closeMenu();
+
+    Swal.fire({
+      // Usamos HTML personalizado para el contenido
+      html: `
+      <div class="flex flex-col items-center mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14 text-red-500 logout-animate-icon mb-3">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" class="opacity-50"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <h2 class="text-lg font-bold text-gray-800">¿Cerrar sesión?</h2>
+        <p class="text-sm text-gray-500 leading-tight mt-1">¿Seguro que quieres salir?</p>
+      </div>
+    `,
+      width: '300px',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: true,
+      allowEscapeKey: true,
+      reverseButtons: true, // Pone el botón Cancelar primero (más seguro)
+      buttonsStyling: false, // Desactiva estilos por defecto para usar Tailwind
+      customClass: {
+        popup: 'rounded-2xl shadow-xl p-4', // Bordes redondeados y padding
+        actions: 'gap-2 mt-2', // Espacio entre botones
+        confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors w-full sm:w-auto focus:ring-2 focus:ring-red-500 focus:ring-offset-2',
+        cancelButton: 'bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-200 text-sm transition-colors w-full sm:w-auto'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 }

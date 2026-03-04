@@ -90,10 +90,25 @@ export class AppComponent implements OnInit, OnDestroy {
   configurarBotonAtras() {
     App.addListener('backButton', () => {
       this.ngZone.run(() => {
-        const ruta = this.router.url.split('?')[0];
-        if (['/login', '/admin/dashboard', '/productos', '/'].includes(ruta)) {
+        let ruta = this.router.url.split('?')[0].split('#')[0];
+
+        if (ruta.length > 1 && ruta.endsWith('/')) {
+          ruta = ruta.slice(0, -1);
+        }
+        console.log(`🔍 [BackButton] Ruta limpia: '${ruta}'`);
+        const rutasRaiz = [
+          '/login',
+          '/admin/dashboard',
+          '/productos',
+          '/home',
+          '/',
+          '/index.html'
+        ];
+        if (rutasRaiz.includes(ruta)) {
+          console.log('👋 En raíz -> Minimizando App');
           App.exitApp();
         } else {
+          console.log('⬅️ En sub-página -> Retrocediendo');
           this.location.back();
         }
       });

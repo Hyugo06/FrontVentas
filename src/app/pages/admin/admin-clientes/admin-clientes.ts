@@ -71,15 +71,23 @@ export class AdminClientesComponent implements OnInit {
   filtrarClientes(): void {
     let lista = this.clientes;
 
-    // 1. Filtro de Texto (Nombre, DNI o Celular)
-    if (this.terminoBusqueda) {
-      const term = this.terminoBusqueda.toLowerCase();
-      lista = lista.filter(c =>
-        c.nombres.toLowerCase().includes(term) ||
-        c.apellidos.toLowerCase().includes(term) ||
-        c.dni.includes(term) ||
-        (c.celular && c.celular.includes(term))
-      );
+    // 1. Filtro de Texto (Nombre, Apellidos, DNI o Celular)
+    // Agregamos .trim() para ignorar espacios accidentales
+    if (this.terminoBusqueda && this.terminoBusqueda.trim() !== '') {
+      const term = this.terminoBusqueda.toLowerCase().trim();
+
+      lista = lista.filter(c => {
+        // "Blindamos" los campos: si son nulos, usamos un texto vacío ''
+        const nombres = (c.nombres || '').toLowerCase();
+        const apellidos = (c.apellidos || '').toLowerCase();
+        const dni = (c.dni || ''); // Campo crítico que estaba fallando
+        const celular = (c.celular || '');
+
+        return nombres.includes(term) ||
+          apellidos.includes(term) ||
+          dni.includes(term) ||
+          celular.includes(term);
+      });
     }
 
     // 2. Filtro de Estado (Deuda)
