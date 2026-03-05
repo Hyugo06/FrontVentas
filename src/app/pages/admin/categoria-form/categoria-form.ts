@@ -5,6 +5,11 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { Categoria, CategoriaDTO } from '../../../services/categoria'; // Tu servicio de Categoria
 import { HttpErrorResponse } from '@angular/common/http';
 
+
+interface CategoriaView extends CategoriaDTO {
+  nivel?: number;
+}
+
 @Component({
   selector: 'app-categoria-form',
   standalone: true,
@@ -22,7 +27,7 @@ export class CategoriaFormComponent implements OnInit {
   public dropdownOpen: boolean = false;
 
   // Lista para el dropdown de "Categoría Padre"
-  public listaCategoriasPadre: CategoriaDTO[] = [];
+  public listaCategoriasPadre: CategoriaView[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -43,18 +48,25 @@ export class CategoriaFormComponent implements OnInit {
     this.dropdownOpen = !this.dropdownOpen;
   }
 
-  seleccionarPadre(id: number | null): void {
-    this.categoriaForm.patchValue({ idCategoriaPadre: id });
-    this.dropdownOpen = false; // Cerramos al elegir
-  }
+  seleccionarPadre(cat: any | null): void {
+    // 1. Si elige "Categoría Principal" (Abuelo)
+    if (cat === null) {
+      this.categoriaForm.patchValue({ idCategoriaPadre: null });
+      this.error = null;
+      this.dropdownOpen = false;
+      return;
+    }
 
-  get nombrePadreSeleccionado(): string {
-    const idSeleccionado = this.categoriaForm.get('idCategoriaPadre')?.value;
+    // 2. Validación de nivel (Solo permite hasta nivel 2 como padre)
+    if (cat.nivel === 3) {
+      this.error = `No puedes seleccionar "${cat.nombre}". La estructura máxima es de 3 niveles y esta ya es una categoría hija.`;
+      return;
+    }
 
-    if (idSeleccionado === null) return '-- Es una Categoría Principal --';
-
-    const categoria = this.listaCategoriasPadre.find(c => c.idCategoria === idSeleccionado);
-    return categoria ? categoria.nombre : '-- Es una Categoría Principal --';
+    // 3. Asigna el ID y cierra el dropdown
+    this.categoriaForm.patchValue({ idCategoriaPadre: cat.idCategoria });
+    this.error = null;
+    this.dropdownOpen = false;
   }
 
 
@@ -73,19 +85,58 @@ export class CategoriaFormComponent implements OnInit {
     }
   }
 
+  get nombrePadreSeleccionado(): string {
+    const idSeleccionado = this.categoriaForm.get('idCategoriaPadre')?.value;
+    if (idSeleccionado === null) return '-- Categoría Principal (Abuelo) --';
+    const cat = this.listaCategoriasPadre.find(c => c.idCategoria === idSeleccionado);
+    if (!cat) return '-- Seleccionar Padre --';
+
+    const nivelStr = (cat as any).nivel === 1 ? '[Abuelo]' : (cat as any).nivel === 2 ? '[Padre]' : '[Hijo]';
+    return `${nivelStr} ${cat.nombre}`;
+  }
+
   cargarCategoriasPadre(): void {
     this.categoriaService.getCategoriasAdmin().subscribe({
       next: (data: CategoriaDTO[]) => {
+        const todas = data;
+        const listaOrdenada: CategoriaDTO[] = [];
 
-        // --- ¡¡ESTA ES LA CORRECCIÓN!! ---
-        // Filtramos la lista 'data' para quedarnos solo
-        // con las categorías que NO tienen padre (idCategoriaPadre es null).
-        this.listaCategoriasPadre = data.filter(cat => cat.idCategoriaPadre === null);
-        // ---------------------------------
+        // Función para determinar el nivel
+        const obtenerNivel = (cat: CategoriaDTO): number => {
+          if (!cat.idCategoriaPadre) return 1;
+          const padre = todas.find(p => p.idCategoria === cat.idCategoriaPadre);
+          if (padre && !padre.idCategoriaPadre) return 2;
+          return 3;
+        };
 
-      },
-      error: (err: any) => {
-        this.error = 'No se pudo cargar la lista de categorías padre.';
+        // --- MAGIA: ORDENAR EN ESTRUCTURA DE ÁRBOL PLANO ---
+        const abuelos = todas.filter(c => !c.idCategoriaPadre).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        abuelos.forEach(abuelo => {
+          // Añadir Abuelo
+          listaOrdenada.push({ ...abuelo, nivel: 1 } as any);
+
+          // Buscar y añadir sus Padres
+          const papas = todas
+            .filter(p => p.idCategoriaPadre === abuelo.idCategoria)
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+          papas.forEach(papa => {
+            listaOrdenada.push({ ...papa, nivel: 2 } as any);
+
+            // Buscar y añadir sus Hijos (Nietos)
+            const hijos = todas
+              .filter(h => h.idCategoriaPadre === papa.idCategoria)
+              .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            hijos.forEach(hijo => {
+              listaOrdenada.push({ ...hijo, nivel: 3 } as any);
+            });
+          });
+        });
+
+        this.listaCategoriasPadre = listaOrdenada;
+        this.cargando = false;
       }
     });
   }

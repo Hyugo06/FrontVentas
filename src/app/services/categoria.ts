@@ -7,6 +7,7 @@ export interface CategoriaDTO {
   idCategoria: number;
   nombre: string;
   idCategoriaPadre: number | null;
+  nivel?: number;
 }
 
 @Injectable({

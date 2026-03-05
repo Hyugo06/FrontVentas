@@ -101,15 +101,28 @@
 
               @for (cat of listaCategoriasPadre; track cat.idCategoria) {
                 @if (cat.idCategoria !== categoriaId) {
-                  <div (click)="seleccionarPadre(cat.idCategoria)"
-                       class="cursor-pointer select-none py-3 px-4 hover:bg-indigo-50 hover:text-indigo-700 transition-colors text-slate-700 font-medium"
+                  <div (click)="seleccionarPadre(cat)"
+                       class="cursor-pointer select-none py-3 px-4 transition-colors flex justify-between items-center border-b border-slate-50 last:border-0"
                        [class.bg-indigo-50]="categoriaForm.get('idCategoriaPadre')?.value === cat.idCategoria"
-                       [class.text-indigo-700]="categoriaForm.get('idCategoriaPadre')?.value === cat.idCategoria">
+                       [class.opacity-50]="cat.nivel === 3"
+                       [class.bg-slate-50]="cat.nivel === 3">
 
-                    <span class="block truncate">
-                      {{ cat.nombre }}
-                    </span>
+                    <div class="flex items-center gap-2">
+                      @if (cat.nivel === 2) { <span class="ml-4 text-slate-300">└─</span> }
+                      @if (cat.nivel === 3) { <span class="ml-8 text-slate-300 font-bold text-red-300">!</span> }
+                      <span class="text-slate-700 font-medium truncate" [class.text-slate-400]="cat.nivel === 3">
+          {{ cat.nombre }}
+        </span>
+                    </div>
 
+                    <span class="text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-tighter"
+                          [ngClass]="{
+              'bg-indigo-100 text-indigo-600': cat.nivel === 1,
+              'bg-amber-100 text-amber-600': cat.nivel === 2,
+              'bg-slate-200 text-slate-400': cat.nivel === 3
+            }">
+        {{ cat.nivel === 1 ? 'Abuelo' : cat.nivel === 2 ? 'Padre' : (cat.nivel === 3 ? 'Límite' : 'Hijo') }}
+      </span>
                   </div>
                 }
               }

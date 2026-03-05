@@ -371,12 +371,20 @@ export class ProductoFormComponent implements OnInit {
   }
 
   cargarDropdowns(): void {
-    forkJoin([this.marcaService.getMarcas(), this.categoriaService.getCategorias()]).subscribe({
+    forkJoin([
+      this.marcaService.getMarcas(),
+      this.categoriaService.getCategorias()
+    ]).subscribe({
       next: ([marcas, categorias]) => {
         this.listaMarcas = marcas;
-        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre != null);
+        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre !== null);
+        this.cargando = false;
       },
-      error: () => { this.error = 'Error al cargar listas.'; this.cargando = false; }
+      error: (err) => {
+        console.error('Error al cargar dropdowns:', err);
+        this.error = 'No se pudieron cargar las marcas o categorías.';
+        this.cargando = false;
+      }
     });
   }
 
