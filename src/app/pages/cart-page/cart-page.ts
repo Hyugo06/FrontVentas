@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { Cart, CartItem } from '../../services/cart';
 import { map } from 'rxjs/operators';
 import { Modal } from '../../services/modal';
+import {environment} from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-cart-page',
@@ -38,7 +39,7 @@ export class CartPageComponent {
     }
 
     // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
-    return 'https://apiventas-1.onrender.com' + url;
+    return environment.apiUrl + url;
   }
 
   incrementar(item: CartItem): void {

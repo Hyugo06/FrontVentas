@@ -8,6 +8,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Media } from '../../../services/media';
+import {environment} from '../../../../environments/environment.prod';
 
 @Component({
   selector: 'app-producto-form',
@@ -111,7 +112,7 @@ export class ProductoFormComponent implements OnInit {
     }
 
     // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
-    return 'https://apiventas-1.onrender.com' + url;
+    return environment.apiUrl + url;
   }
 
   crearTallaGroup(talla: string = '', stock: number = 0, idVariante: number | null = null): FormGroup {
@@ -310,7 +311,7 @@ export class ProductoFormComponent implements OnInit {
           urlImagen: producto.urlImagen
         });
 
-        if (producto.urlImagen) this.previewUrl = 'https://apiventas-1.onrender.com' + producto.urlImagen;
+        if (producto.urlImagen) this.previewUrl = environment.apiUrl + producto.urlImagen;
 
         if (producto.variantes && producto.variantes.length > 0) {
           this.reconstruirGruposDesdeBackend(producto.variantes);

@@ -1,6 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../environments/environment.prod';
 
 // Interfaz para la lista de marcas
 export interface MarcaDTO {
@@ -13,8 +14,8 @@ export interface MarcaDTO {
 })
 export class Marca { // Tu clase 'Marca'
 
-  private publicApiUrl = 'https://apiventas-1.onrender.com/api/marcas';
-  private adminApiUrl = 'https://apiventas-1.onrender.com/api/admin/marcas';
+  private publicApiUrl = `${environment.apiUrl}/api/marcas`;
+  private adminApiUrl = `${environment.apiUrl}/api/admin/marcas`;
 
   //private publicApiUrl = 'http://localhost:8080/api/marcas';
   //private adminApiUrl = 'http://localhost:8080/api/admin/marcas';

@@ -9,7 +9,8 @@ import { Producto } from '../../services/producto';
 import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { Cart } from '../../services/cart';
 import { Auth } from '../../services/auth';
-import {UiService} from '../../services/ui.service'; // <--- Importar Auth
+import {UiService} from '../../services/ui.service';
+import {environment} from '../../../environments/environment.prod'; // <--- Importar Auth
 
 interface CategoriaTree extends CategoriaDTO {
   children?: CategoriaDTO[];
@@ -119,7 +120,7 @@ export class ProductoListaComponent implements OnInit {
   resolverUrlImagen(url: string | null): string {
     if (!url) return 'assets/img/sin-imagen.png';
     if (url.startsWith('http')) return url;
-    return 'https://apiventas-1.onrender.com' + url;
+    return environment.apiUrl + url;
   }
 
   inicializarCarruseles(productos: any[]): void {

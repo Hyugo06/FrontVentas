@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,7 @@ import { Observable } from 'rxjs';
 export class Caja {
 
   // Ajusta la URL si es necesario (igual que en tus otros servicios)
-  private apiUrl = 'http://192.168.1.34:8080/api/caja';
+  private apiUrl = `${environment.apiUrl}/api/caja`;
   // private apiUrl = 'http://localhost:8080/api/caja';
 
   constructor(private http: HttpClient) { }

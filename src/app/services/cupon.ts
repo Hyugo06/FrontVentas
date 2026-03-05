@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Cupon } from '../model/cupon';
+import {environment} from '../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,7 @@ export class CuponService {
 
   // Ajusta la URL si es necesario (ej. localhost o render)
   // private apiUrl = 'http://192.168.1.34:8080/api/cupones';
-  private apiUrl = 'https://apiventas-1.onrender.com/api/cupones';
+  private apiUrl = `${environment.apiUrl}/api/cupones`;
 
   private http = inject(HttpClient);
 

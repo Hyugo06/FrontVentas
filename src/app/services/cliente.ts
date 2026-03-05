@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../environments/environment.prod';
 
 // Interfaz Cliente
 export interface Cliente {
@@ -32,7 +33,7 @@ export interface Movimiento {
 export class ClienteService {
 
   // Asegúrate de que esta URL coincida con tu backend
-  private apiUrl = 'https://apiventas-1.onrender.com/api/clientes';
+  private apiUrl = `${environment.apiUrl}/api/clientes`
 
   private http = inject(HttpClient);
 

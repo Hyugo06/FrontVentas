@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Producto } from '../../../services/producto';
 import { forkJoin } from 'rxjs';
+import {environment} from '../../../../environments/environment.prod';
 
 @Component({
   selector: 'app-admin-producto-detalle',
@@ -17,7 +18,7 @@ export class AdminProductoDetalleComponent implements OnInit {
   public imagenesGlobales: any[] = []; // Guardamos todas las del backend aquí
   public cargando: boolean = true;
   public error: string | null = null;
-  public baseUrl = 'https://apiventas-1.onrender.com';
+  public baseUrl = environment.apiUrl;
 
   // --- VARIABLES PARA LA GALERÍA DINÁMICA ---
   public imagenActual: string | null = null;

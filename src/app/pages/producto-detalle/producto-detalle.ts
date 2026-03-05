@@ -7,6 +7,7 @@ import { take } from 'rxjs/operators';
 import { Cart } from '../../services/cart';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import {environment} from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-producto-detalle',
@@ -29,7 +30,7 @@ export class ProductoDetalleComponent implements OnInit {
 
   // Galería
   public imagenActual: string | null = null;
-  // public baseUrl = 'https://apiventas-1.onrender.com'; // YA NO LO USAREMOS DIRECTAMENTE
+
 
   constructor(
     private route: ActivatedRoute,
@@ -80,7 +81,7 @@ export class ProductoDetalleComponent implements OnInit {
     }
 
     // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
-    return 'https://apiventas-1.onrender.com' + url;
+    return environment.apiUrl + url;
   }
 
   // --- LÓGICA DE FILTRADO Y SELECCIÓN ---

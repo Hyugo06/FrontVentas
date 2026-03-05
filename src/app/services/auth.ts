@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { HttpClient } from '@angular/common/http'; // Asegúrate de que esto esté importado
+import { HttpClient } from '@angular/common/http';
+import {environment} from '../../environments/environment.prod'; // Asegúrate de que esto esté importado
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,7 @@ import { HttpClient } from '@angular/common/http'; // Asegúrate de que esto est
 export class Auth { // Tu clase 'Auth'
 
   //APIWEB
-  private apiUrl = 'https://apiventas-1.onrender.com/api/usuarios';
+  private apiUrl = `${environment.apiUrl}/api/usuarios`;
   //APILOCAL-MOBIL
   //apiUrl = 'http://192.168.1.34:8080/api/usuarios';
   //APIPC

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Necesario para el buscador
 import { Cliente, ClienteService } from '../../../services/cliente';
 import { RouterLink } from '@angular/router';
+import Swal from 'sweetalert2';
 
 // Extendemos la interfaz para incluir campos de negocio (si tu backend aún no los trae)
 interface ClienteView extends Cliente {
@@ -105,6 +106,46 @@ export class AdminClientesComponent implements OnInit {
   registrarPago(cliente: ClienteView): void {
     // Aquí abrirías un Modal o SweetAlert para ingresar el monto a pagar
     alert(`Aquí abriríamos modal para cobrar a: ${cliente.nombres}. Deuda: S/ ${cliente.deudaActual}`);
+  }
+
+  eliminarCliente(cliente: ClienteView): void {
+    Swal.fire({
+      title: '¿Eliminar cliente?',
+      text: `¿Estás seguro de borrar a ${cliente.nombres}? Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444', // Rojo para peligro
+      cancelButtonColor: '#f3f4f6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      allowOutsideClick: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.clienteService.deleteCliente(cliente.idCliente).subscribe({
+          next: () => {
+            // 1. Quitamos al cliente de la lista local
+            this.clientes = this.clientes.filter(c => c.idCliente !== cliente.idCliente);
+
+            // 2. Recalculamos filtros y métricas (total deuda, etc)
+            this.filtrarClientes();
+            this.calcularMetricas();
+
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: 'El cliente ha sido borrado correctamente.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          },
+          error: (err) => {
+            console.error(err);
+            Swal.fire('Error', 'No se pudo eliminar. Si el cliente tiene ventas registradas, no podrás borrarlo por seguridad.', 'error');
+          }
+        });
+      }
+    });
   }
 
   verHistorial(cliente: ClienteView): void {

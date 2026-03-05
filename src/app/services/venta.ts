@@ -3,6 +3,7 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import { Observable } from 'rxjs';
 // Asegúrate de crear este archivo de interfaces en src/app/model/venta-request.dto.ts
 import { VentaRequestDTO } from '../model/venta-request.dto';
+import {environment} from '../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class Venta { // Tu clase 'Venta'
 
   // private apiUrl = 'http://192.168.1.34:8080/api/ventas';
   //private apiUrl = 'http://localhost:8080/api/ventas';
-  private apiUrl = 'https://apiventas-1.onrender.com/api/ventas';
+  private apiUrl = `${environment.apiUrl}/api/ventas`;
 
   constructor(private http: HttpClient) { }
 

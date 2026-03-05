@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ export class Usuario { // Tu CLI usa el nombre 'Usuario'
 
   // private apiUrl = 'http://192.168.1.34:8080/api/usuarios';
   //private apiUrl = 'http://localhost:8080/api/usuarios';
-  private apiUrl = 'https://apiventas-1.onrender.com/api/usuarios';
+  private apiUrl = `${environment.apiUrl}/api/usuarios`;
 
   constructor(private http: HttpClient) { }
 

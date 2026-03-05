@@ -8,7 +8,6 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 // ------------------------------------
 
 import { routes } from './app.routes';
-// ... (otras importaciones) ...
 
 export const appConfig: ApplicationConfig = {
   providers: [

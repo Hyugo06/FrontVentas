@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../environments/environment.prod';
 
 export interface CategoriaDTO {
   idCategoria: number;
@@ -13,8 +14,8 @@ export interface CategoriaDTO {
 })
 export class Categoria { // Tu clase 'Categoria'
 
-  private publicApiUrl = 'https://apiventas-1.onrender.com/api/categorias';
-  private adminApiUrl = 'https://apiventas-1.onrender.com/api/admin/categorias';
+  private publicApiUrl = `${environment.apiUrl}/api/categorias`;
+  private adminApiUrl = `${environment.apiUrl}/api/admin/categorias`;
 
   //APILOCAL-MOBIL
   // private publicApiUrl = 'http://192.168.1.34:8080/api/categorias';
