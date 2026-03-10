@@ -247,20 +247,36 @@ export class ProductoListaComponent implements OnInit {
     this.categoriaService.getCategorias().subscribe({
       next: (data) => {
         this.categorias = data;
-        const padres = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
-        padres.forEach(padre => {
-          padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria);
-          padre.isOpen = false;
+
+        // 1. Filtramos los ABUELOS (los que no tienen padre)
+        const abuelos = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
+
+        abuelos.forEach(abuelo => {
+          // 2. Buscamos los PADRES de cada abuelo
+          const padres = data.filter(c => c.idCategoriaPadre === abuelo.idCategoria) as CategoriaTree[];
+
+          padres.forEach(padre => {
+            // 3. Buscamos los HIJOS de cada padre
+            padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria) as CategoriaTree[];
+            padre.isOpen = false;
+          });
+
+          abuelo.children = padres;
+          abuelo.isOpen = false;
         });
-        this.categoriasTree = padres;
+
+        // Asignamos el árbol completo de 3 niveles
+        this.categoriasTree = abuelos;
       },
       error: (err) => console.error(err)
     });
   }
+
   toggleMobileMenu(): void {
     if (this.showMobileMenu) this.uiService.closeMenu();
     else this.uiService.toggleMenu();
   }
+
   toggleCategoria(cat: CategoriaTree): void { cat.isOpen = !cat.isOpen; }
   filtrarPorCategoria(id: any): void { this.filtroForm.patchValue({ categoria: id }); this.showMobileMenu = false; }
   setCategoriaFiltro(nombre: string): void { this.filtroForm.patchValue({ categoria: nombre }); }

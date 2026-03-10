@@ -104,8 +104,14 @@ export class AdminDashboardComponent implements OnInit {
         },
         error: (err: any) => {
           console.error(err);
-          this.error = 'No se pudo eliminar el producto.';
+          // Seteamos el error
+          this.error = 'No se puede eliminar este producto porque tiene ventas o registros asociados.';
           this.productoAEliminar = null;
+
+          // AUTO-LIMPIEZA: El aviso desaparecerá solo tras 3.5 segundos
+          setTimeout(() => {
+            this.error = null;
+          }, 1000);
         }
       });
     }

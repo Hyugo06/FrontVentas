@@ -86,14 +86,17 @@
 
         <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8 border border-gray-100 relative overflow-hidden">
           <div class="relative z-10">
-            <div class="flex flex-wrap gap-2 mb-3">
-              <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-mono font-bold tracking-wider">{{ producto.codigoSku }}</span>
-              <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold uppercase tracking-wider">{{ producto.marca?.nombre }}</span>
-            </div>
-            <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">{{ producto.nombre }}</h1>
-            @if(producto.descripcion) {
-              <p class="text-gray-600 text-sm md:text-base bg-gray-50 p-4 rounded-xl border border-gray-100">{{ producto.descripcion }}</p>
-            }
+            <nav class="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span>{{ producto?.categoria?.categoriaPadre?.categoriaPadre?.nombre }}</span>
+              @if(producto?.categoria?.categoriaPadre) { <span class="text-slate-300">/</span> }
+              <span>{{ producto?.categoria?.categoriaPadre?.nombre }}</span>
+              <span class="text-slate-300">/</span>
+              <span class="text-indigo-500">{{ producto?.categoria?.nombre }}</span>
+            </nav>
+
+            <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+              {{ producto.nombre }}
+            </h1>
           </div>
         </div>
 

@@ -10,6 +10,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Media } from '../../../services/media';
 import {environment} from '../../../../environments/environment.prod';
 
+
+interface CategoriaView extends CategoriaDTO {
+  nivel: number;
+  rutaCompleta: string;
+}
+
 @Component({
   selector: 'app-producto-form',
   standalone: true,
@@ -23,9 +29,12 @@ export class ProductoFormComponent implements OnInit {
   public esEdicion: boolean = false;
   public productoId: number | null = null;
   public listaMarcas: MarcaDTO[] = [];
-  public listaCategorias: CategoriaDTO[] = [];
+  public listaCategorias: CategoriaView[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
+
+  public dropdownCatOpen: boolean = false;
+  public filtroCategoria: string = '';
 
   public previewUrl: string | null = null;
   public uploading: boolean = false;
@@ -62,6 +71,51 @@ export class ProductoFormComponent implements OnInit {
 
   get gruposVariantes(): FormArray {
     return this.productoForm.get('gruposVariantes') as FormArray;
+  }
+
+  get categoriasFiltradas() {
+    if (!this.filtroCategoria) return this.listaCategorias;
+    const busqueda = this.filtroCategoria.toLowerCase();
+
+    const idsVisibles = new Set<number>();
+
+    this.listaCategorias.forEach(cat => {
+      // Si coincide el nombre o la ruta
+      if (cat.nombre.toLowerCase().includes(busqueda) || cat.rutaCompleta?.toLowerCase().includes(busqueda)) {
+        idsVisibles.add(cat.idCategoria);
+
+        // Añadir ancestros para no perder el contexto
+        let idPadre = cat.idCategoriaPadre;
+        while (idPadre) {
+          const padre = this.listaCategorias.find(p => p.idCategoria === idPadre);
+          if (padre) {
+            idsVisibles.add(padre.idCategoria);
+            idPadre = padre.idCategoriaPadre;
+          } else idPadre = null;
+        }
+      }
+    });
+
+    return this.listaCategorias.filter(c => idsVisibles.has(c.idCategoria));
+  }
+
+  get nombreCategoriaSeleccionada(): string {
+    const id = this.productoForm.get('idCategoria')?.value;
+    // Cambiamos el texto largo por un simple "Seleccionar"
+    if (!id) return 'Seleccionar';
+
+    const cat = this.listaCategorias.find(c => c.idCategoria === id);
+    if (!cat) return 'Seleccionar';
+
+    return `✨ ${cat.nombre}`;
+  }
+
+  seleccionarCategoria(cat: CategoriaView): void {
+    if (cat.nivel !== 3) return;
+
+    this.productoForm.patchValue({ idCategoria: cat.idCategoria });
+    this.dropdownCatOpen = false;
+    this.filtroCategoria = ''; // Limpiamos el buscador al elegir
   }
 
   ngOnInit(): void {
@@ -371,18 +425,38 @@ export class ProductoFormComponent implements OnInit {
   }
 
   cargarDropdowns(): void {
+    this.cargando = true;
     forkJoin([
       this.marcaService.getMarcas(),
-      this.categoriaService.getCategorias()
+      this.categoriaService.getCategoriasAdmin()
     ]).subscribe({
       next: ([marcas, categorias]) => {
         this.listaMarcas = marcas;
-        this.listaCategorias = categorias.filter(c => c.idCategoriaPadre !== null);
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar dropdowns:', err);
-        this.error = 'No se pudieron cargar las marcas o categorías.';
+        const todas = categorias;
+        const listaJerarquica: CategoriaView[] = [];
+
+        const abuelos = todas.filter(c => !c.idCategoriaPadre).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        abuelos.forEach(abuelo => {
+          const rutaAbuelo = abuelo.nombre;
+          listaJerarquica.push({ ...abuelo, nivel: 1, rutaCompleta: rutaAbuelo }); //
+
+          const papas = todas.filter(p => p.idCategoriaPadre === abuelo.idCategoria).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+          papas.forEach(papa => {
+            const rutaPapa = `${rutaAbuelo} > ${papa.nombre}`;
+            listaJerarquica.push({ ...papa, nivel: 2, rutaCompleta: rutaPapa }); //
+
+            const hijos = todas.filter(h => h.idCategoriaPadre === papa.idCategoria).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            hijos.forEach(hijo => {
+              const rutaHijo = `${rutaPapa} > ${hijo.nombre}`;
+              listaJerarquica.push({ ...hijo, nivel: 3, rutaCompleta: rutaHijo }); //
+            });
+          });
+        });
+
+        this.listaCategorias = listaJerarquica;
         this.cargando = false;
       }
     });

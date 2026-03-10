@@ -23,6 +23,8 @@ export class AdminCategoriasComponent implements OnInit {
   public error: string | null = null;
   public showModalEliminar: boolean = false;
   public categoriaAEliminar: CategoriaDTO | null = null;
+  public toastMensaje: string | null = null;
+  public mostrarToast: boolean = false;
 
   constructor(private categoriaService: Categoria) {}
 
@@ -31,6 +33,7 @@ export class AdminCategoriasComponent implements OnInit {
   }
 
   abrirModalEliminar(categoria: CategoriaDTO): void {
+    console.log("Intentando eliminar ID:", categoria.idCategoria, "Nombre:", categoria.nombre);
     this.categoriaAEliminar = categoria;
     this.showModalEliminar = true;
   }
@@ -45,16 +48,28 @@ export class AdminCategoriasComponent implements OnInit {
       this.cargando = true;
       this.categoriaService.deleteCategoria(this.categoriaAEliminar.idCategoria).subscribe({
         next: () => {
-          this.cargarCategorias(); // Recargar lista
+          this.cargarCategorias();
           this.cerrarModal();
         },
         error: (err: any) => {
           this.cargando = false;
           this.cerrarModal();
-          alert('No se puede eliminar: Probablemente tenga productos o subcategorías asociadas.');
+          // LLAMAMOS AL TOAST EN LUGAR DEL ALERT
+          this.mostrarAviso('No se puede eliminar: Probablemente tenga productos o subcategorías asociadas.');
         }
       });
     }
+  }
+
+  mostrarAviso(mensaje: string): void {
+    this.toastMensaje = mensaje;
+    this.mostrarToast = true;
+
+    // Se oculta automáticamente después de 4 segundos
+    setTimeout(() => {
+      this.mostrarToast = false;
+      setTimeout(() => this.toastMensaje = null, 300); // Limpia el texto después de la animación
+    }, 4000);
   }
 
   cargarCategorias(): void {
