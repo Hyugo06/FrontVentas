@@ -12,6 +12,31 @@
     </a>
   </div>
 
+  <div class="w-full animate-fadeIn">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+    </div>
+
+    <div class="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl w-full sm:w-max mb-6 border border-slate-200">
+      <button (click)="cambiarFiltro('ACTIVOS')"
+              [ngClass]="filtroEstado === 'ACTIVOS' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2">
+        <span [ngClass]="filtroEstado === 'ACTIVOS' ? 'bg-emerald-500' : 'bg-slate-400'" class="w-2 h-2 rounded-full"></span>
+        Activos
+      </button>
+      <button (click)="cambiarFiltro('INACTIVOS')"
+              [ngClass]="filtroEstado === 'INACTIVOS' ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2">
+        <span [ngClass]="filtroEstado === 'INACTIVOS' ? 'bg-red-500' : 'bg-slate-400'" class="w-2 h-2 rounded-full"></span>
+        Inactivos
+      </button>
+      <button (click)="cambiarFiltro('TODOS')"
+              [ngClass]="filtroEstado === 'TODOS' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200">
+        Todos
+      </button>
+    </div>
+
   <div class="hidden lg:block bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 overflow-hidden">
     <table class="min-w-full divide-y divide-slate-100">
       <thead class="bg-slate-50/80">
@@ -84,7 +109,7 @@
   </div>
 
   <div class="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-    @for (user of usuarios; track user.idUsuario) {
+    @for (user of usuariosFiltrados; track user.idUsuario)  {
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative hover:shadow-md transition-shadow">
 
         <div class="flex items-start justify-between mb-4">
@@ -131,3 +156,44 @@
     }
   </div>
 </div>
+
+
+@if (usuarioAEliminar) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-fadeIn">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-100">
+
+      <div [ngClass]="usuarioAEliminar.activo ? 'bg-orange-50' : 'bg-red-50'" class="p-6 flex justify-center">
+        <div [ngClass]="usuarioAEliminar.activo ? 'bg-orange-100 text-orange-500' : 'bg-red-100 text-red-500'" class="w-20 h-20 rounded-full flex items-center justify-center animate-bounce-slow">
+          @if(usuarioAEliminar.activo) {
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          } @else {
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          }
+        </div>
+      </div>
+
+      <div class="p-6 text-center">
+        <h3 class="text-xl font-bold text-slate-800 mb-2">
+          {{ usuarioAEliminar.activo ? '¿Desactivar Usuario?' : '¿Eliminar Definitivamente?' }}
+        </h3>
+
+        @if(usuarioAEliminar.activo) {
+          <p class="text-slate-500 text-sm mb-6">El usuario <span class="font-bold text-slate-800">{{ usuarioAEliminar.nombres }}</span> ya no podrá iniciar sesión en el sistema, pero sus registros se conservarán.</p>
+        } @else {
+          <p class="text-slate-500 text-sm mb-6">Estás a punto de borrar a <span class="font-bold text-slate-800">{{ usuarioAEliminar.nombres }}</span> de la base de datos. <br><span class="text-red-500 font-bold">¡Esta acción no se puede deshacer!</span></p>
+        }
+      </div>
+
+      <div class="grid grid-cols-2 gap-0 border-t border-slate-100">
+        <button (click)="cerrarModal()" class="py-4 text-slate-600 font-bold hover:bg-slate-50 transition-colors border-r border-slate-100">Cancelar</button>
+
+        <button (click)="eliminarUsuario()"
+                [ngClass]="usuarioAEliminar.activo ? 'bg-orange-500 hover:bg-orange-600' : 'bg-red-500 hover:bg-red-600'"
+                class="py-4 text-white font-bold transition-colors">
+          {{ usuarioAEliminar.activo ? 'Sí, Desactivar' : 'Sí, Eliminar' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

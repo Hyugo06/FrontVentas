@@ -25,7 +25,13 @@ export class CartPageComponent {
   ) {
     this.items$ = this.cartService.items$;
     this.total$ = this.items$.pipe(
-      map(items => items.reduce((total, item) => total + (item.producto.precioVenta * item.cantidad), 0))
+      map(items => items.reduce((total, item) => {
+        // Si está en oferta y el precio regular existe, usamos el regular (la oferta). Si no, usamos el precio de venta (el caro).
+        const precioFinal = (item.producto.enOferta && item.producto.precioRegular && item.producto.precioVenta > item.producto.precioRegular)
+          ? item.producto.precioRegular
+          : item.producto.precioVenta;
+        return total + (precioFinal * item.cantidad);
+      }, 0))
     );
   }
 

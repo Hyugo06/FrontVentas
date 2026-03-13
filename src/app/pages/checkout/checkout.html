@@ -79,46 +79,64 @@
           @if (!esClienteAnonimo) {
             <div formGroupName="cliente" class="animate-fadeIn">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombres (*)</label>
-                  <input type="text" formControlName="nombres" (input)="validarSoloLetras($event)"
+
+                <div [ngClass]="checkoutForm.get('tipoComprobante')?.value === 'factura' ? 'md:col-span-2' : ''">
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">
+                    {{ checkoutForm.get('tipoComprobante')?.value === 'factura' ? 'Razón Social (*)' : 'Nombres (*)' }}
+                  </label>
+                  <input type="text" formControlName="nombres"
+                         [attr.maxlength]="checkoutForm.get('tipoComprobante')?.value === 'factura' ? 100 : 50"
                          class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+
                   @if (checkoutForm.get('cliente.nombres')?.invalid && checkoutForm.get('cliente.nombres')?.touched) {
                     <p class="text-red-500 text-xs mt-1 font-bold">Campo obligatorio</p>
                   }
                 </div>
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Apellidos (*)</label>
-                  <input type="text" formControlName="apellidos" (input)="validarSoloLetras($event)"
-                         class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                  @if (checkoutForm.get('cliente.apellidos')?.invalid && checkoutForm.get('cliente.apellidos')?.touched) {
-                    <p class="text-red-500 text-xs mt-1 font-bold">Campo obligatorio</p>
-                  }
-                </div>
+
+                @if (checkoutForm.get('tipoComprobante')?.value === 'boleta') {
+                  <div class="animate-fadeIn">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Apellidos (*)</label>
+                    <input type="text" formControlName="apellidos" (input)="validarSoloLetras($event)"
+                           class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+
+                    @if (checkoutForm.get('cliente.apellidos')?.invalid && checkoutForm.get('cliente.apellidos')?.touched) {
+                      <p class="text-red-500 text-xs mt-1 font-bold">Campo obligatorio</p>
+                    }
+                  </div>
+                }
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">DNI (Opcional)</label>
 
-                  <input type="text" formControlName="dni" maxlength="8" (input)="validarSoloNumeros($event)"
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">
+                    {{ checkoutForm.get('tipoComprobante')?.value === 'factura' ? 'RUC (11 dígitos) (*)' : 'DNI (Opcional)' }}
+                  </label>
+                  <input type="text" formControlName="dni"
+                         [attr.maxlength]="checkoutForm.get('tipoComprobante')?.value === 'factura' ? 11 : 8"
+                         (input)="validarSoloNumeros($event)"
                          class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                         placeholder="8 dígitos">
+                         [placeholder]="checkoutForm.get('tipoComprobante')?.value === 'factura' ? '11 dígitos' : '8 dígitos'">
 
                   @if (checkoutForm.get('cliente.dni')?.invalid && checkoutForm.get('cliente.dni')?.touched) {
-                    <p class="text-red-500 text-xs mt-1 font-bold">Si ingresas DNI, deben ser 8 números</p>
+                    <p class="text-red-500 text-xs mt-1 font-bold">
+                      {{ checkoutForm.get('tipoComprobante')?.value === 'factura' ? 'Debe ingresar 11 números exactos' : 'Si ingresas DNI, deben ser 8 números' }}
+                    </p>
                   }
                 </div>
 
                 <div>
                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Celular (9 dígitos) (*)</label>
                   <input type="text" formControlName="celular" maxlength="9" (input)="validarSoloNumeros($event)"
-                         class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                         class="w-full border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                         placeholder="9 dígitos">
+
                   @if (checkoutForm.get('cliente.celular')?.invalid && checkoutForm.get('cliente.celular')?.touched) {
-                    <p class="text-red-500 text-xs mt-1 font-bold">Celular inválido</p>
+                    <p class="text-red-500 text-xs mt-1 font-bold">Campo obligatorio de 9 números</p>
                   }
                 </div>
               </div>
+
 
               <div class="mb-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email (Opcional)</label>
@@ -167,7 +185,14 @@
                   <p class="font-bold text-slate-700 line-clamp-1">{{ item.producto.nombre }}</p>
                   <p class="text-xs text-slate-400">Cant: {{item.cantidad}}</p>
                 </div>
-                <span class="font-bold text-slate-800">S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}</span>
+                <div class="text-right">
+                  @if (item.producto.enOferta && item.producto.precioRegular && item.producto.precioVenta > item.producto.precioRegular) {
+                    <p class="text-xs text-slate-400 line-through">S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}</p>
+                    <p class="font-bold text-red-600">S/ {{ (item.producto.precioRegular * item.cantidad) | number:'1.2-2' }}</p>
+                  } @else {
+                    <span class="font-bold text-slate-800">S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}</span>
+                  }
+                </div>
               </div>
             }
           </div>

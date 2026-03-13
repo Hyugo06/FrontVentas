@@ -98,11 +98,14 @@
                     {{ venta.cliente?.nombres?.charAt(0) || 'C' }}
                   </div>
                   <div>
-                    <div class="text-sm font-medium text-slate-900">
+                    <div class="text-sm font-medium text-slate-900 flex items-center gap-2">
                       {{ venta.cliente?.nombres }} {{ venta.cliente?.apellidos }}
+                      @if (venta.cliente?.dni?.length === 11) {
+                        <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded border border-purple-200">EMPRESA</span>
+                      }
                     </div>
-                    <div class="text-xs text-slate-500">
-                      {{ venta.cliente?.dni || 'Sin DNI' }}
+                    <div class="text-xs text-slate-500 font-medium">
+                      {{ venta.cliente?.dni ? (venta.cliente.dni.length === 11 ? 'RUC: ' + venta.cliente.dni : 'DNI: ' + venta.cliente.dni) : 'Sin documento' }}
                     </div>
                   </div>
                 </div>
@@ -160,8 +163,16 @@
             }
           </div>
           <div class="mb-4">
-            <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ venta.cliente?.nombres }} {{ venta.cliente?.apellidos }}</h3>
-            <p class="text-xs text-slate-400 mt-1">Atendido por:
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ venta.cliente?.nombres }} {{ venta.cliente?.apellidos }}</h3>
+              @if (venta.cliente?.dni?.length === 11) {
+                <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-purple-200">EMPRESA</span>
+              }
+            </div>
+            <p class="text-xs text-slate-500 font-medium mb-1.5">
+              {{ venta.cliente?.dni ? (venta.cliente.dni.length === 11 ? 'RUC: ' + venta.cliente.dni : 'DNI: ' + venta.cliente.dni) : 'Sin documento' }}
+            </p>
+            <p class="text-xs text-slate-400">Atendido por:
               <span class="text-slate-600 font-medium">
                    {{ (venta.usuario?.nombres && venta.usuario?.apellidos) ? (venta.usuario.nombres + ' ' + venta.usuario.apellidos) : (venta.usuario?.nombreUsuario || 'Sistema') }}
                  </span>

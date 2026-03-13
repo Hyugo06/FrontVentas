@@ -61,6 +61,28 @@ export class CheckoutComponent implements OnInit {
         email: ['', [Validators.email]]
       })
     });
+
+    // --- NUEVO: ESCUCHAR EL CAMBIO DE COMPROBANTE ---
+    this.checkoutForm.get('tipoComprobante')?.valueChanges.subscribe(tipo => {
+      const clienteGroup = this.checkoutForm.get('cliente');
+      const apellidosCtrl = clienteGroup?.get('apellidos');
+      const dniCtrl = clienteGroup?.get('dni');
+
+      if (tipo === 'factura') {
+        // Reglas para EMPRESA: Sin apellido, RUC obligatorio de 11 dígitos
+        apellidosCtrl?.clearValidators();
+        dniCtrl?.setValidators([Validators.required, Validators.pattern('^[0-9]{11}$')]);
+      } else {
+        // Reglas para PERSONA NATURAL: Apellido obligatorio, DNI opcional de 8 dígitos
+        apellidosCtrl?.setValidators([Validators.required]);
+        dniCtrl?.setValidators([Validators.pattern('^[0-9]{8}$')]);
+      }
+
+      // Aplicamos los cambios instantáneamente
+      apellidosCtrl?.updateValueAndValidity();
+      dniCtrl?.updateValueAndValidity();
+    });
+    // ------------------------------------------------
   }
 
   ngOnInit(): void {
@@ -68,9 +90,13 @@ export class CheckoutComponent implements OnInit {
       this.cartItems = items;
 
       // Calculamos el total usando reduce (NO usamos cartService.total())
-      this.totalMonto = this.cartItems.reduce((sum, item) =>
-        sum + (item.producto.precioVenta * item.cantidad), 0
-      );
+      // NUEVO CÁLCULO QUE RESPETA LAS OFERTAS
+      this.totalMonto = this.cartItems.reduce((sum, item) => {
+        const precioFinal = (item.producto.enOferta && item.producto.precioRegular && item.producto.precioVenta > item.producto.precioRegular)
+          ? item.producto.precioRegular
+          : item.producto.precioVenta;
+        return sum + (precioFinal * item.cantidad);
+      }, 0);
 
       if (this.cuponAplicado) {
         this.calcularDescuento(this.totalMonto);

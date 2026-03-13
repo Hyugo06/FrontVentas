@@ -13,7 +13,7 @@ import {UiService} from '../../services/ui.service';
 import {environment} from '../../../environments/environment.prod'; // <--- Importar Auth
 
 interface CategoriaTree extends CategoriaDTO {
-  children?: CategoriaDTO[];
+  children?: CategoriaTree[];
   isOpen?: boolean;
 }
 
