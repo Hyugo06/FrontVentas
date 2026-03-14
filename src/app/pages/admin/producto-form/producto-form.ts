@@ -34,6 +34,8 @@ export class ProductoFormComponent implements OnInit {
   public error: string | null = null;
 
   public dropdownCatOpen: boolean = false;
+  public dropdownMarcaOpen: boolean = false;
+  public dropdownTiendaOpen: boolean = false;
   public filtroCategoria: string = '';
 
   public previewUrl: string | null = null;
@@ -357,13 +359,13 @@ export class ProductoFormComponent implements OnInit {
           codigoSku: producto.codigoSku,
           nombre: producto.nombre,
           descripcion: producto.descripcion,
-          tieneOferta: estaEnOferta,// Marcamos el check si corresponde
+          tieneOferta: estaEnOferta,
           precioRegular: producto.precioRegular,
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
-          idSucursal: producto.sucursal?.idSucursal,
-          idMarca: producto.marca?.idMarca,
-          idCategoria: producto.categoria?.idCategoria,
+          idSucursal: producto.sucursal?.idSucursal || null,
+          idMarca: producto.marca?.idMarca || null,
+          idCategoria: producto.categoria?.idCategoria || null,
           urlImagen: producto.urlImagen
         });
 
@@ -401,15 +403,12 @@ export class ProductoFormComponent implements OnInit {
 
     this.cargando = true;
     const formValue = this.productoForm.getRawValue();
-
-    // Dejamos que formValue pase el idSucursal, idMarca e idCategoria tal cual (planos)
     const productoData: any = {
       ...formValue,
       enOferta: formValue.tieneOferta,
       variantes: this.aplanarGruposParaBackend()
     };
 
-    // Ya no enviamos el objeto 'sucursal', ni borramos el 'idSucursal'
     delete productoData.gruposVariantes;
     delete productoData.tieneOferta;
 
@@ -419,6 +418,7 @@ export class ProductoFormComponent implements OnInit {
           this.router.navigate(['/admin/productos']);
         },
         error: (err: HttpErrorResponse) => {
+          console.error('Error del backend:', err.error);
           this.error = 'Error al actualizar el producto. Verifica los datos.';
           this.cargando = false;
         }
@@ -434,6 +434,34 @@ export class ProductoFormComponent implements OnInit {
         }
       });
     }
+  }
+
+  get nombreMarcaSeleccionada(): string {
+    const id = this.productoForm.get('idMarca')?.value;
+    if (!id) return 'Seleccionar Marca';
+    const marca = this.listaMarcas.find(m => m.idMarca === id);
+    return marca ? marca.nombre : 'Seleccionar Marca';
+  }
+
+  get nombreTiendaSeleccionada(): string {
+    const id = this.productoForm.get('idSucursal')?.value;
+    switch (id) {
+      case 1: return '👕 Ropa';
+      case 2: return '🛋️ Hogar';
+      case 3: return '🏢 Almacén';
+      case 4: return '📦 Almacén 2do Piso';
+      default: return 'Seleccionar Tienda';
+    }
+  }
+
+  seleccionarMarca(id: number | null): void {
+    this.productoForm.patchValue({ idMarca: id });
+    this.dropdownMarcaOpen = false;
+  }
+
+  seleccionarTienda(id: number | null): void {
+    this.productoForm.patchValue({ idSucursal: id });
+    this.dropdownTiendaOpen = false;
   }
 
   cargarDropdowns(): void {

@@ -97,9 +97,31 @@ export const routes: Routes = [
       { path: 'productos/nuevo', component: ProductoFormComponent },
       { path: 'productos/editar/:id', component: ProductoFormComponent },
 
-      { path: 'productos/ropa', component: AdminDashboardComponent },
-      { path: 'productos/hogar', component: AdminDashboardComponent },
-      { path: 'productos/almacen', component: AdminDashboardComponent },
+      {
+        path: 'productos',
+        component: AdminDashboardComponent,
+        data: { titulo: 'Inventario General' }
+      },
+      {
+        path: 'productos/ropa',
+        component: AdminDashboardComponent,
+        data: { titulo: 'Tienda de Ropa' }
+      },
+      {
+        path: 'productos/hogar',
+        component: AdminDashboardComponent,
+        data: { titulo: 'Tienda de Hogar' }
+      },
+      {
+        path: 'productos/almacen',
+        component: AdminDashboardComponent,
+        data: { titulo: 'Almacén de la Tienda' }
+      },
+      {
+        path: 'productos/almacen2',
+        component: AdminDashboardComponent,
+        data: { titulo: 'Almacén 2do Piso' }
+      },
 
       // { path: 'caja', component: AdminCajaComponent },
 

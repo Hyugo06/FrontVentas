@@ -90,7 +90,7 @@ export class LoginComponent implements OnInit {
     const navOptions = { replaceUrl: true };
 
     if (rol === 'ADMIN') {
-      this.router.navigate(['/admin/dashboard'], navOptions);
+      this.router.navigate(['/admin/productos'], navOptions);
       return;
     }
 

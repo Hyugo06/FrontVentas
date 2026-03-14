@@ -1,10 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, tap,catchError } from 'rxjs/operators';
-import {Producto} from '../../services/producto';
-import { of } from 'rxjs';
+import { Producto } from '../../services/producto';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -15,25 +13,24 @@ import { of } from 'rxjs';
 })
 export class AdminDashboardComponent implements OnInit {
 
+  public tituloVista: string = 'Inventario General'; // <-- NUEVA VARIABLE
+
   public productos: any[] = [];
-  public productosFiltrados: any[] = []; // Nueva lista para el filtrado local
+  public productosFiltrados: any[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
   public productoAEliminar: any = null;
 
-  // --- NUEVAS VARIABLES DE FILTRADO ---
   public filtroMarca: string = 'TODAS';
   public filtroCategoria: string = 'TODAS';
   public filtroColor: string = 'TODOS';
   public filtroTalla: string = 'TODAS';
 
-  // Control de apertura de menús
   public menuMarcaAbierto: boolean = false;
   public menuCatAbierto: boolean = false;
   public menuColorAbierto: boolean = false;
   public menuTallaAbierto: boolean = false;
 
-  // Opciones (Puedes cambiarlas por las que manejes en tu tienda)
   public marcas: string[] = [];
   public categorias: string[] = [];
   public colores: string[] = [];
@@ -44,7 +41,8 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private productoService: Producto,
     private fb: FormBuilder,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute // <-- INYECTAMOS ACTIVATEDROUTE
+  ) {
     this.searchForm = this.fb.group({ search: [''] });
   }
 
@@ -54,15 +52,18 @@ export class AdminDashboardComponent implements OnInit {
     this.filtroColor = 'TODOS';
     this.filtroTalla = 'TODAS';
     this.searchForm.get('search')?.setValue('');
-
-    // Cerramos cualquier menú que haya quedado abierto
     this.toggleMenu('');
-
-    // Aplicamos el filtrado para mostrar todo
     this.filtrarProductos();
   }
 
   ngOnInit(): void {
+    // 👇 NUEVO: LEER EL TÍTULO DESDE LAS RUTAS
+    this.route.data.subscribe(data => {
+      if (data['titulo']) {
+        this.tituloVista = data['titulo'];
+      }
+    });
+
     this.route.url.subscribe(() => {
       this.cargarProductos();
     });
@@ -77,8 +78,8 @@ export class AdminDashboardComponent implements OnInit {
     const urlSegments = this.route.snapshot.url.map(s => s.path);
     const tienda = urlSegments[urlSegments.length - 1];
 
-    // Si la URL es solo 'productos', 'tienda' será 'productos'
-    if (tienda === 'ropa' || tienda === 'hogar' || tienda === 'almacen') {
+    // 👇 ACTUALIZADO: AGREGAMOS "almacen2" A LA CONDICIÓN
+    if (tienda === 'ropa' || tienda === 'hogar' || tienda === 'almacen' || tienda === 'almacen2') {
       this.productoService.getProductosPorSucursal(tienda).subscribe({
         next: (data: any) => {
           this.productos = data || [];
@@ -89,7 +90,6 @@ export class AdminDashboardComponent implements OnInit {
         error: () => { this.error = 'Error al cargar productos de la tienda.'; this.cargando = false; }
       });
     } else {
-      // Carga normal de todos los productos
       this.productoService.getProductosAdmin('').subscribe({
         next: (data: any) => {
           this.productos = data;
@@ -102,6 +102,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
+  // ... (MANTÉN EL RESTO DE MÉTODOS EXACTAMENTE IGUAL) ...
 
   private extraerFiltrosDinamicos(): void {
     // Marcas únicas
@@ -133,13 +134,11 @@ export class AdminDashboardComponent implements OnInit {
     const term = this.searchForm.get('search')?.value?.toLowerCase() || '';
 
     this.productosFiltrados = this.productos.filter(p => {
-      // Buscador: Nombre, SKU o Marca
       const matchBusqueda =
         p.nombre.toLowerCase().includes(term) ||
         (p.codigoSku || '').toLowerCase().includes(term) ||
         (p.marca?.nombre || '').toLowerCase().includes(term);
 
-      // Filtros dinámicos
       const matchMarca = this.filtroMarca === 'TODAS' || p.marca?.nombre === this.filtroMarca;
       const matchCat = this.filtroCategoria === 'TODAS' || p.categoria?.nombre === this.filtroCategoria;
       const matchColor = this.filtroColor === 'TODOS' || p.caracteristicas?.color === this.filtroColor;
@@ -160,14 +159,10 @@ export class AdminDashboardComponent implements OnInit {
     this.searchForm.get('search')?.setValue('');
   }
 
-  // --- FUNCIONES DEL MODAL (YA NO EXISTE eliminarProducto) ---
-
-  // 1. Botón "Eliminar" de la tarjeta llama a esto
   confirmarEliminacion(producto: any): void {
-    this.productoAEliminar = producto; // Esto abre el modal en el HTML
+    this.productoAEliminar = producto;
   }
 
-  // 2. Botón "Cancelar" del modal
   cancelarEliminacion(): void {
     this.productoAEliminar = null;
   }
@@ -181,11 +176,9 @@ export class AdminDashboardComponent implements OnInit {
         },
         error: (err: any) => {
           console.error(err);
-          // Seteamos el error
           this.error = 'No se puede eliminar este producto porque tiene ventas o registros asociados.';
           this.productoAEliminar = null;
 
-          // AUTO-LIMPIEZA: El aviso desaparecerá solo tras 3.5 segundos
           setTimeout(() => {
             this.error = null;
           }, 1000);
