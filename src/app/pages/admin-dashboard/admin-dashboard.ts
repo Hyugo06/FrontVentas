@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, tap,catchError } from 'rxjs/operators';
 import {Producto} from '../../services/producto';
@@ -16,51 +16,144 @@ import { of } from 'rxjs';
 export class AdminDashboardComponent implements OnInit {
 
   public productos: any[] = [];
+  public productosFiltrados: any[] = []; // Nueva lista para el filtrado local
   public cargando: boolean = true;
   public error: string | null = null;
-  public productoAEliminar: any = null; // Variable del Modal
+  public productoAEliminar: any = null;
+
+  // --- NUEVAS VARIABLES DE FILTRADO ---
+  public filtroMarca: string = 'TODAS';
+  public filtroCategoria: string = 'TODAS';
+  public filtroColor: string = 'TODOS';
+  public filtroTalla: string = 'TODAS';
+
+  // Control de apertura de menús
+  public menuMarcaAbierto: boolean = false;
+  public menuCatAbierto: boolean = false;
+  public menuColorAbierto: boolean = false;
+  public menuTallaAbierto: boolean = false;
+
+  // Opciones (Puedes cambiarlas por las que manejes en tu tienda)
+  public marcas: string[] = [];
+  public categorias: string[] = [];
+  public colores: string[] = [];
+  public tallas: string[] = [];
 
   public searchForm: FormGroup;
 
   constructor(
     private productoService: Producto,
-    private fb: FormBuilder
-  ) {
-    this.searchForm = this.fb.group({
-      search: ['']
-    });
+    private fb: FormBuilder,
+    private route: ActivatedRoute) {
+    this.searchForm = this.fb.group({ search: [''] });
+  }
+
+  public limpiarFiltros(): void {
+    this.filtroMarca = 'TODAS';
+    this.filtroCategoria = 'TODAS';
+    this.filtroColor = 'TODOS';
+    this.filtroTalla = 'TODAS';
+    this.searchForm.get('search')?.setValue('');
+
+    // Cerramos cualquier menú que haya quedado abierto
+    this.toggleMenu('');
+
+    // Aplicamos el filtrado para mostrar todo
+    this.filtrarProductos();
   }
 
   ngOnInit(): void {
-    // Suscripción al buscador "Blindada"
-    this.searchForm.get('search')!.valueChanges.pipe(
-      debounceTime(350),       // Espera a que termines de escribir
-      distinctUntilChanged(),  // No busca si escribes lo mismo
-      tap(() => {
-        this.cargando = true;
-        this.error = null;     // Limpiamos errores previos al buscar
-      }),
-      switchMap(searchTerm => {
-        return this.productoService.getProductosAdmin(searchTerm).pipe(
-          // --- AQUÍ ESTÁ EL TRUCO ---
-          // Si la búsqueda falla, atrapamos el error AQUÍ DENTRO.
-          // Esto evita que el buscador "muera" y deje de escuchar.
-          catchError(err => {
-            console.error('Error en búsqueda:', err);
-            this.error = 'Ocurrió un error al buscar.';
-            // Retornamos una lista vacía para que la interfaz sepa que terminó
-            return of([]);
-          })
-        );
-      })
-    ).subscribe((data: any) => {
-      // Como ya atrapamos el error arriba, aquí siempre llega data (vacía o llena)
-      this.productos = data;
-      this.cargando = false;
+    this.route.url.subscribe(() => {
+      this.cargarProductos();
     });
 
-    // Disparar la carga inicial
-    this.searchForm.get('search')!.setValue('');
+    this.searchForm.get('search')!.valueChanges.subscribe(() => {
+      this.filtrarProductos();
+    });
+  }
+
+  cargarProductos(): void {
+    this.cargando = true;
+    const urlSegments = this.route.snapshot.url.map(s => s.path);
+    const tienda = urlSegments[urlSegments.length - 1];
+
+    // Si la URL es solo 'productos', 'tienda' será 'productos'
+    if (tienda === 'ropa' || tienda === 'hogar' || tienda === 'almacen') {
+      this.productoService.getProductosPorSucursal(tienda).subscribe({
+        next: (data: any) => {
+          this.productos = data || [];
+          this.extraerFiltrosDinamicos();
+          this.filtrarProductos();
+          this.cargando = false;
+        },
+        error: () => { this.error = 'Error al cargar productos de la tienda.'; this.cargando = false; }
+      });
+    } else {
+      // Carga normal de todos los productos
+      this.productoService.getProductosAdmin('').subscribe({
+        next: (data: any) => {
+          this.productos = data;
+          this.extraerFiltrosDinamicos();
+          this.filtrarProductos();
+          this.cargando = false;
+        },
+        error: () => { this.error = 'No se pudieron cargar los productos.'; this.cargando = false; }
+      });
+    }
+  }
+
+
+  private extraerFiltrosDinamicos(): void {
+    // Marcas únicas
+    this.marcas = [...new Set(this.productos
+      .map(p => p.marca?.nombre)
+      .filter(m => m)
+    )].sort() as string[];
+
+    // Categorías únicas
+    this.categorias = [...new Set(this.productos
+      .map(p => p.categoria?.nombre)
+      .filter(c => c)
+    )].sort() as string[];
+
+    // Colores (desde características)
+    this.colores = [...new Set(this.productos
+      .map(p => p.caracteristicas?.color)
+      .filter(col => col)
+    )].sort() as string[];
+
+    // Tallas (desde características)
+    this.tallas = [...new Set(this.productos
+      .map(p => p.caracteristicas?.talla)
+      .filter(t => t)
+    )].sort() as string[];
+  }
+
+  filtrarProductos(): void {
+    const term = this.searchForm.get('search')?.value?.toLowerCase() || '';
+
+    this.productosFiltrados = this.productos.filter(p => {
+      // Buscador: Nombre, SKU o Marca
+      const matchBusqueda =
+        p.nombre.toLowerCase().includes(term) ||
+        (p.codigoSku || '').toLowerCase().includes(term) ||
+        (p.marca?.nombre || '').toLowerCase().includes(term);
+
+      // Filtros dinámicos
+      const matchMarca = this.filtroMarca === 'TODAS' || p.marca?.nombre === this.filtroMarca;
+      const matchCat = this.filtroCategoria === 'TODAS' || p.categoria?.nombre === this.filtroCategoria;
+      const matchColor = this.filtroColor === 'TODOS' || p.caracteristicas?.color === this.filtroColor;
+      const matchTalla = this.filtroTalla === 'TODAS' || p.caracteristicas?.talla === this.filtroTalla;
+
+      return matchBusqueda && matchMarca && matchCat && matchColor && matchTalla;
+    });
+  }
+
+  toggleMenu(menu: string) {
+    this.menuMarcaAbierto = menu === 'marca' ? !this.menuMarcaAbierto : false;
+    this.menuCatAbierto = menu === 'cat' ? !this.menuCatAbierto : false;
+    this.menuColorAbierto = menu === 'color' ? !this.menuColorAbierto : false;
+    this.menuTallaAbierto = menu === 'talla' ? !this.menuTallaAbierto : false;
   }
 
   limpiarBusqueda(): void {
@@ -77,22 +170,6 @@ export class AdminDashboardComponent implements OnInit {
   // 2. Botón "Cancelar" del modal
   cancelarEliminacion(): void {
     this.productoAEliminar = null;
-  }
-
-  cargarProductos(): void {
-    this.cargando = true;
-    const searchTerm = this.searchForm.get('search')?.value || '';
-
-    this.productoService.getProductosAdmin(searchTerm).subscribe({
-      next: (data: any) => {
-        this.productos = data;
-        this.cargando = false;
-      },
-      error: (err: any) => {
-        this.error = 'No se pudieron cargar los productos.';
-        this.cargando = false;
-      }
-    });
   }
 
   eliminarDefinitivamente(): void {

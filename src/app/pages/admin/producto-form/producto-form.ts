@@ -61,6 +61,7 @@ export class ProductoFormComponent implements OnInit {
       precioVenta: [0, [Validators.required, Validators.min(0)]],
       precioCompra: [0, [Validators.required, Validators.min(0)]],
       stockActual: [0],
+      idSucursal: [null, Validators.required],
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
       urlImagen: [''],
@@ -360,6 +361,7 @@ export class ProductoFormComponent implements OnInit {
           precioRegular: producto.precioRegular,
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
+          idSucursal: producto.sucursal?.idSucursal,
           idMarca: producto.marca?.idMarca,
           idCategoria: producto.categoria?.idCategoria,
           urlImagen: producto.urlImagen
@@ -396,28 +398,38 @@ export class ProductoFormComponent implements OnInit {
       this.error = 'Por favor, completa todos los campos requeridos.';
       return;
     }
+
     this.cargando = true;
     const formValue = this.productoForm.getRawValue();
-    const productoData = {
+
+    // Dejamos que formValue pase el idSucursal, idMarca e idCategoria tal cual (planos)
+    const productoData: any = {
       ...formValue,
       enOferta: formValue.tieneOferta,
       variantes: this.aplanarGruposParaBackend()
     };
+
+    // Ya no enviamos el objeto 'sucursal', ni borramos el 'idSucursal'
     delete productoData.gruposVariantes;
     delete productoData.tieneOferta;
+
     if (this.esEdicion && this.productoId) {
       this.productoService.updateProducto(this.productoId, productoData).subscribe({
-        next: () => this.router.navigate(['/admin/productos']),
+        next: () => {
+          this.router.navigate(['/admin/productos']);
+        },
         error: (err: HttpErrorResponse) => {
-          this.error = err.error?.message || 'Error al actualizar.';
+          this.error = 'Error al actualizar el producto. Verifica los datos.';
           this.cargando = false;
         }
       });
     } else {
       this.productoService.createProducto(productoData).subscribe({
-        next: () => this.router.navigate(['/admin/productos']),
+        next: () => {
+          this.router.navigate(['/admin/productos']);
+        },
         error: (err: HttpErrorResponse) => {
-          this.error = err.error?.message || 'Error al crear.';
+          this.error = 'Error al crear el producto. Verifica los datos.';
           this.cargando = false;
         }
       });

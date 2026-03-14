@@ -97,6 +97,10 @@ export const routes: Routes = [
       { path: 'productos/nuevo', component: ProductoFormComponent },
       { path: 'productos/editar/:id', component: ProductoFormComponent },
 
+      { path: 'productos/ropa', component: AdminDashboardComponent },
+      { path: 'productos/hogar', component: AdminDashboardComponent },
+      { path: 'productos/almacen', component: AdminDashboardComponent },
+
       // { path: 'caja', component: AdminCajaComponent },
 
       { path: 'ventas', component: AdminVentasComponent },

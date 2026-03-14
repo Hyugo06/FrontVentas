@@ -35,6 +35,9 @@ export class AdminClientesComponent implements OnInit {
   public filtroTipo: 'TODOS' | 'JURIDICO' | 'NATURAL' = 'TODOS';
   public filtroDeuda: 'TODOS' | 'DEUDORES' | 'AL_DIA' = 'TODOS';
 
+  public menuTipoAbierto: boolean = false;
+  public menuDeudaAbierto: boolean = false;
+
   constructor(private clienteService: ClienteService) {}
 
   ngOnInit(): void {
@@ -145,6 +148,18 @@ export class AdminClientesComponent implements OnInit {
         });
       }
     });
+  }
+
+  public seleccionarTipo(valor: 'TODOS' | 'JURIDICO' | 'NATURAL'): void {
+    this.filtroTipo = valor;
+    this.menuTipoAbierto = false;
+    this.filtrarClientes();
+  }
+
+  public seleccionarDeuda(valor: 'TODOS' | 'DEUDORES' | 'AL_DIA'): void {
+    this.filtroDeuda = valor;
+    this.menuDeudaAbierto = false;
+    this.filtrarClientes();
   }
 
   verHistorial(cliente: ClienteView): void {

@@ -77,6 +77,19 @@
                     @for (m of listaMarcas; track m.idMarca) { <option [ngValue]="m.idMarca">{{ m.nombre }}</option> }
                   </select>
                 </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-bold text-slate-700 ml-1">Ubicación / Tienda</label>
+                  <select formControlName="idSucursal"
+                          class="block w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm text-slate-700">
+                    <option [ngValue]="null" disabled>Seleccionar Tienda</option>
+                    <option [ngValue]="1">👕 Ropa</option>
+                    <option [ngValue]="2">🛋️ Hogar</option>
+                    <option [ngValue]="3">🏢 Almacén</option>
+                  </select>
+                  @if (productoForm.get('idSucursal')?.touched && productoForm.get('idSucursal')?.invalid) {
+                    <p class="text-[10px] text-red-500 font-bold ml-1">Debes asignar una tienda.</p>
+                  }
+                </div>
                 <div class="space-y-2 relative">
                   <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                     Categorías
