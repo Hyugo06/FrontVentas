@@ -1,0 +1,13 @@
+/* Ocultar barra de desplazamiento manteniendo la funcionalidad de scroll horizontal */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Efecto de desplazamiento suave y "nativo" en móviles */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}

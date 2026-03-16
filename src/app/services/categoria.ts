@@ -6,7 +6,10 @@ import {environment} from '../../environments/environment.prod';
 export interface CategoriaDTO {
   idCategoria: number;
   nombre: string;
+  codigoCorto?: string;      // Nuevo campo (Opcional)
+  descripcion?: string;      // Nuevo campo (Opcional)
   idCategoriaPadre: number | null;
+  rutaCompleta?: string;     // <--- ¡NUESTRO CAMPO ESTRELLA!
   nivel?: number;
 }
 
@@ -17,13 +20,6 @@ export class Categoria { // Tu clase 'Categoria'
 
   private publicApiUrl = `${environment.apiUrl}/api/categorias`;
   private adminApiUrl = `${environment.apiUrl}/api/admin/categorias`;
-
-  //APILOCAL-MOBIL
-  // private publicApiUrl = 'http://192.168.1.34:8080/api/categorias';
-  // private adminApiUrl = 'http://192.168.1.34:8080/api/admin/categorias';
-
-  //private publicApiUrl = 'http://localhost:8080/api/categorias';
-  //private adminApiUrl = 'http://localhost:8080/api/admin/categorias';
 
   private http = inject(HttpClient);
   constructor() { }

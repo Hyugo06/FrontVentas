@@ -52,6 +52,11 @@ export class Producto {
     return this.http.get<any[]>(this.adminApiUrl, { params: params });
   }
 
+  public getProductosPorSucursal(nombreSucursal: string): Observable<any[]> {
+    // Usamos publicApiUrl que apunta a /api/productos
+    return this.http.get<any[]>(`${this.publicApiUrl}/sucursal/${nombreSucursal}`);
+  }
+
   public getProductoAdminPorId(id: string): Observable<any> {
     return this.http.get<any>(`${this.adminApiUrl}/${id}`);
   }

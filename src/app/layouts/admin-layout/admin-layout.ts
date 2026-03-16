@@ -18,6 +18,7 @@ export class AdminLayoutComponent implements OnInit {
   public nombreMostrar: string | null = null;
   public isMobileMenuOpen: boolean = false;
   public isUserMenuOpen: boolean = false;
+  public isProductosMenuOpen: boolean = false;
 
   constructor(
     private authService: Auth,
@@ -104,4 +105,9 @@ export class AdminLayoutComponent implements OnInit {
     const listaPermisos: string[] = JSON.parse(permisosGuardados);
     return listaPermisos.includes(permisoRequerido);
   }
+
+  public toggleProductosMenu(): void {
+    this.isProductosMenuOpen = !this.isProductosMenuOpen;
+  }
 }
+

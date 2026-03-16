@@ -1,7 +1,7 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router'; // <--- Importar Router
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
@@ -13,14 +13,14 @@ import {UiService} from '../../services/ui.service';
 import {environment} from '../../../environments/environment.prod'; // <--- Importar Auth
 
 interface CategoriaTree extends CategoriaDTO {
-  children?: CategoriaDTO[];
+  children?: CategoriaTree[];
   isOpen?: boolean;
 }
 
 @Component({
   selector: 'app-producto-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, FormsModule],
   templateUrl: './producto-lista.html',
   styleUrl: './producto-lista.css'
 })
@@ -41,6 +41,29 @@ export class ProductoListaComponent implements OnInit {
   public colorSeleccionado: { [id: number]: string } = {};
   public seleccion: { [id: number]: any } = {};
   public categoriaHover: CategoriaTree | null = null;
+
+  // Nuevas variables de estado
+  public menuMarcaAbierto: boolean = false;
+  public menuColorAbierto: boolean = false;
+  public menuTallaAbierto: boolean = false;
+
+  public productosFiltrados: any[] = [];
+  public filtroMarca: string = 'TODAS';
+  public filtroColor: string = 'TODOS';
+  public filtroTalla: string = 'TODAS';
+
+  public marcas: string[] = [];
+  public coloresList: string[] = [];
+  public tallasList: string[] = [];
+
+  public filtroUbicacion: any = 'TODAS';
+
+  public ubicaciones = [
+    { id: 1, nombre: 'Ropa', icono: '👕' },
+    { id: 2, nombre: 'Hogar', icono: '🛋️' },
+    { id: 3, nombre: 'Almacén', icono: '🏢' },
+    { id: 4, nombre: 'Almacén 2do Piso', icono: '📦' }
+  ];
 
   constructor(
     private productoService: Producto,
@@ -69,13 +92,76 @@ export class ProductoListaComponent implements OnInit {
       switchMap(val => this.productoService.getProductosPublicos(val.search, val.categoria))
     ).subscribe({
       next: (data) => {
-        this.inicializarCarruseles(data);
         this.productos = data;
+        this.productosFiltrados = data;
+        this.extraerFiltrosDinamicos(); // <--- Generamos los filtros
+        this.filtrarProductos();        // <--- Aplicamos el filtrado local
+        this.inicializarCarruseles(data);
         this.cargandoProductos = false;
       },
       error: () => this.cargandoProductos = false
     });
     this.filtroForm.updateValueAndValidity({ emitEvent: true });
+  }
+
+  public extraerFiltrosDinamicos(): void {
+    this.marcas = [...new Set(this.productos.map(p => p.marca?.nombre).filter(m => m))].sort() as string[];
+    this.coloresList = [...new Set(this.productos.map(p => p.caracteristicas?.color).filter(c => c))].sort() as string[];
+    this.tallasList = [...new Set(this.productos.map(p => p.caracteristicas?.talla).filter(t => t))].sort() as string[];
+  }
+
+  public filtrarProductos(): void {
+    const term = this.filtroForm.get('search')?.value?.toLowerCase() || '';
+
+    this.productosFiltrados = this.productos.filter(p => {
+      const matchBusqueda = p.nombre.toLowerCase().includes(term) || (p.codigoSku || '').toLowerCase().includes(term);
+      const matchMarca = this.filtroMarca === 'TODAS' || p.marca?.nombre === this.filtroMarca;
+      const matchColor = this.filtroColor === 'TODOS' || p.caracteristicas?.color === this.filtroColor;
+      const matchTalla = this.filtroTalla === 'TODAS' || p.caracteristicas?.talla === this.filtroTalla;
+
+      // 👇 EL SECRETO DEL FILTRO DE TIENDAS 👇
+      let matchUbicacion = true;
+      if (this.filtroUbicacion !== 'TODAS') {
+        const idBuscado = Number(this.filtroUbicacion);
+        let encontrado = false;
+
+        // 1. Buscamos en la raíz del producto (Si Java lo envía directo)
+        const idRaiz = p.idSucursal || (p.sucursal && p.sucursal.idSucursal);
+        if (Number(idRaiz) === idBuscado) {
+          encontrado = true;
+        }
+
+        // 2. Si no está en la raíz, buscamos dentro de sus variantes e inventarios
+        if (!encontrado && p.variantes && Array.isArray(p.variantes)) {
+          encontrado = p.variantes.some((v: any) => {
+            if (!v.inventarios) return false;
+
+            // Caso A: Si Java envía un Array de inventarios
+            if (Array.isArray(v.inventarios)) {
+              return v.inventarios.some((inv: any) => inv.sucursal && Number(inv.sucursal.idSucursal) === idBuscado);
+            }
+            // Caso B: Si Java envía un "Mapa" con nombres de tiendas
+            else {
+              const tiendaObj = this.ubicaciones.find((u: any) => u.id === idBuscado);
+              return tiendaObj && v.inventarios[tiendaObj.nombre] !== undefined;
+            }
+          });
+        }
+
+        matchUbicacion = encontrado;
+      }
+
+      // 👇 ESTA LÍNEA ES VITAL: Si falta "matchUbicacion", el filtro nunca funcionará
+      return matchBusqueda && matchMarca && matchColor && matchTalla && matchUbicacion;
+    });
+  }
+
+  public limpiarTodo(): void {
+    this.filtroMarca = 'TODAS';
+    this.filtroColor = 'TODOS';
+    this.filtroTalla = 'TODAS';
+    this.filtroForm.reset({ search: '', categoria: '' });
+    this.filtrarProductos();
   }
 
   @HostListener('window:scroll', [])
@@ -272,9 +358,35 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
+  toggleMenu(menu: string) {
+    this.menuMarcaAbierto = menu === 'marca' ? !this.menuMarcaAbierto : false;
+    this.menuColorAbierto = menu === 'color' ? !this.menuColorAbierto : false;
+    this.menuTallaAbierto = menu === 'talla' ? !this.menuTallaAbierto : false;
+  }
+
+
+
+  seleccionarFiltro(tipo: string, valor: any) {
+    if (tipo === 'marca') this.filtroMarca = valor;
+    if (tipo === 'color') this.filtroColor = valor;
+    if (tipo === 'talla') this.filtroTalla = valor;
+    if (tipo === 'ubicacion') this.filtroUbicacion = valor;
+
+    this.toggleMenu('');
+    this.filtrarProductos();
+  }
+
   toggleMobileMenu(): void {
     if (this.showMobileMenu) this.uiService.closeMenu();
     else this.uiService.toggleMenu();
+  }
+
+  limpiarFiltrosRapidos() {
+    this.filtroMarca = 'TODAS';
+    this.filtroColor = 'TODOS';
+    this.filtroTalla = 'TODAS';
+    this.filtroUbicacion = 'TODAS'; // <--- NUEVO
+    this.filtrarProductos();
   }
 
   toggleCategoria(cat: CategoriaTree): void { cat.isOpen = !cat.isOpen; }

@@ -1,10 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, tap,catchError } from 'rxjs/operators';
-import {Producto} from '../../services/producto';
-import { of } from 'rxjs';
+import { Producto } from '../../services/producto';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -15,84 +13,181 @@ import { of } from 'rxjs';
 })
 export class AdminDashboardComponent implements OnInit {
 
+  public tituloVista: string = 'Inventario General'; // <-- NUEVA VARIABLE
+
   public productos: any[] = [];
+  public productosFiltrados: any[] = [];
   public cargando: boolean = true;
   public error: string | null = null;
-  public productoAEliminar: any = null; // Variable del Modal
+  public productoAEliminar: any = null;
+
+  public filtroMarca: string = 'TODAS';
+  public filtroCategoria: string = 'TODAS';
+  public filtroColor: string = 'TODOS';
+  public filtroTalla: string = 'TODAS';
+
+  public menuMarcaAbierto: boolean = false;
+  public menuCatAbierto: boolean = false;
+  public menuColorAbierto: boolean = false;
+  public menuTallaAbierto: boolean = false;
+
+  public marcas: string[] = [];
+  public categorias: string[] = [];
+  public colores: string[] = [];
+  public tallas: string[] = [];
 
   public searchForm: FormGroup;
 
   constructor(
     private productoService: Producto,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private route: ActivatedRoute
   ) {
-    this.searchForm = this.fb.group({
-      search: ['']
-    });
+    this.searchForm = this.fb.group({ search: [''] });
+  }
+
+  public limpiarFiltros(): void {
+    this.filtroMarca = 'TODAS';
+    this.filtroCategoria = 'TODAS';
+    this.filtroColor = 'TODOS';
+    this.filtroTalla = 'TODAS';
+    this.searchForm.get('search')?.setValue('');
+    this.toggleMenu('');
+    this.filtrarProductos();
   }
 
   ngOnInit(): void {
-    // Suscripción al buscador "Blindada"
-    this.searchForm.get('search')!.valueChanges.pipe(
-      debounceTime(350),       // Espera a que termines de escribir
-      distinctUntilChanged(),  // No busca si escribes lo mismo
-      tap(() => {
-        this.cargando = true;
-        this.error = null;     // Limpiamos errores previos al buscar
-      }),
-      switchMap(searchTerm => {
-        return this.productoService.getProductosAdmin(searchTerm).pipe(
-          // --- AQUÍ ESTÁ EL TRUCO ---
-          // Si la búsqueda falla, atrapamos el error AQUÍ DENTRO.
-          // Esto evita que el buscador "muera" y deje de escuchar.
-          catchError(err => {
-            console.error('Error en búsqueda:', err);
-            this.error = 'Ocurrió un error al buscar.';
-            // Retornamos una lista vacía para que la interfaz sepa que terminó
-            return of([]);
-          })
-        );
-      })
-    ).subscribe((data: any) => {
-      // Como ya atrapamos el error arriba, aquí siempre llega data (vacía o llena)
-      this.productos = data;
-      this.cargando = false;
+    // 👇 NUEVO: LEER EL TÍTULO DESDE LAS RUTAS
+    this.route.data.subscribe(data => {
+      if (data['titulo']) {
+        this.tituloVista = data['titulo'];
+      }
     });
 
-    // Disparar la carga inicial
-    this.searchForm.get('search')!.setValue('');
+    this.route.url.subscribe(() => {
+      this.cargarProductos();
+    });
+
+    this.searchForm.get('search')!.valueChanges.subscribe(() => {
+      this.filtrarProductos();
+    });
+  }
+
+  cargarProductos(): void {
+    this.cargando = true;
+    const urlSegments = this.route.snapshot.url.map(s => s.path);
+    const tiendaPath = urlSegments[urlSegments.length - 1];
+
+    if (tiendaPath === 'ropa' || tiendaPath === 'hogar' || tiendaPath === 'almacen' || tiendaPath === 'almacen2') {
+
+      // 👇 MAGIA AQUÍ: Traducimos la URL de internet al nombre real de tu Base de Datos
+      let nombreRealBD = '';
+      if (tiendaPath === 'ropa') nombreRealBD = 'Ropa';
+      if (tiendaPath === 'hogar') nombreRealBD = 'Hogar';
+      if (tiendaPath === 'almacen') nombreRealBD = 'Almacén'; // ¡Con su tilde!
+      if (tiendaPath === 'almacen2') nombreRealBD = 'Almacén 2do Piso';
+
+      this.productoService.getProductosPorSucursal(nombreRealBD).subscribe({
+        next: (data: any) => {
+          this.productos = data || [];
+          this.extraerFiltrosDinamicos();
+          this.filtrarProductos();
+          this.cargando = false;
+        },
+        error: () => { this.error = 'Error al cargar productos de la tienda.'; this.cargando = false; }
+      });
+    } else {
+      this.productoService.getProductosAdmin('').subscribe({
+        next: (data: any) => {
+          this.productos = data;
+          this.extraerFiltrosDinamicos();
+          this.filtrarProductos();
+          this.cargando = false;
+        },
+        error: () => { this.error = 'No se pudieron cargar los productos.'; this.cargando = false; }
+      });
+    }
+  }
+
+  // ... (MANTÉN EL RESTO DE MÉTODOS EXACTAMENTE IGUAL) ...
+
+  private extraerFiltrosDinamicos(): void {
+    // Marcas únicas
+    this.marcas = [...new Set(this.productos
+      .map(p => p.marca?.nombre)
+      .filter(m => m)
+    )].sort() as string[];
+
+    // Categorías únicas
+    this.categorias = [...new Set(this.productos
+      .map(p => p.categoria?.nombre)
+      .filter(c => c)
+    )].sort() as string[];
+
+    // Colores (desde características)
+    this.colores = [...new Set(this.productos
+      .map(p => p.caracteristicas?.color)
+      .filter(col => col)
+    )].sort() as string[];
+
+    // Tallas (desde características)
+    this.tallas = [...new Set(this.productos
+      .map(p => p.caracteristicas?.talla)
+      .filter(t => t)
+    )].sort() as string[];
+  }
+
+  filtrarProductos(): void {
+    const term = this.searchForm.get('search')?.value?.toLowerCase() || '';
+
+    this.productosFiltrados = this.productos.filter(p => {
+      const matchBusqueda =
+        p.nombre.toLowerCase().includes(term) ||
+        (p.codigoSku || '').toLowerCase().includes(term) ||
+        (p.marca?.nombre || '').toLowerCase().includes(term);
+
+      const matchMarca = this.filtroMarca === 'TODAS' || p.marca?.nombre === this.filtroMarca;
+      const matchCat = this.filtroCategoria === 'TODAS' || p.categoria?.nombre === this.filtroCategoria;
+      const matchColor = this.filtroColor === 'TODOS' || p.caracteristicas?.color === this.filtroColor;
+      const matchTalla = this.filtroTalla === 'TODAS' || p.caracteristicas?.talla === this.filtroTalla;
+
+      return matchBusqueda && matchMarca && matchCat && matchColor && matchTalla;
+    });
+  }
+
+  toggleMenu(menu: string) {
+    this.menuMarcaAbierto = menu === 'marca' ? !this.menuMarcaAbierto : false;
+    this.menuCatAbierto = menu === 'cat' ? !this.menuCatAbierto : false;
+    this.menuColorAbierto = menu === 'color' ? !this.menuColorAbierto : false;
+    this.menuTallaAbierto = menu === 'talla' ? !this.menuTallaAbierto : false;
   }
 
   limpiarBusqueda(): void {
     this.searchForm.get('search')?.setValue('');
   }
 
-  // --- FUNCIONES DEL MODAL (YA NO EXISTE eliminarProducto) ---
-
-  // 1. Botón "Eliminar" de la tarjeta llama a esto
   confirmarEliminacion(producto: any): void {
-    this.productoAEliminar = producto; // Esto abre el modal en el HTML
+    this.productoAEliminar = producto;
   }
 
-  // 2. Botón "Cancelar" del modal
   cancelarEliminacion(): void {
     this.productoAEliminar = null;
   }
 
-  cargarProductos(): void {
-    this.cargando = true;
-    const searchTerm = this.searchForm.get('search')?.value || '';
+  obtenerNombreUbicacion(prod: any): string {
+    if (prod.sucursal && prod.sucursal.nombre) {
+      return prod.sucursal.nombre;
+    }
+    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal);
 
-    this.productoService.getProductosAdmin(searchTerm).subscribe({
-      next: (data: any) => {
-        this.productos = data;
-        this.cargando = false;
-      },
-      error: (err: any) => {
-        this.error = 'No se pudieron cargar los productos.';
-        this.cargando = false;
-      }
-    });
+    if (!id) return 'General / Sin Asignar';
+    switch (id) {
+      case 1: return 'Ropa';
+      case 2: return 'Hogar';
+      case 3: return 'Almacén';
+      case 4: return 'Almacén 2do Piso';
+      default: return 'Desconocida';
+    }
   }
 
   eliminarDefinitivamente(): void {
@@ -104,11 +199,9 @@ export class AdminDashboardComponent implements OnInit {
         },
         error: (err: any) => {
           console.error(err);
-          // Seteamos el error
           this.error = 'No se puede eliminar este producto porque tiene ventas o registros asociados.';
           this.productoAEliminar = null;
 
-          // AUTO-LIMPIEZA: El aviso desaparecerá solo tras 3.5 segundos
           setTimeout(() => {
             this.error = null;
           }, 1000);
