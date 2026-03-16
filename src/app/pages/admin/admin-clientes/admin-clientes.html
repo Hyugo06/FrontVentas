@@ -122,7 +122,7 @@
                   <a [routerLink]="['/admin/clientes/historial', cliente.idCliente]" class="hover:text-indigo-600 transition-colors cursor-pointer">
                     {{ cliente.nombres }}
                   </a>
-                  @if (cliente.dni?.length === 11) {
+                  @if (cliente.dni.length === 11) {
                     <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded border border-purple-200 mt-1">EMPRESA</span>
                   }
                 </h3>
@@ -224,7 +224,7 @@
                           {{ cliente.nombres }} {{ cliente.apellidos }}
                         </a>
 
-                        @if (cliente.dni?.length === 11) {
+                        @if (cliente.dni.length === 11) {
                           <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded border border-purple-200">EMPRESA</span>
                         }
 

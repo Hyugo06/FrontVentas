@@ -41,7 +41,7 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private productoService: Producto,
     private fb: FormBuilder,
-    private route: ActivatedRoute // <-- INYECTAMOS ACTIVATEDROUTE
+    private route: ActivatedRoute
   ) {
     this.searchForm = this.fb.group({ search: [''] });
   }
@@ -76,11 +76,18 @@ export class AdminDashboardComponent implements OnInit {
   cargarProductos(): void {
     this.cargando = true;
     const urlSegments = this.route.snapshot.url.map(s => s.path);
-    const tienda = urlSegments[urlSegments.length - 1];
+    const tiendaPath = urlSegments[urlSegments.length - 1];
 
-    // 👇 ACTUALIZADO: AGREGAMOS "almacen2" A LA CONDICIÓN
-    if (tienda === 'ropa' || tienda === 'hogar' || tienda === 'almacen' || tienda === 'almacen2') {
-      this.productoService.getProductosPorSucursal(tienda).subscribe({
+    if (tiendaPath === 'ropa' || tiendaPath === 'hogar' || tiendaPath === 'almacen' || tiendaPath === 'almacen2') {
+
+      // 👇 MAGIA AQUÍ: Traducimos la URL de internet al nombre real de tu Base de Datos
+      let nombreRealBD = '';
+      if (tiendaPath === 'ropa') nombreRealBD = 'Ropa';
+      if (tiendaPath === 'hogar') nombreRealBD = 'Hogar';
+      if (tiendaPath === 'almacen') nombreRealBD = 'Almacén'; // ¡Con su tilde!
+      if (tiendaPath === 'almacen2') nombreRealBD = 'Almacén 2do Piso';
+
+      this.productoService.getProductosPorSucursal(nombreRealBD).subscribe({
         next: (data: any) => {
           this.productos = data || [];
           this.extraerFiltrosDinamicos();
@@ -165,6 +172,22 @@ export class AdminDashboardComponent implements OnInit {
 
   cancelarEliminacion(): void {
     this.productoAEliminar = null;
+  }
+
+  obtenerNombreUbicacion(prod: any): string {
+    if (prod.sucursal && prod.sucursal.nombre) {
+      return prod.sucursal.nombre;
+    }
+    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal);
+
+    if (!id) return 'General / Sin Asignar';
+    switch (id) {
+      case 1: return 'Ropa';
+      case 2: return 'Hogar';
+      case 3: return 'Almacén';
+      case 4: return 'Almacén 2do Piso';
+      default: return 'Desconocida';
+    }
   }
 
   eliminarDefinitivamente(): void {

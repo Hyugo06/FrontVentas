@@ -137,9 +137,41 @@
                 }
               </div>
             }
+
           </div>
         }
       </nav>
+      <div class="mt-16 pt-8 border-t border-slate-200 mb-2">
+        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Ubicación
+        </h3>
+        <div class="flex flex-col gap-2">
+          <button (click)="seleccionarFiltro('ubicacion', 'TODAS')"
+                  class="text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                  [class.bg-indigo-50]="filtroUbicacion === 'TODAS'"
+                  [class.text-indigo-600]="filtroUbicacion === 'TODAS'"
+                  [class.text-slate-500]="filtroUbicacion !== 'TODAS'"
+                  [class.hover:bg-slate-50]="filtroUbicacion !== 'TODAS'">
+            <span>🌍</span> Todas las Tiendas
+          </button>
+
+          @for (ub of ubicaciones; track ub.id) {
+            <button (click)="seleccionarFiltro('ubicacion', ub.id)"
+                    class="text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                    [class.bg-indigo-50]="filtroUbicacion === ub.id"
+                    [class.text-indigo-600]="filtroUbicacion === ub.id"
+                    [class.text-slate-500]="filtroUbicacion !== ub.id"
+                    [class.hover:bg-slate-50]="filtroUbicacion !== ub.id">
+              <span>{{ ub.icono }}</span> {{ ub.nombre }}
+            </button>
+          }
+        </div>
+      </div>
+
     </div>
   </aside>
 
@@ -245,7 +277,7 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 items-start">
 
-      @for (prod of productos; track prod.idProducto) {
+      @for (prod of productosFiltrados; track prod.idProducto) {
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
 
           <div class="relative h-64 bg-gray-100 overflow-hidden">
