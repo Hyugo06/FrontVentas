@@ -54,22 +54,30 @@
 
       <div>
         <div class="mb-6">
-          <span class="text-sm font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-3 py-1 rounded-full">
-            {{ producto.marca?.nombre || 'Genérico' }}
-          </span>
-          <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mt-4 mb-2 leading-tight">
-            {{ producto.nombre }}
-          </h1>
-          <div class="flex items-end gap-3 mb-6">
-            <span class="text-3xl font-bold text-slate-800">S/ {{ producto.precioVenta | number:'1.2-2' }}</span>
-            @if (producto.precioRegular > producto.precioVenta) {
-              <span class="text-lg text-gray-400 line-through mb-1">S/ {{ producto.precioRegular | number:'1.2-2' }}</span>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ producto.marca?.nombre || 'GENÉRICO' }}</span>
+            <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md shadow-sm border border-slate-200 uppercase tracking-widest">
+              SKU: {{ producto.codigoSku }}
+            </span>
+          </div>
+
+
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-4">{{ producto.nombre }}</h1>
+
+          <div class="flex items-center gap-4">
+            @if (producto.enOferta && producto.precioRegular && producto.precioVenta > producto.precioRegular) {
+              <div class="flex items-center gap-3">
+                <p class="text-3xl font-extrabold text-red-600">S/ {{ producto.precioRegular | number:'1.2-2' }}</p>
+                <p class="text-lg text-slate-400 line-through font-medium">S/ {{ producto.precioVenta | number:'1.2-2' }}</p>
+                <span class="bg-red-100 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg border border-red-200">
+                  -{{ (100 - (producto.precioRegular * 100 / producto.precioVenta)) | number:'1.0-0' }}%
+                </span>
+              </div>
+            } @else {
+              <p class="text-3xl font-extrabold text-indigo-600">S/ {{ producto.precioVenta | number:'1.2-2' }}</p>
             }
           </div>
 
-          <p class="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-            {{ producto.descripcion || 'Sin descripción disponible.' }}
-          </p>
         </div>
 
         <div class="border-t border-gray-100 my-6 pt-6 space-y-6">
@@ -99,13 +107,11 @@
           @if (colorSeleccionado) {
             <div class="animate-fadeIn">
               <div class="flex justify-between items-center mb-3">
-                <span class="text-xs font-bold text-gray-900 uppercase tracking-wider">Tallas Disponibles</span>
-
                 <span class="text-xs font-bold px-2 py-1 rounded bg-green-100 text-green-700 animate-pulse">
                   @if (varianteSeleccionada) {
-                    {{ varianteSeleccionada.stockActual }} unid. en {{ varianteSeleccionada.talla }}
+                    {{ getStockVarianteSeleccionada() }} unid. disp. en {{ varianteSeleccionada.talla }}
                   } @else {
-                    {{ getStockTotalColor(colorSeleccionado) }} unid. total en {{ colorSeleccionado }}
+                    {{ getStockTotalColor(colorSeleccionado) }} unid. disp. en {{ colorSeleccionado }}
                   }
                 </span>
               </div>

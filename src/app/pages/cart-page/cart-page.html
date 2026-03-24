@@ -34,6 +34,12 @@
                   {{ item.producto.nombre }}
                 </h3>
 
+                <div *ngIf="item.nombreSucursal !== 'General'" class="mb-2">
+                  <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide border border-indigo-200">
+                    📍 {{ item.nombreSucursal }}
+                  </span>
+                </div>
+
                 @if (item.variante) {
                   <div class="flex items-center mt-1 space-x-2">
                     <span class="text-sm text-gray-600">Color: <span class="font-medium text-gray-800">{{ item.variante.color }}</span></span>

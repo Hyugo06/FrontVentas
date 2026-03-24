@@ -23,13 +23,22 @@ export class ProductoDetalleComponent implements OnInit {
   public imagenesFiltradas: any[] = [];
   public cargando: boolean = true;
 
+  public idTiendaContexto: number | null = null;
+
   // Selección
   public colorSeleccionado: string | null = null;
   public tallaSeleccionada: string | null = null;
-  public varianteSeleccionada: ProductoVariante | null = null;
+  public varianteSeleccionada: any = null;
 
   // Galería
   public imagenActual: string | null = null;
+
+  private nombresSucursales: { [id: number]: string } = {
+    1: 'Ropa',
+    2: 'Hogar',
+    3: 'Almacén',
+    4: 'Almacén 2do Piso'
+  };
 
 
   constructor(
@@ -39,6 +48,12 @@ export class ProductoDetalleComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+
+    this.route.queryParams.subscribe(params => {
+      if (params['tienda']) {
+        this.idTiendaContexto = Number(params['tienda']);
+      }
+    });
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       forkJoin({
@@ -69,6 +84,62 @@ export class ProductoDetalleComponent implements OnInit {
         }
       });
     }
+  }
+
+  getStockPorTienda(): { id: number; nombre: string; stock: number }[] {
+    const consolidado = new Map<number, { id: number; nombre: string; stock: number }>();
+    if (!this.producto) return [];
+
+    const sumarInventarios = (inventarios: any[]) => {
+      if (!inventarios || !Array.isArray(inventarios)) return;
+      inventarios.forEach((inv: any) => {
+        const sucursalId = Number(inv.idSucursal);
+
+        // REGLA DE ORO: Si venimos de una tienda específica, ignoramos las demás
+        if (this.idTiendaContexto && this.idTiendaContexto > 0 && sucursalId !== this.idTiendaContexto) return;
+
+        const nombre = this.nombresSucursales[sucursalId] || `Tienda ${sucursalId}`;
+        const stock = inv.stockActual || 0;
+
+        if (stock > 0) {
+          if (consolidado.has(sucursalId)) consolidado.get(sucursalId)!.stock += stock;
+          else consolidado.set(sucursalId, { id: sucursalId, nombre, stock });
+        }
+      });
+    };
+
+    if (this.varianteSeleccionada) sumarInventarios(this.varianteSeleccionada.inventarios);
+    else if (this.colorSeleccionado) {
+      const variantesColor = this.producto.variantes.filter((v: any) => v.color === this.colorSeleccionado);
+      variantesColor.forEach((v: any) => sumarInventarios(v.inventarios));
+    } else if (this.producto.variantes && this.producto.variantes.length > 0) {
+      this.producto.variantes.forEach((v: any) => sumarInventarios(v.inventarios));
+    } else {
+      if ((this.producto.stockActual || 0) > 0 && (!this.idTiendaContexto || this.idTiendaContexto === 0)) {
+        consolidado.set(0, { id: 0, nombre: 'General', stock: this.producto.stockActual });
+      }
+    }
+    return Array.from(consolidado.values());
+  }
+
+  // 👇 NUEVO: Calcula el stock real sumando la mochila de todas las tiendas
+  getStockReal(v: any): number {
+    if (!v) return 0;
+    if (v.inventarios && Array.isArray(v.inventarios) && v.inventarios.length > 0) {
+      return v.inventarios.reduce((acc: number, inv: any) => acc + (inv.stockActual || 0), 0);
+    }
+    return v.stockActual || 0;
+  }
+
+  // 👇 NUEVO: Muestra el stock en la pantalla dependiendo de si eligió talla o no
+  getStockDisplay(): number {
+    if (this.varianteSeleccionada) {
+      return this.getStockReal(this.varianteSeleccionada);
+    }
+    if (this.producto?.variantes && this.producto.variantes.length > 0) {
+      return this.producto.variantes.reduce((acc: number, v: any) => acc + this.getStockReal(v), 0);
+    }
+    return this.producto?.stockActual || 0;
   }
 
   // --- NUEVA FUNCIÓN INTELIGENTE (Pública para el HTML) ---
@@ -163,15 +234,44 @@ export class ProductoDetalleComponent implements OnInit {
     if (!this.producto?.variantes || !color) return 0;
     return this.producto.variantes
       .filter((v: any) => v.color === color)
-      .reduce((acc: number, v: any) => acc + v.stockActual, 0);
+      .reduce((acc: number, v: any) => {
+        if (v.inventarios && Array.isArray(v.inventarios)) {
+          if (this.idTiendaContexto && this.idTiendaContexto > 0) {
+            const inv = v.inventarios.find((i: any) => Number(i.idSucursal) === this.idTiendaContexto);
+            return acc + (inv ? inv.stockActual || 0 : 0);
+          }
+          return acc + v.inventarios.reduce((sum: number, inv: any) => sum + (inv.stockActual || 0), 0);
+        }
+        return acc + (v.stockActual || 0);
+      }, 0);
+  }
+
+  getStockVarianteSeleccionada(): number {
+    if (!this.varianteSeleccionada) return 0;
+    if (this.varianteSeleccionada.inventarios && Array.isArray(this.varianteSeleccionada.inventarios)) {
+      if (this.idTiendaContexto && this.idTiendaContexto > 0) {
+        const inv = this.varianteSeleccionada.inventarios.find((i: any) => Number(i.idSucursal) === this.idTiendaContexto);
+        return inv ? inv.stockActual || 0 : 0;
+      }
+      return this.varianteSeleccionada.inventarios.reduce((acc: number, inv: any) => acc + (inv.stockActual || 0), 0);
+    }
+    return this.varianteSeleccionada.stockActual || 0;
   }
 
   isTallaDisponible(talla: string): boolean {
-    if (!this.colorSeleccionado || !this.producto?.variantes) return false;
-    const variante = this.producto.variantes.find((v: any) =>
-      v.color === this.colorSeleccionado && v.talla === talla
-    );
-    return variante ? variante.stockActual > 0 : false;
+    if (!this.producto || !this.producto.variantes) return false;
+    const variantesColor = this.producto.variantes.filter((v: any) => v.color === this.colorSeleccionado && v.talla === talla);
+
+    return variantesColor.some((v: any) => {
+      if (v.inventarios && Array.isArray(v.inventarios) && v.inventarios.length > 0) {
+        if (this.idTiendaContexto && this.idTiendaContexto > 0) {
+          const inv = v.inventarios.find((i: any) => Number(i.idSucursal) === this.idTiendaContexto);
+          return (inv ? inv.stockActual || 0 : 0) > 0;
+        }
+        return v.inventarios.reduce((acc: number, inv: any) => acc + (inv.stockActual || 0), 0) > 0;
+      }
+      return (v.stockActual || 0) > 0;
+    });
   }
 
   // --- GALERÍA (CORREGIDA) ---
@@ -198,60 +298,57 @@ export class ProductoDetalleComponent implements OnInit {
     }
   }
 
-  // --- CARRITO ---
   agregarAlCarrito(): void {
-    if (this.producto?.variantes?.length > 0 && !this.varianteSeleccionada) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Selecciona una talla',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-      });
+    if (this.producto.variantes?.length > 0 && !this.varianteSeleccionada) {
+      Swal.fire({ title: 'Falta la talla', text: 'Por favor selecciona una talla para continuar', icon: 'warning', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
       return;
+    }
+
+    let idSuc: number | null = null;
+    let nomSuc: string | null = null;
+
+    if (this.idTiendaContexto && this.idTiendaContexto > 0) {
+      idSuc = this.idTiendaContexto;
+      nomSuc = this.nombresSucursales[idSuc] || 'Tienda';
+    } else if (this.producto.variantes?.length > 0) {
+      const stockTiendas = this.getStockPorTienda();
+      const tiendaConMasStock = stockTiendas.reduce((max, tienda) =>
+        (tienda.stock > (max ? max.stock : 0)) ? tienda : max, null as any);
+
+      if (tiendaConMasStock && tiendaConMasStock.stock > 0) {
+        idSuc = tiendaConMasStock.id;
+        nomSuc = tiendaConMasStock.nombre;
+      }
+    } else {
+      if ((this.producto.stockActual || 0) > 0) {
+        idSuc = 0; nomSuc = 'General';
+      }
+    }
+
+    if (idSuc !== null) {
+      this.producto._sucursalContexto = idSuc;
+      this.producto._nombreSucursalContexto = nomSuc;
     }
 
     this.cartService.items$.pipe(take(1)).subscribe(items => {
       const uid = this.varianteSeleccionada
-        ? `${this.producto.idProducto}-${this.varianteSeleccionada.idVariante}`
-        : `${this.producto.idProducto}-base`;
+        ? `${this.producto.idProducto}-${this.varianteSeleccionada.idVariante}-${idSuc}`
+        : `${this.producto.idProducto}-base-${idSuc}`;
 
       const itemEnCarrito = items.find(i => i.uid === uid);
       const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
-      const stockMaximo = this.varianteSeleccionada
-        ? this.varianteSeleccionada.stockActual
+
+      const stockMaximoSucursal = this.varianteSeleccionada
+        ? (idSuc === 0 ? this.varianteSeleccionada.stockActual : this.varianteSeleccionada.inventarios.find((i:any)=>Number(i.idSucursal)===idSuc)?.stockActual)
         : this.producto.stockActual;
 
-      if (cantidadEnCarrito + 1 > stockMaximo) {
-        Swal.fire({
-          title: '¡Stock Máximo Alcanzado!',
-          text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`,
-          icon: 'error',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          showCloseButton: true,
-          timer: 4000,
-          background: '#fff5f5',
-          iconColor: '#ef4444'
-        });
+      if (cantidadEnCarrito + 1 > (stockMaximoSucursal || 0)) {
+        Swal.fire({ title: '¡Stock Máximo Alcanzado!', text: `Ya tienes las ${stockMaximoSucursal} unidades disponibles de ${nomSuc} en tu carrito.`, icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 4500, background: '#fff5f5', iconColor: '#ef4444' });
         return;
       }
 
       this.cartService.addToCart(this.producto, this.varianteSeleccionada, 1);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Agregado al carrito',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        showCloseButton: true,
-        timer: 3000,
-        background: '#ffffff',
-        iconColor: '#10b981'
-      });
+      Swal.fire({ title: '¡Agregado!', text: `${this.producto.nombre} se agregó al carrito`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, background: '#ffffff', iconColor: '#10b981' });
     });
   }
 }

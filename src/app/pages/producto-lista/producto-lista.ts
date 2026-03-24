@@ -1,6 +1,6 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router'; // <--- Importar Router
+import { RouterLink, Router } from '@angular/router';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, tap, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
@@ -10,7 +10,7 @@ import { Categoria, CategoriaDTO } from '../../services/categoria';
 import { Cart } from '../../services/cart';
 import { Auth } from '../../services/auth';
 import {UiService} from '../../services/ui.service';
-import {environment} from '../../../environments/environment.prod'; // <--- Importar Auth
+import {environment} from '../../../environments/environment.prod';
 
 interface CategoriaTree extends CategoriaDTO {
   children?: CategoriaTree[];
@@ -36,26 +36,23 @@ export class ProductoListaComponent implements OnInit {
   public isHidden: boolean = false;
   private lastScrollTop: number = 0;
 
-  public mapaImagenes: { [id: number]: string[] } = {};
-  public indiceImagen: { [id: number]: number } = {};
-  public colorSeleccionado: { [id: number]: string } = {};
-  public seleccion: { [id: number]: any } = {};
-  public categoriaHover: CategoriaTree | null = null;
+  // 👇 Ahora nuestros diccionarios usarán el ID ÚNICO de la tarjeta clonada
+  public mapaImagenes: { [idUnico: string]: string[] } = {};
+  public indiceImagen: { [idUnico: string]: number } = {};
+  public colorSeleccionado: { [idUnico: string]: string } = {};
+  public seleccion: { [idUnico: string]: any } = {};
 
-  // Nuevas variables de estado
+  public categoriaHover: CategoriaTree | null = null;
   public menuMarcaAbierto: boolean = false;
   public menuColorAbierto: boolean = false;
   public menuTallaAbierto: boolean = false;
-
   public productosFiltrados: any[] = [];
   public filtroMarca: string = 'TODAS';
   public filtroColor: string = 'TODOS';
   public filtroTalla: string = 'TODAS';
-
   public marcas: string[] = [];
   public coloresList: string[] = [];
   public tallasList: string[] = [];
-
   public filtroUbicacion: any = 'TODAS';
 
   public ubicaciones = [
@@ -67,11 +64,11 @@ export class ProductoListaComponent implements OnInit {
 
   constructor(
     private productoService: Producto,
-    public cartService: Cart, // <--- CAMBIO: Debe ser PUBLIC para usarse en el HTML
+    public cartService: Cart,
     private fb: FormBuilder,
     private categoriaService: Categoria,
-    private authService: Auth, // <--- INYECCIÓN: Auth
-    private router: Router,// <--- INYECCIÓN: Router
+    private authService: Auth,
+    private router: Router,
     private uiService: UiService
   ) {
     this.filtroForm = this.fb.group({
@@ -93,10 +90,8 @@ export class ProductoListaComponent implements OnInit {
     ).subscribe({
       next: (data) => {
         this.productos = data;
-        this.productosFiltrados = data;
-        this.extraerFiltrosDinamicos(); // <--- Generamos los filtros
-        this.filtrarProductos();        // <--- Aplicamos el filtrado local
-        this.inicializarCarruseles(data);
+        this.extraerFiltrosDinamicos();
+        this.filtrarProductos(); // Aquí es donde ocurre la clonación
         this.cargandoProductos = false;
       },
       error: () => this.cargandoProductos = false
@@ -113,53 +108,96 @@ export class ProductoListaComponent implements OnInit {
   public filtrarProductos(): void {
     const term = this.filtroForm.get('search')?.value?.toLowerCase() || '';
 
-    this.productosFiltrados = this.productos.filter(p => {
+    // 1. Primero filtramos la base (Marca, Color, Talla, Texto)
+    let productosBase = this.productos.filter(p => {
       const matchBusqueda = p.nombre.toLowerCase().includes(term) || (p.codigoSku || '').toLowerCase().includes(term);
       const matchMarca = this.filtroMarca === 'TODAS' || p.marca?.nombre === this.filtroMarca;
       const matchColor = this.filtroColor === 'TODOS' || p.caracteristicas?.color === this.filtroColor;
       const matchTalla = this.filtroTalla === 'TODAS' || p.caracteristicas?.talla === this.filtroTalla;
+      return matchBusqueda && matchMarca && matchColor && matchTalla;
+    });
 
-      // 👇 EL SECRETO DEL FILTRO DE TIENDAS 👇
-      let matchUbicacion = true;
-      if (this.filtroUbicacion !== 'TODAS') {
-        const idBuscado = Number(this.filtroUbicacion);
-        let encontrado = false;
+    // 2. MAGIA: Aplanar y clonar los productos por cada sucursal donde existan
+    let productosExpandidos: any[] = [];
 
-        // 1. Buscamos en la raíz del producto (Si Java lo envía directo)
-        const idRaiz = p.idSucursal || (p.sucursal && p.sucursal.idSucursal);
-        if (Number(idRaiz) === idBuscado) {
-          encontrado = true;
-        }
+    productosBase.forEach(p => {
+      let sucursalesConStock = new Set<number>();
+      let esProductoViejo = true;
 
-        // 2. Si no está en la raíz, buscamos dentro de sus variantes e inventarios
-        if (!encontrado && p.variantes && Array.isArray(p.variantes)) {
-          encontrado = p.variantes.some((v: any) => {
-            if (!v.inventarios) return false;
-
-            // Caso A: Si Java envía un Array de inventarios
-            if (Array.isArray(v.inventarios)) {
-              return v.inventarios.some((inv: any) => inv.sucursal && Number(inv.sucursal.idSucursal) === idBuscado);
-            }
-            // Caso B: Si Java envía un "Mapa" con nombres de tiendas
-            else {
-              const tiendaObj = this.ubicaciones.find((u: any) => u.id === idBuscado);
-              return tiendaObj && v.inventarios[tiendaObj.nombre] !== undefined;
-            }
-          });
-        }
-
-        matchUbicacion = encontrado;
+      // Averiguamos en qué sucursales tiene stock real
+      if (p.variantes && Array.isArray(p.variantes)) {
+        p.variantes.forEach((v: any) => {
+          if (v.inventarios && Array.isArray(v.inventarios) && v.inventarios.length > 0) {
+            esProductoViejo = false;
+            v.inventarios.forEach((inv: any) => {
+              if (inv.stockActual > 0) {
+                sucursalesConStock.add(Number(inv.idSucursal));
+              }
+            });
+          }
+        });
       }
 
-      // 👇 ESTA LÍNEA ES VITAL: Si falta "matchUbicacion", el filtro nunca funcionará
-      return matchBusqueda && matchMarca && matchColor && matchTalla && matchUbicacion;
+      // Si es un producto antiguo sin tiendas, lo mostramos normalmente
+      if (esProductoViejo) {
+        if (this.filtroUbicacion === 'TODAS') {
+          productosExpandidos.push({ ...p, _idUnico: p.idProducto.toString(), _sucursalContexto: 0, _nombreSucursalContexto: 'General' });
+        }
+        return; // Saltamos a la siguiente iteración
+      }
+
+      // Si el filtro es "TODAS", creamos una tarjeta clonada por cada tienda
+      if (this.filtroUbicacion === 'TODAS') {
+        sucursalesConStock.forEach(idSuc => {
+          productosExpandidos.push({
+            ...p,
+            _idUnico: `${p.idProducto}-${idSuc}`, // Ej: "15-1" (Producto 15 en tienda Ropa)
+            _sucursalContexto: idSuc,
+            _nombreSucursalContexto: this.ubicaciones.find(u => u.id === idSuc)?.nombre || 'Tienda'
+          });
+        });
+      } else {
+        // Si el usuario eligió "Ropa", solo creamos la tarjeta de "Ropa" si tiene stock
+        const idBuscado = Number(this.filtroUbicacion);
+        if (sucursalesConStock.has(idBuscado)) {
+          productosExpandidos.push({
+            ...p,
+            _idUnico: `${p.idProducto}-${idBuscado}`,
+            _sucursalContexto: idBuscado,
+            _nombreSucursalContexto: this.ubicaciones.find(u => u.id === idBuscado)?.nombre || 'Tienda'
+          });
+        }
+      }
     });
+
+    this.productosFiltrados = productosExpandidos;
+    this.inicializarCarruseles(this.productosFiltrados); // Inicializamos el visualizador para cada clon
+  }
+
+  // 👇 Ahora estas funciones exigen saber en QUÉ TIENDA estamos preguntando el stock
+  getStockVarianteVisible(v: any, idSucursalContexto: number): number {
+    if (!v.inventarios || !Array.isArray(v.inventarios)) return v.stockActual || 0; // Para productos viejos
+    const inv = v.inventarios.find((i: any) => Number(i.idSucursal) === idSucursalContexto);
+    return inv ? (inv.stockActual || 0) : 0;
+  }
+
+  getStockTotalColorVisible(prod: any, color: string): number {
+    const variantesColor = this.getTallasPorColor(prod, color);
+    return variantesColor.reduce((acc, v) => acc + this.getStockVarianteVisible(v, prod._sucursalContexto), 0);
+  }
+
+  getStockTotalProducto(prod: any): number {
+    if (prod.variantes?.length > 0) {
+      return prod.variantes.reduce((sum: number, v: any) => sum + this.getStockVarianteVisible(v, prod._sucursalContexto), 0);
+    }
+    return prod.stockActual || 0;
   }
 
   public limpiarTodo(): void {
     this.filtroMarca = 'TODAS';
     this.filtroColor = 'TODOS';
     this.filtroTalla = 'TODAS';
+    this.filtroUbicacion = 'TODAS';
     this.filtroForm.reset({ search: '', categoria: '' });
     this.filtrarProductos();
   }
@@ -175,11 +213,8 @@ export class ProductoListaComponent implements OnInit {
     this.lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
   }
 
-
-  // --- NUEVA FUNCIÓN LOGOUT ---
   logout(): void {
     this.showMobileMenu = false;
-
     Swal.fire({
       title: '¿Cerrar sesión?',
       text: "¿Estás seguro que deseas salir?",
@@ -189,9 +224,8 @@ export class ProductoListaComponent implements OnInit {
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, salir',
       cancelButtonText: 'Cancelar',
-      // --- ESTA ES LA LÍNEA CLAVE ---
       allowOutsideClick: true,
-      allowEscapeKey: true // También permite cerrar con la tecla 'Esc'
+      allowEscapeKey: true
     }).then((result) => {
       if (result.isConfirmed) {
         this.authService.logout();
@@ -200,34 +234,33 @@ export class ProductoListaComponent implements OnInit {
     });
   }
 
-  // ... (EL RESTO DEL CÓDIGO PERMANECE EXACTAMENTE IGUAL) ...
-  // resolverUrlImagen, inicializarCarruseles, getImagenActual, etc.
-
   resolverUrlImagen(url: string | null): string {
     if (!url) return 'assets/img/sin-imagen.png';
     if (url.startsWith('http')) return url;
     return environment.apiUrl + url;
   }
 
-  inicializarCarruseles(productos: any[]): void {
-    productos.forEach(prod => {
-      this.indiceImagen[prod.idProducto] = 0;
+  // 👇 Ahora usa prod._idUnico para no mezclar las fotos de Ropa con las de Almacén
+  inicializarCarruseles(productosExpandidos: any[]): void {
+    productosExpandidos.forEach(prod => {
+      const uid = prod._idUnico;
+      this.indiceImagen[uid] = 0;
       const colores = this.getColoresUnicos(prod);
       if (colores.length > 0) {
         const primerColor = colores[0];
-        this.colorSeleccionado[prod.idProducto] = primerColor;
+        this.colorSeleccionado[uid] = primerColor;
         this.construirGaleria(prod, primerColor);
       } else {
-        this.colorSeleccionado[prod.idProducto] = '';
+        this.colorSeleccionado[uid] = '';
         this.construirGaleria(prod, null);
       }
     });
   }
 
   getImagenActual(prod: any): string | null {
-    const id = prod.idProducto;
-    const imagenes = this.mapaImagenes[id];
-    const indice = this.indiceImagen[id];
+    const uid = prod._idUnico;
+    const imagenes = this.mapaImagenes[uid];
+    const indice = this.indiceImagen[uid];
     if (imagenes && imagenes.length > 0 && typeof indice === 'number') {
       return imagenes[indice] || null;
     }
@@ -235,6 +268,7 @@ export class ProductoListaComponent implements OnInit {
   }
 
   construirGaleria(prod: any, colorFiltro: string | null): void {
+    const uid = prod._idUnico;
     let urls: string[] = [];
     if (!colorFiltro) {
       if (prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
@@ -253,30 +287,30 @@ export class ProductoListaComponent implements OnInit {
       });
       if (urls.length === 0 && prod.urlImagen) urls.push(this.resolverUrlImagen(prod.urlImagen));
     }
-    this.mapaImagenes[prod.idProducto] = [...new Set(urls)];
-    this.indiceImagen[prod.idProducto] = 0;
+    this.mapaImagenes[uid] = [...new Set(urls)];
+    this.indiceImagen[uid] = 0;
   }
 
   cambiarImagen(prod: any, direccion: number): void {
-    const id = prod.idProducto;
-    const total = this.mapaImagenes[id]?.length || 0;
+    const uid = prod._idUnico;
+    const total = this.mapaImagenes[uid]?.length || 0;
     if (total <= 1) return;
-    let nuevoIndice = this.indiceImagen[id] + direccion;
+    let nuevoIndice = this.indiceImagen[uid] + direccion;
     if (nuevoIndice < 0) nuevoIndice = total - 1;
     if (nuevoIndice >= total) nuevoIndice = 0;
-    this.indiceImagen[id] = nuevoIndice;
+    this.indiceImagen[uid] = nuevoIndice;
   }
 
   seleccionarColor(prod: any, color: string): void {
-    const id = prod.idProducto;
-    if (this.colorSeleccionado[id] === color) return;
-    this.colorSeleccionado[id] = color;
-    this.seleccion[id] = null;
+    const uid = prod._idUnico;
+    if (this.colorSeleccionado[uid] === color) return;
+    this.colorSeleccionado[uid] = color;
+    this.seleccion[uid] = null;
     this.construirGaleria(prod, color);
   }
 
   seleccionarTalla(prod: any, variante: any): void {
-    this.seleccion[prod.idProducto] = variante;
+    this.seleccion[prod._idUnico] = variante;
   }
 
   agregarAlCarrito(event: Event, producto: any, varianteSeleccionada: any): void {
@@ -294,10 +328,12 @@ export class ProductoListaComponent implements OnInit {
       return;
     }
     this.cartService.items$.pipe(take(1)).subscribe(items => {
-      const uid = varianteSeleccionada ? `${producto.idProducto}-${varianteSeleccionada.idVariante}` : `${producto.idProducto}-base`;
-      const itemEnCarrito = items.find(i => i.uid === uid);
+      // Usamos el UID de la tarjeta para que el carrito sepa de qué tienda es
+      const cartUid = varianteSeleccionada ? `${producto._idUnico}-${varianteSeleccionada.idVariante}` : `${producto._idUnico}-base`;
+      const itemEnCarrito = items.find(i => i.uid === cartUid);
       const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
-      const stockMaximo = varianteSeleccionada ? varianteSeleccionada.stockActual : producto.stockActual;
+
+      const stockMaximo = varianteSeleccionada ? this.getStockVarianteVisible(varianteSeleccionada, producto._sucursalContexto) : this.getStockTotalProducto(producto);
 
       if (cantidadEnCarrito + 1 > stockMaximo) {
         Swal.fire({ title: '¡Stock Máximo Alcanzado!', text: `Ya tienes las ${stockMaximo} unidades disponibles en tu carrito.`, icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, showCloseButton: true, timer: 4000, background: '#fff5f5', iconColor: '#ef4444' });
@@ -318,40 +354,20 @@ export class ProductoListaComponent implements OnInit {
     return prod.variantes.filter((v: any) => v.color === color);
   }
 
-  getStockTotalColor(prod: any, color: string): number {
-    return this.getTallasPorColor(prod, color).reduce((acc, v) => acc + v.stockActual, 0);
-  }
-
-  getStockTotalProducto(prod: any): number {
-    if (prod.variantes?.length > 0) {
-      return prod.variantes.reduce((sum: number, v: any) => sum + v.stockActual, 0);
-    }
-    return prod.stockActual || 0;
-  }
-
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (data) => {
         this.categorias = data;
-
-        // 1. Filtramos los ABUELOS (los que no tienen padre)
         const abuelos = data.filter(c => !c.idCategoriaPadre) as CategoriaTree[];
-
         abuelos.forEach(abuelo => {
-          // 2. Buscamos los PADRES de cada abuelo
           const padres = data.filter(c => c.idCategoriaPadre === abuelo.idCategoria) as CategoriaTree[];
-
           padres.forEach(padre => {
-            // 3. Buscamos los HIJOS de cada padre
             padre.children = data.filter(c => c.idCategoriaPadre === padre.idCategoria) as CategoriaTree[];
             padre.isOpen = false;
           });
-
           abuelo.children = padres;
           abuelo.isOpen = false;
         });
-
-        // Asignamos el árbol completo de 3 niveles
         this.categoriasTree = abuelos;
       },
       error: (err) => console.error(err)
@@ -363,8 +379,6 @@ export class ProductoListaComponent implements OnInit {
     this.menuColorAbierto = menu === 'color' ? !this.menuColorAbierto : false;
     this.menuTallaAbierto = menu === 'talla' ? !this.menuTallaAbierto : false;
   }
-
-
 
   seleccionarFiltro(tipo: string, valor: any) {
     if (tipo === 'marca') this.filtroMarca = valor;
@@ -385,7 +399,7 @@ export class ProductoListaComponent implements OnInit {
     this.filtroMarca = 'TODAS';
     this.filtroColor = 'TODOS';
     this.filtroTalla = 'TODAS';
-    this.filtroUbicacion = 'TODAS'; // <--- NUEVO
+    this.filtroUbicacion = 'TODAS';
     this.filtrarProductos();
   }
 

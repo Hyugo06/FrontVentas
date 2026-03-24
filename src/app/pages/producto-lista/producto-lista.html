@@ -277,20 +277,28 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 items-start">
 
-      @for (prod of productosFiltrados; track prod.idProducto) {
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
+      @for (prod of productosFiltrados; track prod._idUnico) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full relative">
+
+          @if (prod._nombreSucursalContexto !== 'General') {
+            <div class="absolute top-3 right-3 z-20">
+              <span class="bg-indigo-600/90 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md uppercase tracking-wide border border-indigo-500">
+                📍 {{ prod._nombreSucursalContexto }}
+              </span>
+            </div>
+          }
 
           <div class="relative h-64 bg-gray-100 overflow-hidden">
             @if (getImagenActual(prod)) {
               <img [src]="getImagenActual(prod)" [alt]="prod.nombre"
                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
 
-              @if (mapaImagenes[prod.idProducto] && mapaImagenes[prod.idProducto].length > 1) {
+              @if (mapaImagenes[prod._idUnico] && mapaImagenes[prod._idUnico].length > 1) {
                 <button (click)="cambiarImagen(prod, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10"><svg class="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <button (click)="cambiarImagen(prod, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10"><svg class="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
                 <div class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
-                  @for (url of mapaImagenes[prod.idProducto]; track $index) {
-                    <div class="w-1.5 h-1.5 rounded-full transition-colors" [class.bg-white]="indiceImagen[prod.idProducto] === $index" [ngClass]="{'bg-white/50': indiceImagen[prod.idProducto] !== $index}"></div>
+                  @for (url of mapaImagenes[prod._idUnico]; track $index) {
+                    <div class="w-1.5 h-1.5 rounded-full transition-colors" [class.bg-white]="indiceImagen[prod._idUnico] === $index" [ngClass]="{'bg-white/50': indiceImagen[prod._idUnico] !== $index}"></div>
                   }
                 </div>
               }
@@ -314,6 +322,7 @@
 
               <h3 class="text-gray-800 font-bold text-base leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                 <a [routerLink]="['/productos', prod.idProducto]"
+                   [queryParams]="prod._sucursalContexto ? { tienda: prod._sucursalContexto } : null"
                    class="hover:text-indigo-600 transition-colors cursor-pointer">
                   {{ prod.nombre }}
                 </a>
@@ -343,19 +352,19 @@
               @if (getColoresUnicos(prod).length > 0) {
                 <div class="mb-3">
                   <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                    Color: <span class="text-slate-800">{{ colorSeleccionado[prod.idProducto] }}</span>
+                    Color: <span class="text-slate-800">{{ colorSeleccionado[prod._idUnico] }}</span>
                   </span>
                   <div class="flex flex-wrap gap-2">
                     @for (color of getColoresUnicos(prod); track color) {
                       <button (click)="seleccionarColor(prod, color)"
                               class="px-2 py-1 text-xs rounded border transition-all duration-200"
-                              [class.bg-slate-800]="colorSeleccionado[prod.idProducto] === color"
-                              [class.text-white]="colorSeleccionado[prod.idProducto] === color"
-                              [class.border-slate-800]="colorSeleccionado[prod.idProducto] === color"
-                              [class.bg-white]="colorSeleccionado[prod.idProducto] !== color"
-                              [class.text-slate-600]="colorSeleccionado[prod.idProducto] !== color"
-                              [class.border-slate-200]="colorSeleccionado[prod.idProducto] !== color"
-                              [class.hover:border-slate-400]="colorSeleccionado[prod.idProducto] !== color">
+                              [class.bg-slate-800]="colorSeleccionado[prod._idUnico] === color"
+                              [class.text-white]="colorSeleccionado[prod._idUnico] === color"
+                              [class.border-slate-800]="colorSeleccionado[prod._idUnico] === color"
+                              [class.bg-white]="colorSeleccionado[prod._idUnico] !== color"
+                              [class.text-slate-600]="colorSeleccionado[prod._idUnico] !== color"
+                              [class.border-slate-200]="colorSeleccionado[prod._idUnico] !== color"
+                              [class.hover:border-slate-400]="colorSeleccionado[prod._idUnico] !== color">
                         {{ color }}
                       </button>
                     }
@@ -363,24 +372,24 @@
                 </div>
               }
 
-              @if (colorSeleccionado[prod.idProducto]) {
+              @if (colorSeleccionado[prod._idUnico]) {
                 <div class="mb-4 animate-fadeIn">
                   <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Tallas Disp:</span>
                   <div class="flex flex-wrap gap-2">
-                    @for (v of getTallasPorColor(prod, colorSeleccionado[prod.idProducto]); track v.idVariante) {
+                    @for (v of getTallasPorColor(prod, colorSeleccionado[prod._idUnico]); track v.idVariante) {
                       <button (click)="seleccionarTalla(prod, v)"
-                              [disabled]="v.stockActual === 0"
+                              [disabled]="getStockVarianteVisible(v, prod._sucursalContexto) === 0"
                               class="px-3 py-1 text-xs font-bold rounded border transition-all"
-                              [class.bg-indigo-600]="seleccion[prod.idProducto] === v"
-                              [class.text-white]="seleccion[prod.idProducto] === v"
-                              [class.border-indigo-600]="seleccion[prod.idProducto] === v"
-                              [class.bg-white]="seleccion[prod.idProducto] !== v && v.stockActual > 0"
-                              [class.text-gray-700]="seleccion[prod.idProducto] !== v && v.stockActual > 0"
-                              [class.border-gray-200]="seleccion[prod.idProducto] !== v && v.stockActual > 0"
-                              [class.bg-gray-50]="v.stockActual === 0"
-                              [class.text-gray-300]="v.stockActual === 0"
-                              [class.border-gray-100]="v.stockActual === 0"
-                              [class.line-through]="v.stockActual === 0">
+                              [class.bg-indigo-600]="seleccion[prod._idUnico] === v"
+                              [class.text-white]="seleccion[prod._idUnico] === v"
+                              [class.border-indigo-600]="seleccion[prod._idUnico] === v"
+                              [class.bg-white]="seleccion[prod._idUnico] !== v && getStockVarianteVisible(v, prod._sucursalContexto) > 0"
+                              [class.text-gray-700]="seleccion[prod._idUnico] !== v && getStockVarianteVisible(v, prod._sucursalContexto) > 0"
+                              [class.border-gray-200]="seleccion[prod._idUnico] !== v && getStockVarianteVisible(v, prod._sucursalContexto) > 0"
+                              [class.bg-gray-50]="getStockVarianteVisible(v, prod._sucursalContexto) === 0"
+                              [class.text-gray-300]="getStockVarianteVisible(v, prod._sucursalContexto) === 0"
+                              [class.border-gray-100]="getStockVarianteVisible(v, prod._sucursalContexto) === 0"
+                              [class.line-through]="getStockVarianteVisible(v, prod._sucursalContexto) === 0">
                         {{ v.talla }}
                       </button>
                     }
@@ -391,18 +400,18 @@
 
             <div class="mt-2 pt-3 border-t border-gray-50">
               <p class="text-[10px] text-gray-400 font-bold uppercase mb-2 text-center h-4">
-                @if (seleccion[prod.idProducto]) {
-                  {{ seleccion[prod.idProducto].stockActual }} disponibles
-                } @else if (colorSeleccionado[prod.idProducto]) {
-                  {{ getStockTotalColor(prod, colorSeleccionado[prod.idProducto]) }} disp. en total
+                @if (seleccion[prod._idUnico]) {
+                  {{ getStockVarianteVisible(seleccion[prod._idUnico], prod._sucursalContexto) }} disponibles
+                } @else if (colorSeleccionado[prod._idUnico]) {
+                  {{ getStockTotalColorVisible(prod, colorSeleccionado[prod._idUnico]) }} disp. en total
                 }
               </p>
 
-              <button (click)="agregarAlCarrito($event, prod, seleccion[prod.idProducto])"
-                      [disabled]="prod.variantes && prod.variantes.length > 0 && (!seleccion[prod.idProducto] || seleccion[prod.idProducto].stockActual === 0)"
+              <button (click)="agregarAlCarrito($event, prod, seleccion[prod._idUnico])"
+                      [disabled]="prod.variantes && prod.variantes.length > 0 && (!seleccion[prod._idUnico] || getStockVarianteVisible(seleccion[prod._idUnico], prod._sucursalContexto) === 0)"
                       class="w-full bg-slate-900 text-white font-bold text-xs md:text-sm py-3 px-4 rounded-xl shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:shadow-indigo-200 transition-all active:transform active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none flex justify-center items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                {{ seleccion[prod.idProducto]?.stockActual === 0 ? 'Agotado' : 'Agregar al Carrito' }}
+                {{ (seleccion[prod._idUnico] && getStockVarianteVisible(seleccion[prod._idUnico], prod._sucursalContexto) === 0) ? 'Agotado en esta Tienda' : 'Agregar al Carrito' }}
               </button>
             </div>
           </div>

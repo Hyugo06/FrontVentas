@@ -10,7 +10,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Media } from '../../../services/media';
 import {environment} from '../../../../environments/environment.prod';
 
-
 interface CategoriaView extends CategoriaDTO {
   nivel: number;
   rutaCompleta: string;
@@ -62,8 +61,8 @@ export class ProductoFormComponent implements OnInit {
       precioRegular: [{ value: null, disabled: true }, [Validators.required, Validators.min(0)]],
       precioVenta: [0, [Validators.required, Validators.min(0)]],
       precioCompra: [0, [Validators.required, Validators.min(0)]],
-      stockActual: [0],
-      idSucursal: [null, Validators.required],
+      // 👇 El stock ahora se calcula solo y quitamos el idSucursal viejo
+      stockActual: [{ value: 0, disabled: true }],
       idMarca: [null, Validators.required],
       idCategoria: [null, Validators.required],
       urlImagen: [''],
@@ -83,11 +82,8 @@ export class ProductoFormComponent implements OnInit {
     const idsVisibles = new Set<number>();
 
     this.listaCategorias.forEach(cat => {
-      // Si coincide el nombre o la ruta
       if (cat.nombre.toLowerCase().includes(busqueda) || cat.rutaCompleta?.toLowerCase().includes(busqueda)) {
         idsVisibles.add(cat.idCategoria);
-
-        // Añadir ancestros para no perder el contexto
         let idPadre = cat.idCategoriaPadre;
         while (idPadre) {
           const padre = this.listaCategorias.find(p => p.idCategoria === idPadre);
@@ -104,21 +100,17 @@ export class ProductoFormComponent implements OnInit {
 
   get nombreCategoriaSeleccionada(): string {
     const id = this.productoForm.get('idCategoria')?.value;
-    // Cambiamos el texto largo por un simple "Seleccionar"
     if (!id) return 'Seleccionar';
-
     const cat = this.listaCategorias.find(c => c.idCategoria === id);
     if (!cat) return 'Seleccionar';
-
     return `✨ ${cat.nombre}`;
   }
 
   seleccionarCategoria(cat: CategoriaView): void {
     if (cat.nivel !== 3) return;
-
     this.productoForm.patchValue({ idCategoria: cat.idCategoria });
     this.dropdownCatOpen = false;
-    this.filtroCategoria = ''; // Limpiamos el buscador al elegir
+    this.filtroCategoria = '';
   }
 
   ngOnInit(): void {
@@ -139,7 +131,7 @@ export class ProductoFormComponent implements OnInit {
       this.esEdicion = true;
       this.productoId = +id;
       this.cargarDatosProducto(this.productoId);
-      this.cargarImagenesGlobales(this.productoId); // (Si usas esta función)
+      this.cargarImagenesGlobales(this.productoId);
     } else {
       this.cargando = false;
       this.agregarGrupoVariante();
@@ -153,31 +145,65 @@ export class ProductoFormComponent implements OnInit {
   crearGrupoGroup(color: string = '', imagenesUrls: string[] = []): FormGroup {
     return this.fb.group({
       color: [color, Validators.required],
-      // Array de strings (URLs)
       imagenes: this.fb.array(imagenesUrls.map(url => this.fb.control(url))),
       tallas: this.fb.array([])
     });
   }
 
-  // --- FUNCIÓN PARA CORREGIR LAS URLs ---
   public resolverUrlImagen(url: string | null): string {
     if (!url) return 'assets/img/sin-imagen.png';
-
-    // 1. Si ya es de Cloudinary (empieza con http), la dejamos tal cual
-    if (url.startsWith('http')) {
-      return url;
-    }
-
-    // 2. Si es una imagen antigua (ruta relativa), le pegamos tu dominio de Render
+    if (url.startsWith('http')) return url;
     return environment.apiUrl + url;
   }
 
-  crearTallaGroup(talla: string = '', stock: number = 0, idVariante: number | null = null): FormGroup {
+  crearTallaGroup(talla: string = '', stock: number = 0, idVariante: number | null = null, inventariosData: any[] = []): FormGroup {
+    const inventariosBase = [
+      { idSucursal: 1, nombre: 'Ropa', stockActual: 0, habilitado: false },
+      { idSucursal: 2, nombre: 'Hogar', stockActual: 0, habilitado: false },
+      { idSucursal: 3, nombre: 'Almacén', stockActual: 0, habilitado: false },
+      { idSucursal: 4, nombre: 'Almacén 2do Piso', stockActual: 0, habilitado: false }
+    ];
+
+    if (inventariosData && inventariosData.length > 0) {
+      inventariosBase.forEach(inv => {
+        const dataBackend = inventariosData.find(i => i.idSucursal === inv.idSucursal);
+        if (dataBackend) {
+          inv.stockActual = dataBackend.stockActual;
+          inv.habilitado = true; // Si viene de Java, activamos el check
+        }
+      });
+    }
+
     return this.fb.group({
       idVariante: [idVariante],
       talla: [talla, Validators.required],
-      stockActual: [stock, [Validators.required, Validators.min(0)]]
+      inventarios: this.fb.array(
+        inventariosBase.map(inv => this.fb.group({
+          idSucursal: [inv.idSucursal],
+          nombre: [inv.nombre],
+          habilitado: [inv.habilitado], // Control del Checkbox
+          // Si no está habilitado, el input nace deshabilitado
+          stockActual: [{ value: inv.stockActual, disabled: !inv.habilitado }, [Validators.required, Validators.min(0)]]
+        }))
+      )
     });
+  }
+
+  toggleTienda(invControl: AbstractControl): void {
+    const habilitado = invControl.get('habilitado')?.value;
+    const stockControl = invControl.get('stockActual');
+    if (habilitado) {
+      stockControl?.enable();
+    } else {
+      stockControl?.disable();
+      stockControl?.setValue(0); // Si lo apagan, lo regresamos a 0
+    }
+    this.actualizarStockTotal();
+  }
+
+  // Helper para el HTML
+  getInventariosControls(tallaGroup: AbstractControl): FormArray {
+    return tallaGroup.get('inventarios') as FormArray;
   }
 
   agregarGrupoVariante(): void {
@@ -191,7 +217,6 @@ export class ProductoFormComponent implements OnInit {
     this.actualizarStockTotal();
   }
 
-  // --- GESTIÓN DE TALLAS ---
   getTallasControls(grupoIndex: number): FormArray {
     return this.gruposVariantes.at(grupoIndex).get('tallas') as FormArray;
   }
@@ -205,29 +230,21 @@ export class ProductoFormComponent implements OnInit {
     this.actualizarStockTotal();
   }
 
-  // --- GESTIÓN DE IMÁGENES DEL GRUPO ---
   getImagenesControls(grupoIndex: number): FormArray {
     return this.gruposVariantes.at(grupoIndex).get('imagenes') as FormArray;
   }
 
   onFileSelectedGrupo(event: any, grupoIndex: number): void {
-    // 1. Obtenemos TODOS los archivos, no solo el [0]
     const files = event.target.files;
-
     if (files && files.length > 0) {
       this.uploading = true;
-      let archivosPendientes = files.length; // Contador para saber cuándo apagar el loading
+      let archivosPendientes = files.length;
 
-      // 2. Recorremos cada archivo seleccionado
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-
         this.mediaService.uploadFile(file).subscribe({
           next: (response) => {
-            // Agregamos la URL recibida al array de imágenes
             this.getImagenesControls(grupoIndex).push(this.fb.control(response.url));
-
-            // Restamos uno al contador
             archivosPendientes--;
             if (archivosPendientes === 0) this.uploading = false;
           },
@@ -246,7 +263,7 @@ export class ProductoFormComponent implements OnInit {
   }
 
   // ==========================================
-  // 🔄 TRANSFORMACIÓN DE DATOS (CORREGIDA)
+  // 🔄 TRANSFORMACIÓN DE DATOS
   // ==========================================
 
   reconstruirGruposDesdeBackend(variantesPlanas: any[]): void {
@@ -257,27 +274,17 @@ export class ProductoFormComponent implements OnInit {
       const colorKey = v.color.toLowerCase().trim();
 
       if (!gruposMap.has(colorKey)) {
-        gruposMap.set(colorKey, {
-          color: v.color,
-          imagenes: [],
-          tallas: []
-        });
+        gruposMap.set(colorKey, { color: v.color, imagenes: [], tallas: [] });
       }
 
       const grupo = gruposMap.get(colorKey);
-
-      // --- CORRECCIÓN AQUÍ: Leer 'galeriaImagenes' que envía el Backend ---
       let urlsNuevas: string[] = [];
 
-      // A) Compatibilidad: imagen principal antigua
       if (v.urlImagen) urlsNuevas.push(v.urlImagen);
-
-      // B) Nuevo sistema: lista de strings que manda tu Java DTO
       if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
         urlsNuevas = [...urlsNuevas, ...v.galeriaImagenes];
       }
 
-      // C) Agregamos sin duplicados
       if (urlsNuevas.length > 0) {
         const combinadas = [...grupo.imagenes, ...urlsNuevas];
         grupo.imagenes = [...new Set(combinadas)];
@@ -286,7 +293,8 @@ export class ProductoFormComponent implements OnInit {
       grupo.tallas.push({
         idVariante: v.idVariante,
         talla: v.talla,
-        stockActual: v.stockActual
+        stockActual: v.stockActual,
+        inventarios: v.inventarios // Le pasamos los inventarios del backend
       });
     });
 
@@ -295,7 +303,7 @@ export class ProductoFormComponent implements OnInit {
       const tallasArray = grupoForm.get('tallas') as FormArray;
 
       g.tallas.forEach((t: any) => {
-        tallasArray.push(this.crearTallaGroup(t.talla, t.stockActual, t.idVariante));
+        tallasArray.push(this.crearTallaGroup(t.talla, t.stockActual, t.idVariante, t.inventarios));
       });
 
       this.gruposVariantes.push(grupoForm);
@@ -311,25 +319,26 @@ export class ProductoFormComponent implements OnInit {
 
     this.gruposVariantes.controls.forEach(grupo => {
       const color = grupo.get('color')?.value;
-
-      // Obtenemos el array de strings ["/uploads/...", "/uploads/..."]
       const imagenesArray = (grupo.get('imagenes') as FormArray).value;
-
-      // Imagen principal (para compatibilidad)
       const imagenPrincipal = imagenesArray.length > 0 ? imagenesArray[0] : null;
-
       const tallas = (grupo.get('tallas') as FormArray).controls;
 
       tallas.forEach(t => {
+        const inventariosRaw = (t.get('inventarios') as FormArray).getRawValue();
+
+        // 👇 FILTRO ESTRELLA: Solo enviamos a Java las tiendas que tengan el check prendido
+        const inventariosActivos = inventariosRaw.filter((inv: any) => inv.habilitado);
+
+        const stockTotalVariante = inventariosActivos.reduce((acc: number, cur: any) => acc + (cur.stockActual || 0), 0);
+
         variantesPlanas.push({
           idVariante: t.get('idVariante')?.value,
           color: color,
           talla: t.get('talla')?.value,
-          stockActual: t.get('stockActual')?.value,
-
-          // --- CORRECCIÓN AQUÍ: Enviar datos como Java los espera ---
-          urlImagen: imagenPrincipal,       // String
-          galeriaImagenes: imagenesArray    // List<String> <-- ¡ESTO ES LO QUE FALTABA!
+          stockActual: stockTotalVariante,
+          urlImagen: imagenPrincipal,
+          galeriaImagenes: imagenesArray,
+          inventarios: inventariosActivos // Mandamos la mochila filtrada
         });
       });
     });
@@ -337,17 +346,17 @@ export class ProductoFormComponent implements OnInit {
     return variantesPlanas;
   }
 
-  // ==========================================
-  // ⚙️ OTROS MÉTODOS
-  // ==========================================
-
   actualizarStockTotal(): void {
     let total = 0;
     this.gruposVariantes.controls.forEach(grupo => {
       const tallas = (grupo.get('tallas') as FormArray).controls;
-      tallas.forEach(t => total += (t.get('stockActual')?.value || 0));
+      tallas.forEach(t => {
+        // Usamos getRawValue() para poder leer los valores aunque estén "disabled"
+        const inventariosArray = (t.get('inventarios') as FormArray).getRawValue();
+        total += inventariosArray.reduce((acc: number, cur: any) => acc + (cur.stockActual || 0), 0);
+      });
     });
-    this.productoForm.patchValue({ stockActual: total });
+    this.productoForm.patchValue({ stockActual: total }, { emitEvent: false });
   }
 
   cargarDatosProducto(id: number): void {
@@ -363,7 +372,6 @@ export class ProductoFormComponent implements OnInit {
           precioRegular: producto.precioRegular,
           precioVenta: producto.precioVenta,
           precioCompra: producto.precioCompra,
-          idSucursal: producto.sucursal?.idSucursal || null,
           idMarca: producto.marca?.idMarca || null,
           idCategoria: producto.categoria?.idCategoria || null,
           urlImagen: producto.urlImagen
@@ -443,25 +451,9 @@ export class ProductoFormComponent implements OnInit {
     return marca ? marca.nombre : 'Seleccionar Marca';
   }
 
-  get nombreTiendaSeleccionada(): string {
-    const id = this.productoForm.get('idSucursal')?.value;
-    switch (id) {
-      case 1: return '👕 Ropa';
-      case 2: return '🛋️ Hogar';
-      case 3: return '🏢 Almacén';
-      case 4: return '📦 Almacén 2do Piso';
-      default: return 'Seleccionar Tienda';
-    }
-  }
-
   seleccionarMarca(id: number | null): void {
     this.productoForm.patchValue({ idMarca: id });
     this.dropdownMarcaOpen = false;
-  }
-
-  seleccionarTienda(id: number | null): void {
-    this.productoForm.patchValue({ idSucursal: id });
-    this.dropdownTiendaOpen = false;
   }
 
   cargarDropdowns(): void {
@@ -505,7 +497,35 @@ export class ProductoFormComponent implements OnInit {
   actualizarCamposCaracteristicas(id: number) { /* Lógica existente para características */ }
   get caracteristicasKeys() { return Object.keys((this.productoForm.get('caracteristicas') as FormGroup).controls); }
   cargarImagenesGlobales(id: number) { /* Lógica existente */ }
-  onFileSelected(event: any) { /* Lógica existente */ }
-  eliminarImagenGaleria(id: number) { /* Lógica existente */ }
   agregarImagen(idProducto: number, imagenData: any): void { /* Lógica existente */ }
+
+  // 👇 LA LÓGICA DE LA GALERÍA QUE FALTABA (YA NO HAY ERRORES ROJOS) 👇
+  onFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      this.uploading = true;
+      let archivosPendientes = files.length;
+
+      for (let i = 0; i < files.length; i++) {
+        this.mediaService.uploadFile(files[i]).subscribe({
+          next: (response) => {
+            this.imagenesProducto.push({
+              idImagen: new Date().getTime() + i,
+              urlImagen: response.url
+            });
+            archivosPendientes--;
+            if (archivosPendientes === 0) this.uploading = false;
+          },
+          error: () => {
+            archivosPendientes--;
+            if (archivosPendientes === 0) this.uploading = false;
+          }
+        });
+      }
+    }
+  }
+
+  eliminarImagenGaleria(idImagen: number): void {
+    this.imagenesProducto = this.imagenesProducto.filter(img => img.idImagen !== idImagen);
+  }
 }
