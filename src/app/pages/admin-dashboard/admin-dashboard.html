@@ -185,7 +185,9 @@
                          📍 Ubicación: {{ obtenerNombreUbicacion(prod) }}
                         </span>
                       </div>
-                      <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="text-sm font-bold text-slate-700 hover:text-indigo-600 hover:underline leading-tight">
+                      <a [routerLink]="['/admin/productos/ver', prod.idProducto]"
+                         [queryParams]="idSucursalActual ? { tienda: idSucursalActual } : null"
+                         class="text-sm font-bold text-slate-700 hover:text-indigo-600 hover:underline leading-tight">
                         {{ prod.nombre }}
                       </a>
 
@@ -280,7 +282,9 @@
                   </span>
                 </div>
                 <h3 class="text-base font-bold text-slate-800 leading-tight mt-2">
-                  <a [routerLink]="['/admin/productos/ver', prod.idProducto]" class="hover:text-indigo-600 transition-colors">{{ prod.nombre }}</a>
+                  <a [routerLink]="['/admin/productos/ver', prod.idProducto]"
+                     [queryParams]="idSucursalActual ? { tienda: idSucursalActual } : null"
+                     class="hover:text-indigo-600 transition-colors">{{ prod.nombre }}</a>
                 </h3>
 
                 <div class="flex items-center gap-1 mt-1.5 flex-wrap">

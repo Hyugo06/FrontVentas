@@ -150,15 +150,6 @@
           Ubicación
         </h3>
         <div class="flex flex-col gap-2">
-          <button (click)="seleccionarFiltro('ubicacion', 'TODAS')"
-                  class="text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
-                  [class.bg-indigo-50]="filtroUbicacion === 'TODAS'"
-                  [class.text-indigo-600]="filtroUbicacion === 'TODAS'"
-                  [class.text-slate-500]="filtroUbicacion !== 'TODAS'"
-                  [class.hover:bg-slate-50]="filtroUbicacion !== 'TODAS'">
-            <span>🌍</span> Todas las Tiendas
-          </button>
-
           @for (ub of ubicaciones; track ub.id) {
             <button (click)="seleccionarFiltro('ubicacion', ub.id)"
                     class="text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
@@ -169,6 +160,14 @@
               <span>{{ ub.icono }}</span> {{ ub.nombre }}
             </button>
           }
+          <button (click)="seleccionarFiltro('ubicacion', 'TODAS')"
+                  class="text-left px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                  [class.bg-indigo-50]="filtroUbicacion === 'TODAS'"
+                  [class.text-indigo-600]="filtroUbicacion === 'TODAS'"
+                  [class.text-slate-500]="filtroUbicacion !== 'TODAS'"
+                  [class.hover:bg-slate-50]="filtroUbicacion !== 'TODAS'">
+            <span>🌍</span> Todas las Tiendas
+          </button>
         </div>
       </div>
 

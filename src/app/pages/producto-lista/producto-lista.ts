@@ -53,7 +53,7 @@ export class ProductoListaComponent implements OnInit {
   public marcas: string[] = [];
   public coloresList: string[] = [];
   public tallasList: string[] = [];
-  public filtroUbicacion: any = 'TODAS';
+  public filtroUbicacion: any = 1;
 
   public ubicaciones = [
     { id: 1, nombre: 'Ropa', icono: '👕' },
@@ -197,7 +197,7 @@ export class ProductoListaComponent implements OnInit {
     this.filtroMarca = 'TODAS';
     this.filtroColor = 'TODOS';
     this.filtroTalla = 'TODAS';
-    this.filtroUbicacion = 'TODAS';
+    this.filtroUbicacion = 1;
     this.filtroForm.reset({ search: '', categoria: '' });
     this.filtrarProductos();
   }
@@ -399,7 +399,7 @@ export class ProductoListaComponent implements OnInit {
     this.filtroMarca = 'TODAS';
     this.filtroColor = 'TODOS';
     this.filtroTalla = 'TODAS';
-    this.filtroUbicacion = 'TODAS';
+    this.filtroUbicacion = 1;
     this.filtrarProductos();
   }
 

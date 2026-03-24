@@ -25,6 +25,7 @@ export class AdminDashboardComponent implements OnInit {
   public filtroCategoria: string = 'TODAS';
   public filtroColor: string = 'TODOS';
   public filtroTalla: string = 'TODAS';
+  public filtroUbicacion: any = 'TODAS';
 
   public menuMarcaAbierto: boolean = false;
   public menuCatAbierto: boolean = false;
@@ -109,30 +110,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  obtenerUbicaciones(prod: any): string[] {
-    if (this.idSucursalActual !== null) {
-      if (this.idSucursalActual === 1) return ['Ropa'];
-      if (this.idSucursalActual === 2) return ['Hogar'];
-      if (this.idSucursalActual === 3) return ['Almacén'];
-      if (this.idSucursalActual === 4) return ['Almacén 2do Piso'];
-    }
-    const sucursales = new Set<string>();
 
-    if (prod.variantes && Array.isArray(prod.variantes)) {
-      prod.variantes.forEach((v: any) => {
-        if (v.inventarios && Array.isArray(v.inventarios)) {
-          v.inventarios.forEach((inv: any) => {
-            if (inv.idSucursal === 1) sucursales.add('Ropa');
-            if (inv.idSucursal === 2) sucursales.add('Hogar');
-            if (inv.idSucursal === 3) sucursales.add('Almacén');
-            if (inv.idSucursal === 4) sucursales.add('Almacén 2do');
-          });
-        }
-      });
-    }
-    if (sucursales.size === 0) return ['Sin Asignar'];
-    return Array.from(sucursales);
-  }
 
 
   obtenerStockVisible(prod: any): number {
@@ -236,14 +214,52 @@ export class AdminDashboardComponent implements OnInit {
     this.productoAEliminar = null;
   }
 
+// 👇 NUEVO: Etiqueta Camaleónica conectada a la Ruta del Menú Lateral 👇
   obtenerNombreUbicacion(prod: any): string {
+    // 1. EL TRUCO CORREGIDO: Leemos la variable 'idSucursalActual' que define la ruta de la página
+    if (this.idSucursalActual !== null) {
+      const idBuscado = Number(this.idSucursalActual);
+      if (idBuscado === 1) return 'Ropa';
+      if (idBuscado === 2) return 'Hogar';
+      if (idBuscado === 3) return 'Almacén';
+      if (idBuscado === 4) return 'Almacén 2do Piso';
+    }
+
+    // 2. Si estamos en "Inventario General" (idSucursalActual es null), leemos TODAS las mochilas
+    if (prod.variantes && Array.isArray(prod.variantes) && prod.variantes.length > 0) {
+      const sucursalesUnicas = new Set<number>();
+
+      prod.variantes.forEach((v: any) => {
+        if (v.inventarios && Array.isArray(v.inventarios)) {
+          v.inventarios.forEach((inv: any) => {
+            if ((inv.stockActual || 0) > 0) {
+              sucursalesUnicas.add(Number(inv.idSucursal));
+            }
+          });
+        }
+      });
+
+      // Si encontramos tiendas, las listamos (Ej: "Ropa, Almacén")
+      if (sucursalesUnicas.size > 0) {
+        const nombres = Array.from(sucursalesUnicas).map(id => {
+          if (id === 1) return 'Ropa';
+          if (id === 2) return 'Hogar';
+          if (id === 3) return 'Almacén';
+          if (id === 4) return 'Almacén 2do Piso';
+          return 'Tienda ' + id;
+        });
+        return nombres.join(', ');
+      }
+    }
+
+    // 3. Fallback: Para productos antiguos sin variantes o sin stock
     if (prod.sucursal && prod.sucursal.nombre) {
       return prod.sucursal.nombre;
     }
-    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal);
+    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal) || prod._sucursalContexto;
 
-    if (!id) return 'General / Sin Asignar';
-    switch (id) {
+    if (!id || id === 0) return 'Sin Asignar';
+    switch (Number(id)) {
       case 1: return 'Ropa';
       case 2: return 'Hogar';
       case 3: return 'Almacén';
