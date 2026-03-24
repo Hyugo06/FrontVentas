@@ -56,9 +56,9 @@
 
             <div class="absolute top-3 left-3">
               <span class="px-3 py-1 text-xs font-bold rounded-full shadow-sm backdrop-blur-md"
-                    [class.bg-green-100]="producto.stockActual > 5" [class.text-green-700]="producto.stockActual > 5"
-                    [class.bg-red-100]="producto.stockActual <= 5" [class.text-red-700]="producto.stockActual <= 5">
-                Total: {{ producto.stockActual }}
+                    [class.bg-green-100]="getStockTotalProducto() > 5" [class.text-green-700]="getStockTotalProducto() > 5"
+                    [class.bg-red-100]="getStockTotalProducto() <= 5" [class.text-red-700]="getStockTotalProducto() <= 5">
+                Total: {{ getStockTotalProducto() }}
               </span>
             </div>
           </div>

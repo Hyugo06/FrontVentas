@@ -8,6 +8,8 @@ export interface CartItem {
   producto: any;
   variante: any | null;
   cantidad: number;
+  idSucursal: number;     // 👇 RECUPERADO
+  nombreSucursal: string; // 👇 RECUPERADO
 }
 
 @Injectable({
@@ -17,80 +19,77 @@ export class Cart {
   private key = 'margarita_cart_storage';
   private itemsSubject = new BehaviorSubject<CartItem[]>([]);
   public items$ = this.itemsSubject.asObservable();
-
-  // Convertimos el getter en una propiedad pública real
   public totalItems$: Observable<number>;
 
   constructor() {
     this.cargarDeLocalStorage();
-
-    // Inicializamos el observable derivado una sola vez
     this.totalItems$ = this.items$.pipe(
       map(items => items.reduce((acc, i) => acc + i.cantidad, 0))
     );
   }
 
-  // MÉTODO BLINDADO: Verifica Stock antes de agregar
   addToCart(producto: any, variante: any | null, cantidad: number = 1): boolean {
     const items = this.itemsSubject.value;
-    const uid = variante ? `${producto.idProducto}-${variante.idVariante}` : `${producto.idProducto}-base`;
 
-    // 1. Determinar el Stock Máximo Real
-    const stockDisponible = variante ? variante.stockActual : producto.stockActual;
+    // Leemos la tienda inyectada desde la vista de detalles
+    const idSuc = producto._sucursalContexto || 0;
+    const nomSuc = producto._nombreSucursalContexto || 'General';
+
+    const uid = variante ? `${producto.idProducto}-${variante.idVariante}-${idSuc}` : `${producto.idProducto}-base-${idSuc}`;
+
+    // Buscamos el stock exacto en la mochila de la tienda
+    let stockDisponible = 0;
+    if (idSuc === 0) {
+      stockDisponible = variante ? (variante.stockActual || 0) : (producto.stockActual || 0);
+    } else {
+      if (variante && variante.inventarios) {
+        const inv = variante.inventarios.find((i: any) => Number(i.idSucursal) === idSuc);
+        stockDisponible = inv ? (inv.stockActual || 0) : 0;
+      } else {
+        stockDisponible = producto.stockActual || 0;
+      }
+    }
 
     const existing = items.find(i => i.uid === uid);
 
     if (existing) {
-      // 2. Validación: ¿La suma supera el stock?
       if (existing.cantidad + cantidad > stockDisponible) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Stock Insuficiente',
-          text: `Solo quedan ${stockDisponible} unidades disponibles.`,
-          toast: true,
-          position: 'top-end',
-          timer: 3000,
-          showConfirmButton: false
-        });
+        this.mostrarError(stockDisponible, nomSuc);
         return false;
       }
       existing.cantidad += cantidad;
     } else {
-      // 2. Validación para item nuevo
       if (cantidad > stockDisponible) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Stock Insuficiente',
-          text: `Solo quedan ${stockDisponible} unidades disponibles.`,
-          toast: true,
-          position: 'top-end',
-          timer: 3000,
-          showConfirmButton: false
-        });
+        this.mostrarError(stockDisponible, nomSuc);
         return false;
       }
-      items.push({ uid, producto, variante, cantidad });
+      items.push({ uid, producto, variante, cantidad, idSucursal: idSuc, nombreSucursal: nomSuc });
     }
 
     this.actualizar(items);
     return true;
   }
 
-  // Alias compatible
-  addItem(producto: any, variante: any | null) {
-    this.addToCart(producto, variante, 1);
+  private mostrarError(stock: number, tienda: string) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Stock Insuficiente',
+      text: `Solo quedan ${stock} unidades en ${tienda}.`,
+      toast: true,
+      position: 'top-end',
+      timer: 3000,
+      showConfirmButton: false
+    });
   }
+
+  addItem(producto: any, variante: any | null) { this.addToCart(producto, variante, 1); }
 
   decrementItem(item: CartItem) {
     const items = this.itemsSubject.value;
     const index = items.findIndex(i => i.uid === item.uid);
-
     if (index > -1) {
-      if (items[index].cantidad > 1) {
-        items[index].cantidad--;
-      } else {
-        items.splice(index, 1);
-      }
+      if (items[index].cantidad > 1) items[index].cantidad--;
+      else items.splice(index, 1);
       this.actualizar(items);
     }
   }
@@ -100,9 +99,7 @@ export class Cart {
     this.actualizar(items);
   }
 
-  clearCart() {
-    this.actualizar([]);
-  }
+  clearCart() { this.actualizar([]); }
 
   private actualizar(items: CartItem[]) {
     this.itemsSubject.next([...items]);
@@ -112,11 +109,8 @@ export class Cart {
   private cargarDeLocalStorage() {
     const saved = localStorage.getItem(this.key);
     if (saved) {
-      try {
-        this.itemsSubject.next(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error al cargar carrito", e);
-      }
+      try { this.itemsSubject.next(JSON.parse(saved)); }
+      catch (e) { console.error("Error al cargar carrito", e); }
     }
   }
 }

@@ -49,11 +49,25 @@ export class CartPageComponent {
   }
 
   incrementar(item: CartItem): void {
-    const stockMaximo = item.variante ? item.variante.stockActual : item.producto.stockActual;
-    if (item.cantidad < stockMaximo) {
-      this.cartService.addItem(item.producto, item.variante);
+    let stockMaximo = 0;
+
+    // 👇 Buscamos en la mochila cuánto queda en esa tienda específica
+    if (item.idSucursal === 0) {
+      stockMaximo = item.variante ? (item.variante.stockActual || 0) : (item.producto.stockActual || 0);
     } else {
-      this.modalService.open(`Lo sentimos, solo quedan ${stockMaximo} unidades.`);
+      if (item.variante && item.variante.inventarios) {
+        const inv = item.variante.inventarios.find((i: any) => Number(i.idSucursal) === item.idSucursal);
+        stockMaximo = inv ? (inv.stockActual || 0) : 0;
+      } else {
+        stockMaximo = item.producto.stockActual || 0;
+      }
+    }
+
+    if (item.cantidad < stockMaximo) {
+      // Pasamos el producto con su contexto intacto
+      this.cartService.addToCart(item.producto, item.variante, 1);
+    } else {
+      this.modalService.open(`Lo sentimos, solo quedan ${stockMaximo} unidades en ${item.nombreSucursal}.`);
     }
   }
 

@@ -25,6 +25,7 @@ export class AdminDashboardComponent implements OnInit {
   public filtroCategoria: string = 'TODAS';
   public filtroColor: string = 'TODOS';
   public filtroTalla: string = 'TODAS';
+  public filtroUbicacion: any = 'TODAS';
 
   public menuMarcaAbierto: boolean = false;
   public menuCatAbierto: boolean = false;
@@ -37,6 +38,7 @@ export class AdminDashboardComponent implements OnInit {
   public tallas: string[] = [];
 
   public searchForm: FormGroup;
+  public idSucursalActual: number | null = null;
 
   constructor(
     private productoService: Producto,
@@ -79,13 +81,11 @@ export class AdminDashboardComponent implements OnInit {
     const tiendaPath = urlSegments[urlSegments.length - 1];
 
     if (tiendaPath === 'ropa' || tiendaPath === 'hogar' || tiendaPath === 'almacen' || tiendaPath === 'almacen2') {
-
-      // 👇 MAGIA AQUÍ: Traducimos la URL de internet al nombre real de tu Base de Datos
       let nombreRealBD = '';
-      if (tiendaPath === 'ropa') nombreRealBD = 'Ropa';
-      if (tiendaPath === 'hogar') nombreRealBD = 'Hogar';
-      if (tiendaPath === 'almacen') nombreRealBD = 'Almacén'; // ¡Con su tilde!
-      if (tiendaPath === 'almacen2') nombreRealBD = 'Almacén 2do Piso';
+      if (tiendaPath === 'ropa') { nombreRealBD = 'Ropa'; this.idSucursalActual = 1; }
+      if (tiendaPath === 'hogar') { nombreRealBD = 'Hogar'; this.idSucursalActual = 2; }
+      if (tiendaPath === 'almacen') { nombreRealBD = 'Almacén'; this.idSucursalActual = 3; }
+      if (tiendaPath === 'almacen2') { nombreRealBD = 'Almacén 2do Piso'; this.idSucursalActual = 4; }
 
       this.productoService.getProductosPorSucursal(nombreRealBD).subscribe({
         next: (data: any) => {
@@ -97,6 +97,7 @@ export class AdminDashboardComponent implements OnInit {
         error: () => { this.error = 'Error al cargar productos de la tienda.'; this.cargando = false; }
       });
     } else {
+      this.idSucursalActual = null;
       this.productoService.getProductosAdmin('').subscribe({
         next: (data: any) => {
           this.productos = data;
@@ -109,7 +110,46 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  // ... (MANTÉN EL RESTO DE MÉTODOS EXACTAMENTE IGUAL) ...
+
+
+
+  obtenerStockVisible(prod: any): number {
+
+    // 1. Si estamos en "Todos los productos", sumamos TODAS las tiendas de TODAS las variantes
+    if (this.idSucursalActual === null) {
+      if (prod.variantes && Array.isArray(prod.variantes) && prod.variantes.length > 0) {
+        let totalGlobal = 0;
+        prod.variantes.forEach((v: any) => {
+          // Si tiene la mochila de tiendas, sumamos su contenido
+          if (v.inventarios && Array.isArray(v.inventarios) && v.inventarios.length > 0) {
+            totalGlobal += v.inventarios.reduce((sum: number, inv: any) => sum + (inv.stockActual || 0), 0);
+          } else {
+            // Por si acaso es un producto viejo sin tiendas aún
+            totalGlobal += (v.stockActual || 0);
+          }
+        });
+        return totalGlobal;
+      }
+      // Si no tiene variantes, devolvemos su stock base
+      return prod.stockActual || 0;
+    }
+
+    // 2. Si estamos en una tienda específica, sumamos SOLO lo de esa tienda
+    let stockTienda = 0;
+    if (prod.variantes && Array.isArray(prod.variantes)) {
+      prod.variantes.forEach((v: any) => {
+        if (v.inventarios && Array.isArray(v.inventarios)) {
+          const invTienda = v.inventarios.find((i: any) => i.idSucursal === this.idSucursalActual);
+          if (invTienda && invTienda.stockActual) {
+            stockTienda += invTienda.stockActual;
+          }
+        }
+      });
+    }
+    return stockTienda;
+  }
+
+
 
   private extraerFiltrosDinamicos(): void {
     // Marcas únicas
@@ -174,14 +214,52 @@ export class AdminDashboardComponent implements OnInit {
     this.productoAEliminar = null;
   }
 
+// 👇 NUEVO: Etiqueta Camaleónica conectada a la Ruta del Menú Lateral 👇
   obtenerNombreUbicacion(prod: any): string {
+    // 1. EL TRUCO CORREGIDO: Leemos la variable 'idSucursalActual' que define la ruta de la página
+    if (this.idSucursalActual !== null) {
+      const idBuscado = Number(this.idSucursalActual);
+      if (idBuscado === 1) return 'Ropa';
+      if (idBuscado === 2) return 'Hogar';
+      if (idBuscado === 3) return 'Almacén';
+      if (idBuscado === 4) return 'Almacén 2do Piso';
+    }
+
+    // 2. Si estamos en "Inventario General" (idSucursalActual es null), leemos TODAS las mochilas
+    if (prod.variantes && Array.isArray(prod.variantes) && prod.variantes.length > 0) {
+      const sucursalesUnicas = new Set<number>();
+
+      prod.variantes.forEach((v: any) => {
+        if (v.inventarios && Array.isArray(v.inventarios)) {
+          v.inventarios.forEach((inv: any) => {
+            if ((inv.stockActual || 0) > 0) {
+              sucursalesUnicas.add(Number(inv.idSucursal));
+            }
+          });
+        }
+      });
+
+      // Si encontramos tiendas, las listamos (Ej: "Ropa, Almacén")
+      if (sucursalesUnicas.size > 0) {
+        const nombres = Array.from(sucursalesUnicas).map(id => {
+          if (id === 1) return 'Ropa';
+          if (id === 2) return 'Hogar';
+          if (id === 3) return 'Almacén';
+          if (id === 4) return 'Almacén 2do Piso';
+          return 'Tienda ' + id;
+        });
+        return nombres.join(', ');
+      }
+    }
+
+    // 3. Fallback: Para productos antiguos sin variantes o sin stock
     if (prod.sucursal && prod.sucursal.nombre) {
       return prod.sucursal.nombre;
     }
-    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal);
+    const id = prod.idSucursal || (prod.sucursal && prod.sucursal.idSucursal) || prod._sucursalContexto;
 
-    if (!id) return 'General / Sin Asignar';
-    switch (id) {
+    if (!id || id === 0) return 'Sin Asignar';
+    switch (Number(id)) {
       case 1: return 'Ropa';
       case 2: return 'Hogar';
       case 3: return 'Almacén';

@@ -241,11 +241,11 @@ export class CheckoutComponent implements OnInit {
     }
 
     console.log("Enviando cliente al backend:", clienteDataFinal);
-    // 2. Preparamos los detalles de la venta
     const detalles: DetalleVentaDTO[] = this.cartItems.map(item => ({
       idProducto: item.producto.idProducto,
       idVariante: item.variante?.idVariante,
-      cantidad: item.cantidad
+      cantidad: item.cantidad,
+      idSucursal: item.idSucursal !== 0 ? item.idSucursal : null // 👇 RECUPERADO
     }));
 
     // 3. Armamos el objeto completo para el Backend
@@ -257,6 +257,7 @@ export class CheckoutComponent implements OnInit {
     };
 
     // 4. Enviamos al servicio
+    // 4. Enviamos al servicio
     this.ventaService.procesarVenta(ventaData).subscribe({
       next: () => {
         this.cartService.clearCart();
@@ -266,8 +267,32 @@ export class CheckoutComponent implements OnInit {
         this.iniciarConteoRegresivo();
       },
       error: (err) => {
-        this.error = 'Error: ' + (err.error?.message || err.message);
+        // 👇 MAGIA: Extraemos el texto exacto que Java nos está gritando 👇
+        let mensajeReal = 'Ocurrió un error en el servidor.';
+
+        if (typeof err.error === 'string') {
+          mensajeReal = err.error; // A veces Spring envía texto puro
+        } else if (err.error && err.error.message) {
+          mensajeReal = err.error.message; // Formato JSON tradicional
+        } else if (err.error && err.error.mensaje) {
+          mensajeReal = err.error.mensaje; // Formato JSON personalizado
+        } else if (err.message) {
+          mensajeReal = err.message; // Fallback de Angular
+        }
+
+        this.error = 'Venta rechazada: ' + mensajeReal;
         this.cargando = false;
+
+        // Si el error fue por falta de stock, le lanzamos un popup amigable
+        if (mensajeReal.toLowerCase().includes('stock')) {
+          Swal.fire({
+            title: '¡Stock Insuficiente!',
+            text: mensajeReal,
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#4f46e5'
+          });
+        }
       }
     });
   }

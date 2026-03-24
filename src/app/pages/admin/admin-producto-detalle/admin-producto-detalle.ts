@@ -28,6 +28,8 @@ export class AdminProductoDetalleComponent implements OnInit {
   public productoAEliminar: any = null;
   public variantesAgrupadas: any[] = [];
 
+  public idTiendaContexto: number | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -35,6 +37,11 @@ export class AdminProductoDetalleComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tienda']) {
+        this.idTiendaContexto = Number(params['tienda']);
+      }
+    });
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.error = "No se proporcionó un ID.";
@@ -68,7 +75,22 @@ export class AdminProductoDetalleComponent implements OnInit {
     });
   }
 
-  // --- LÓGICA DE GALERÍA (NUEVA) ---
+  getStockVarianteVisible(v: any): number {
+    if (!v.inventarios || !Array.isArray(v.inventarios)) return v.stockActual || 0;
+    if (this.idTiendaContexto && this.idTiendaContexto > 0) {
+      const inv = v.inventarios.find((i: any) => Number(i.idSucursal) === this.idTiendaContexto);
+      return inv ? (inv.stockActual || 0) : 0;
+    }
+    return v.inventarios.reduce((acc: number, inv: any) => acc + (inv.stockActual || 0), 0);
+  }
+
+  getStockTotalProducto(): number {
+    if (!this.producto) return 0;
+    if (this.producto.variantes && this.producto.variantes.length > 0) {
+      return this.producto.variantes.reduce((acc: number, v: any) => acc + this.getStockVarianteVisible(v), 0);
+    }
+    return this.producto.stockActual || 0;
+  }
 
   mostrarTodasLasFotos(): void {
     this.colorSeleccionado = null;
@@ -141,12 +163,13 @@ export class AdminProductoDetalleComponent implements OnInit {
     this.imagenActual = urlCompleta;
   }
 
-  // --- (El resto sigue igual: organizarVariantes, eliminar, etc.) ---
 
   private organizarVariantes(variantes: any[]): void {
     const grupos = new Map<string, any>();
     variantes.forEach(v => {
       const colorKey = v.color || 'Sin Color';
+      const stockRealContexto = this.getStockVarianteVisible(v); // <-- MAGIA MULTI-TIENDA
+
       if (!grupos.has(colorKey)) {
         grupos.set(colorKey, {
           color: colorKey,
@@ -156,8 +179,8 @@ export class AdminProductoDetalleComponent implements OnInit {
         });
       }
       const grupo = grupos.get(colorKey);
-      grupo.tallas.push({ talla: v.talla, stock: v.stockActual });
-      grupo.stockTotal += v.stockActual;
+      grupo.tallas.push({ talla: v.talla, stock: stockRealContexto });
+      grupo.stockTotal += stockRealContexto;
 
       if (v.galeriaImagenes && Array.isArray(v.galeriaImagenes)) {
         v.galeriaImagenes.forEach((url: string) => {
