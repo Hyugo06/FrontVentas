@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { Modal } from '../../services/modal';
+import { BehaviorSubject } from 'rxjs';
 
 import Swal from 'sweetalert2';
 
@@ -20,11 +21,19 @@ export class AdminLayoutComponent implements OnInit {
   public isUserMenuOpen: boolean = false;
   public isProductosMenuOpen: boolean = false;
 
+  // Lógica del modo oscuro integrada
+  private darkModeSubject = new BehaviorSubject<boolean>(false);
+  public darkMode$ = this.darkModeSubject.asObservable();
+  private isBrowser: boolean;
+
   constructor(
     private authService: Auth,
     private router: Router,
-    private modalService: Modal
-  ) {}
+    private modalService: Modal,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit(): void {
     const nombreGuardado = localStorage.getItem('nombreUsuarioReal');
@@ -38,16 +47,45 @@ export class AdminLayoutComponent implements OnInit {
       console.warn("🚨 ACCESO DENEGADO: Vendedor intentando entrar a Admin");
       this.router.navigate(['/productos'], { replaceUrl: true });
     }
+
+    // Inicializar el tema guardado al cargar la página
+    this.inicializarTema();
   }
 
+  private inicializarTema(): void {
+    if (!this.isBrowser) return;
+    const temaGuardado = localStorage.getItem('theme');
+    const prefiereOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-  // --- AQUÍ ESTÁ LA CORRECCIÓN ---
+    if (temaGuardado === 'dark' || (!temaGuardado && prefiereOscuro)) {
+      this.setModoOscuro(true);
+    } else {
+      this.setModoOscuro(false);
+    }
+  }
+
+  public toggleTema(): void {
+    this.setModoOscuro(!this.darkModeSubject.value);
+  }
+
+  private setModoOscuro(activar: boolean): void {
+    this.darkModeSubject.next(activar);
+    if (!this.isBrowser) return;
+
+    const htmlRoot = document.documentElement; // Etiqueta <html>
+    if (activar) {
+      htmlRoot.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      htmlRoot.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }
+
   public logout(): void {
-    // 1. Cerramos los menús para que no estorben visualmente
     this.isMobileMenuOpen = false;
     this.isUserMenuOpen = false;
 
-    // 2. Lanzamos el modal con la misma estética que el Navbar
     Swal.fire({
       html: `
       <div class="flex flex-col items-center mb-2">
@@ -81,33 +119,18 @@ export class AdminLayoutComponent implements OnInit {
       }
     });
   }
-  // -------------------------------
 
-  public toggleMenu(): void {
-    this.isMobileMenuOpen = !this.isMobileMenuOpen;
-  }
-
-  public closeMenu(): void {
-    this.isMobileMenuOpen = false;
-  }
-
-  public toggleUserMenu(): void {
-    this.isUserMenuOpen = !this.isUserMenuOpen;
-  }
+  public toggleMenu(): void { this.isMobileMenuOpen = !this.isMobileMenuOpen; }
+  public closeMenu(): void { this.isMobileMenuOpen = false; }
+  public toggleUserMenu(): void { this.isUserMenuOpen = !this.isUserMenuOpen; }
+  public toggleProductosMenu(): void { this.isProductosMenuOpen = !this.isProductosMenuOpen; }
 
   public can(permisoRequerido: string): boolean {
     const rol = this.authService.getRole();
     if (rol === 'ADMIN') return true;
-
     const permisosGuardados = localStorage.getItem('misPermisos');
     if (!permisosGuardados) return false;
-
     const listaPermisos: string[] = JSON.parse(permisosGuardados);
     return listaPermisos.includes(permisoRequerido);
   }
-
-  public toggleProductosMenu(): void {
-    this.isProductosMenuOpen = !this.isProductosMenuOpen;
-  }
 }
-

@@ -48,11 +48,15 @@ export class AdminClientesComponent implements OnInit {
     this.cargando = true;
     this.clienteService.getClientes().subscribe({
       next: (data) => {
-        // Mapeamos los datos (Aquí simulo deuda aleatoria si el backend no la trae aún)
         this.clientes = data.map((c: any) => ({
           ...c,
+          nombres: c.nombres || 'Cliente',
+          apellidos: c.apellidos || '',
+          dni: c.dni || '',
+          celular: c.celular || '',
+          email: c.email || '',
           deudaActual: c.deudaActual || 0,
-          esFrecuente: true // Lógica simple por ahora
+          esFrecuente: c.esFrecuente || false
         }));
 
         this.calcularMetricas();

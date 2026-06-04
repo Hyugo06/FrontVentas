@@ -80,14 +80,13 @@ export class AdminClienteFormComponent implements OnInit {
 
     this.cargando = true;
 
-    // 2. CAMBIO EN ENVÍO: Limpieza de datos (Convertir "" a null)
     const rawData = this.clienteForm.value;
 
     const dataLimpia = {
       ...rawData,
-      // Si es cadena vacía o espacios, enviamos null. Si no, enviamos el valor.
       dni: rawData.dni && rawData.dni.trim() !== '' ? rawData.dni.trim() : null,
-      email: rawData.email && rawData.email.trim() !== '' ? rawData.email.trim() : null
+      email: rawData.email && rawData.email.trim() !== '' ? rawData.email.trim() : null,
+      celular: rawData.celular && rawData.celular.trim() !== '' ? rawData.celular.trim() : null // 👈 ¡ESTA ES LA LÍNEA MÁGICA QUE FALTABA!
     };
 
     // Usamos dataLimpia en lugar de rawData (this.clienteForm.value)
@@ -110,15 +109,18 @@ export class AdminClienteFormComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.cargando = false;
-        let msg = 'Ocurrió un error al guardar.';
-        if (err.error?.message?.includes('DNI')) {
-          msg = 'Este DNI ya está registrado en el sistema.';
-        }
+
+        console.error('ERROR DETALLADO DESDE EL BACKEND:', err);
+
+        const codigoError = err.error?.codigo || 'SYS-500';
+        const mensajeServidor = err.error?.mensaje || err.error?.message || 'Ocurrió un error inesperado al guardar.';
+
         Swal.fire({
-          title: 'Error',
-          text: msg,
-          icon: 'error',
-          confirmButtonColor: '#ef4444'
+          title: `Acción Denegada [${codigoError}]`,
+          text: mensajeServidor,
+          icon: 'warning',
+          confirmButtonColor: '#f59e0b',
+          confirmButtonText: 'Entendido'
         });
       }
     });

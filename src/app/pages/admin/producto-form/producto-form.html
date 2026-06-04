@@ -349,11 +349,11 @@
                                    [class.border-slate-100]="!inv.get('habilitado')?.value"
                                    [class.opacity-60]="!inv.get('habilitado')?.value">
 
-                                <div class="flex items-center gap-2 mb-2.5">
+                                <div class="flex items-start gap-2 mb-2.5">
                                   <input type="checkbox" formControlName="habilitado" (change)="toggleTienda(inv)"
-                                         class="w-4 h-4 text-indigo-600 rounded border-slate-300 cursor-pointer focus:ring-indigo-500">
+                                         class="w-5 h-5 mt-0.5 text-indigo-600 rounded border-slate-300 cursor-pointer focus:ring-indigo-500 flex-shrink-0">
 
-                                  <label class="block text-[10px] font-black truncate cursor-pointer select-none uppercase tracking-wide"
+                                  <label class="block text-[9px] font-black cursor-pointer select-none uppercase tracking-wide leading-tight break-words pt-1"
                                          [class.text-indigo-700]="inv.get('habilitado')?.value"
                                          [class.text-slate-400]="!inv.get('habilitado')?.value"
                                          [title]="inv.get('nombre')?.value">

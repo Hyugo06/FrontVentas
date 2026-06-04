@@ -90,7 +90,6 @@ export class AdminVentaDetalleComponent implements OnInit {
   }
 
   // --- LÓGICA DE PDF HÍBRIDA (WEB Y MÓVIL) ---
-  // 2. Agregamos 'async' aquí
   public async generarBoletaPDF() {
     if (!this.venta) return;
 
@@ -98,93 +97,178 @@ export class AdminVentaDetalleComponent implements OnInit {
       const doc = new jsPDF();
       const venta = this.venta;
 
-      // --- [INICIO] DISEÑO DEL PDF (IGUAL QUE ANTES) ---
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.rect(10, 10, 190, 130 + (venta.detalles.length * 8)); // Altura dinámica
 
-      // 1. Encabezado
-      doc.setFontSize(22);
+      const logoUrl = 'assets/image.png';
+      try {
+        const logoData = await this.getBase64ImageFromUrl(logoUrl);
+        // Ajusta los valores (X, Y, Ancho, Alto) según las proporciones de tu logo
+        doc.addImage(logoData, 'PNG', 15, 15, 80, 25);
+      } catch (e) {
+        console.warn('No se pudo cargar el logo. Verifica la ruta: assets/image.png');
+        // Fallback si no carga el logo
+        doc.setFontSize(24);
+        doc.setFont('times', 'italic');
+        doc.text('Margarita', 15, 30);
+      }
+
+      // --- INFORMACIÓN DE LA EMPRESA (Debajo del logo) ---
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Ropa para su comodidad & De todo para su hogar', 15, 45);
+      doc.text('Sábanas, colchas, almohadas, y moda hombre/mujer.', 15, 50);
+      // Aquí puedes agregar la dirección y teléfono reales de tu tienda
+      doc.text('Dirección: Av. Oscar Ramos Cabieses, Pasadizo de la puerta 4 - Imperial - Cañete', 15, 55);
+      doc.text('Telf. 900-944-156', 15, 60);
+
+      // --- RECUADRO DE RUC Y NÚMERO DE BOLETA (Esquina superior derecha) ---
+      doc.setLineWidth(0.5);
+      doc.roundedRect(120, 15, 75, 25, 3, 3); // Caja principal redondeada
+      doc.line(120, 23, 195, 23); // Línea divisoria 1
+      doc.line(120, 31, 195, 31); // Línea divisoria 2
+
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('TIENDA MARGARITA', 105, 20, { align: 'center' });
+      // Coloca tu RUC real aquí
+      doc.text('R.U.C. 10092688131', 157.5, 21, { align: 'center' });
+
+      const tipoDoc = venta.tipoComprobante === 'FACTURA' ? 'FACTURA ELECTRÓNICA' : 'BOLETA DE VENTA';
+      doc.text(tipoDoc, 157.5, 29, { align: 'center' });
 
       doc.setFontSize(12);
+      doc.text(`001 - ${venta.idVenta.toString().padStart(6, '0')}`, 157.5, 38, { align: 'center' });
+
+      // --- RECUADRO DE FECHA (Debajo del RUC) ---
+      const fechaObj = new Date(venta.fecha);
+      const dia = fechaObj.getDate().toString().padStart(2, '0');
+      const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+      const anio = fechaObj.getFullYear().toString();
+      const hora = fechaObj.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+      doc.rect(140, 45, 55, 10);
+      doc.line(158, 45, 158, 55);
+      doc.line(176, 45, 176, 55);
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DIA', 149, 49, { align: 'center' });
+      doc.text('MES', 167, 49, { align: 'center' });
+      doc.text('AÑO', 185, 49, { align: 'center' });
+
       doc.setFont('helvetica', 'normal');
-      doc.text(`Comprobante de Venta #${venta.idVenta}`, 105, 30, { align: 'center' });
+      doc.text(dia, 149, 53, { align: 'center' });
+      doc.text(mes, 167, 53, { align: 'center' });
+      doc.text(anio, 185, 53, { align: 'center' });
 
-      if (venta.estado === 'ANULADA') {
-        doc.setTextColor(220, 38, 38);
-        doc.setFont('helvetica', 'bold');
-        doc.text('-- VENTA ANULADA --', 105, 40, { align: 'center' });
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
-      }
-
-      // 2. Datos del Cliente
-      const fecha = new Date(venta.fecha).toLocaleString('es-PE');
-      const clienteNombre = venta.nombreCliente || 'Cliente General';
-      const dni = venta.dniCliente || '-';
-
+      // --- DATOS DEL CLIENTE ---
       doc.setFontSize(10);
-      doc.text(`Fecha: ${fecha}`, 14, 50);
-      doc.text(`Cliente: ${clienteNombre}`, 14, 56);
-      doc.text(`DNI/RUC: ${dni}`, 14, 62);
+      const clienteNombre = venta.nombreCliente || 'Cliente General';
+      const documento = venta.dniCliente || '-';
 
-      // 3. Tabla de Productos
-      const head = [['Cant.', 'Descripción', 'Talla', 'Color', 'P. Unit', 'Total']];
+      doc.text('Señor(es):', 15, 70);
+      // Línea punteada
+      doc.setLineDashPattern([1, 1], 0);
+      doc.line(35, 71, 190, 71);
+      doc.text(clienteNombre, 37, 70);
 
-      const body = venta.detalles.map((item: any) => {
-        return [
-          item.cantidad,
-          item.producto,
-          item.talla || '-',
-          item.color || '-',
-          `S/ ${item.precioUnitario.toFixed(2)}`,
-          `S/ ${item.subtotal.toFixed(2)}`
-        ];
-      });
+      doc.text('DNI/RUC:', 15, 78);
+      doc.line(35, 79, 100, 79);
+      doc.text(documento, 37, 78);
+
+      doc.text('Hora:', 110, 78);
+      doc.line(120, 79, 190, 79);
+      doc.text(hora, 122, 78);
+
+      // Restaurar línea sólida para la tabla
+      doc.setLineDashPattern([], 0);
+
+      // --- TABLA DE PRODUCTOS (Estilo clásico) ---
+      const startY = 85;
+
+      // Configuración de la tabla con AutoTable pero forzando el estilo clásico
+      const head = [['CANT.', 'DESCRIPCION', 'TALLA/COLOR', 'P. UNIT.', 'IMPORTE']];
+      const body = venta.detalles.map((item: any) => [
+        item.cantidad,
+        item.producto.toUpperCase(),
+        `${item.talla !== 'U' && item.talla ? item.talla : ''} ${item.color !== '-' && item.color ? item.color : ''}`.trim() || '-',
+        item.precioUnitario.toFixed(2),
+        item.subtotal.toFixed(2)
+      ]);
 
       autoTable(doc, {
-        startY: 75,
+        startY: startY,
         head: head,
         body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [79, 70, 229] },
-        styles: { fontSize: 9 },
+        theme: 'grid', // Borde en todas las celdas
+        styles: {
+          font: 'helvetica',
+          fontSize: 8,
+          textColor: 0,
+          lineColor: 0,
+          lineWidth: 0.5
+        },
+        headStyles: {
+          fillColor: 255, // Fondo blanco
+          textColor: 0,   // Letra negra
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 15 }, // Cantidad
+          1: { halign: 'left', cellWidth: 85 },  // Descripcion
+          2: { halign: 'center', cellWidth: 35 }, // Talla/Color
+          3: { halign: 'right', cellWidth: 25 },  // P. Unit
+          4: { halign: 'right', cellWidth: 25 }   // Importe
+        },
+        margin: { left: 10, right: 10 }
       });
 
-      // Total y Descuento
-      let finalY = (doc as any).lastAutoTable.finalY + 10;
+      // --- ZONA DE TOTALES ---
+      let finalY = (doc as any).lastAutoTable.finalY;
+
+      // Dibujar caja de total al estilo de tu imagen
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
 
       if(venta.montoDescuento > 0){
-        doc.setFontSize(10);
-        doc.setTextColor(22, 163, 74); // Verde
-        doc.text(`Descuento (${venta.codigoCupon}): - S/ ${venta.montoDescuento.toFixed(2)}`, 195, finalY, { align: 'right' });
-        finalY += 6;
-        doc.setTextColor(0,0,0);
+        doc.text(`DSCTO. S/`, 155, finalY + 6, { align: 'right' });
+        doc.rect(157, finalY + 1, 38, 7);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`-${venta.montoDescuento.toFixed(2)}`, 193, finalY + 6, { align: 'right' });
+        finalY += 7;
       }
 
-      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text(`TOTAL A PAGAR:  S/ ${venta.total.toFixed(2)}`, 195, finalY, { align: 'right' });
+      doc.text(`TOTAL S/`, 155, finalY + 6, { align: 'right' });
+      doc.rect(157, finalY + 1, 38, 7);
+      doc.text(venta.total.toFixed(2), 193, finalY + 6, { align: 'right' });
 
-      // --- [FIN] DISEÑO DEL PDF ---
+      // --- MENSAJE FINAL (Centrado y cursiva) ---
+      doc.setFontSize(11);
+      doc.setFont('times', 'italic');
+      doc.text('GRACIAS POR SU PREFERENCIA...', 105, finalY + 15, { align: 'center' });
 
+      // SELLO DE ANULADA (Si aplica)
+      if (venta.estado === 'ANULADA') {
+        doc.setTextColor(220, 38, 38);
+        doc.setFontSize(40);
+        doc.setFont('helvetica', 'bold');
+        // Texto rotado en el centro de la página
+        doc.text('ANULADA', 105, 150, { align: 'center', angle: 45, opacity: 0.3 } as any);
+      }
 
-      // 3. LÓGICA DE DESCARGA (CAMBIO CLAVE)
       const nombreArchivo = `Comprobante-${venta.idVenta}.pdf`;
 
       if (Capacitor.isNativePlatform()) {
-        // --- CELULAR (Android) ---
-
-        // Convertimos a base64 puro (sin encabezado data:application/pdf...)
         const base64Data = doc.output('datauristring').split(',')[1];
-
-        // Guardamos en caché temporal
         const result = await Filesystem.writeFile({
           path: nombreArchivo,
           data: base64Data,
           directory: Directory.Cache
         });
 
-        // Abrimos el menú nativo de compartir
         await Share.share({
           title: `Comprobante #${venta.idVenta}`,
           text: 'Adjunto el comprobante de venta.',
@@ -193,8 +277,6 @@ export class AdminVentaDetalleComponent implements OnInit {
         });
 
       } else {
-        // --- WEB (PC) ---
-        // Descarga directa clásica
         doc.save(nombreArchivo);
       }
 
@@ -202,5 +284,29 @@ export class AdminVentaDetalleComponent implements OnInit {
       console.error("Error generando PDF:", error);
       Swal.fire('Error', 'Hubo un problema al generar el PDF.', 'error');
     }
+  }
+
+  // --- FUNCIÓN AUXILIAR PARA CARGAR EL LOGO ---
+  // Añade esta función justo debajo de generarBoletaPDF()
+  private getBase64ImageFromUrl(imageUrl: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No se pudo obtener el contexto 2D'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      };
+      img.onerror = error => reject(error);
+      img.src = imageUrl;
+    });
   }
 }
