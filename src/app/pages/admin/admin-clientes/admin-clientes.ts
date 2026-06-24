@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Necesario para el buscador
 import { Cliente, ClienteService } from '../../../services/cliente';
@@ -38,7 +38,10 @@ export class AdminClientesComponent implements OnInit {
   public menuTipoAbierto: boolean = false;
   public menuDeudaAbierto: boolean = false;
 
-  constructor(private clienteService: ClienteService) {}
+  constructor(
+    private clienteService: ClienteService,
+    private elementRef: ElementRef
+  ) {}
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -166,8 +169,28 @@ export class AdminClientesComponent implements OnInit {
     this.filtrarClientes();
   }
 
-  verHistorial(cliente: ClienteView): void {
-    // Redirigir a una vista de detalle
-    // this.router.navigate(['/admin/clientes/historial', cliente.idCliente]);
+  @HostListener('document:click', ['$event'])
+  public clickAfueraPC(event: MouseEvent): void {
+    this.evaluarCierreFiltros(event.target);
+  }
+
+  @HostListener('document:touchstart', ['$event'])
+  public toqueAfueraMovil(event: TouchEvent): void {
+    this.evaluarCierreFiltros(event.target);
+  }
+
+  private evaluarCierreFiltros(target: any): void {
+    if (!target) return;
+
+    const targetElement = target as HTMLElement;
+
+    // Buscamos si el clic o toque proviene de alguno de nuestros dos menús desplegables
+    const estaDentroDeFiltros = targetElement.closest('.zona-filtro');
+
+    // Si el usuario tocó en cualquier otro lugar fuera de los selectores, replegamos todo
+    if (!estaDentroDeFiltros) {
+      this.menuTipoAbierto = false;
+      this.menuDeudaAbierto = false;
+    }
   }
 }
