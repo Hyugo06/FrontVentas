@@ -144,6 +144,7 @@ export class ProductoFormComponent implements OnInit {
 
   crearGrupoGroup(color: string = '', imagenesUrls: string[] = []): FormGroup {
     return this.fb.group({
+      _uid: [new Date().getTime() + Math.random()], // 👈 ID Único para el @for de colores
       color: [color, Validators.required],
       imagenes: this.fb.array(imagenesUrls.map(url => this.fb.control(url))),
       tallas: this.fb.array([])
@@ -169,20 +170,20 @@ export class ProductoFormComponent implements OnInit {
         const dataBackend = inventariosData.find(i => i.idSucursal === inv.idSucursal);
         if (dataBackend) {
           inv.stockActual = dataBackend.stockActual;
-          inv.habilitado = true; // Si viene de Java, activamos el check
+          inv.habilitado = true;
         }
       });
     }
 
     return this.fb.group({
+      _uid: [new Date().getTime() + Math.random()],
       idVariante: [idVariante],
       talla: [talla, Validators.required],
       inventarios: this.fb.array(
         inventariosBase.map(inv => this.fb.group({
           idSucursal: [inv.idSucursal],
           nombre: [inv.nombre],
-          habilitado: [inv.habilitado], // Control del Checkbox
-          // Si no está habilitado, el input nace deshabilitado
+          habilitado: [inv.habilitado],
           stockActual: [{ value: inv.stockActual, disabled: !inv.habilitado }, [Validators.required, Validators.min(0)]]
         }))
       )
