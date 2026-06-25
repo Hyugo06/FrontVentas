@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Necesario para el buscador
 import { Cliente, ClienteService } from '../../../services/cliente';
 import { RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
+import {Auth} from '../../../services/auth';
+
 
 // Extendemos la interfaz para incluir campos de negocio (si tu backend aún no los trae)
 interface ClienteView extends Cliente {
@@ -38,7 +40,11 @@ export class AdminClientesComponent implements OnInit {
   public menuTipoAbierto: boolean = false;
   public menuDeudaAbierto: boolean = false;
 
-  constructor(private clienteService: ClienteService) {}
+  constructor(
+    private clienteService: ClienteService,
+    private elementRef: ElementRef,
+    private authService: Auth
+  ) {}
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -48,11 +54,15 @@ export class AdminClientesComponent implements OnInit {
     this.cargando = true;
     this.clienteService.getClientes().subscribe({
       next: (data) => {
-        // Mapeamos los datos (Aquí simulo deuda aleatoria si el backend no la trae aún)
         this.clientes = data.map((c: any) => ({
           ...c,
+          nombres: c.nombres || 'Cliente',
+          apellidos: c.apellidos || '',
+          dni: c.dni || '',
+          celular: c.celular || '',
+          email: c.email || '',
           deudaActual: c.deudaActual || 0,
-          esFrecuente: true // Lógica simple por ahora
+          esFrecuente: c.esFrecuente || false
         }));
 
         this.calcularMetricas();
@@ -111,14 +121,26 @@ export class AdminClientesComponent implements OnInit {
   }
 
   eliminarCliente(cliente: ClienteView): void {
+    // 🌟 NUEVA VALIDACIÓN DE SEGURIDAD INTERNA
+    const rolUsuario = this.authService.getRole(); // Captura el rol activo ('ADMIN', 'VENDEDOR', etc.)
+
+    if (rolUsuario !== 'ADMIN') {
+      Swal.fire({
+        title: 'Acceso Denegado',
+        text: 'Por políticas de auditoría, solo los usuarios Administradores pueden purgar cuentas del sistema.',
+        icon: 'error',
+        confirmButtonColor: '#4f46e5'
+      });
+      return;
+    }
     Swal.fire({
-      title: '¿Eliminar cliente?',
-      text: `¿Estás seguro de borrar a ${cliente.nombres}? Esta acción no se puede deshacer.`,
+      title: '¿Purgar historial y cuenta?',
+      text: `¿Estás seguro de eliminar a ${cliente.nombres}? Se borrará de forma permanente todo su historial de abonos y fiados acumulados.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444', // Rojo para peligro
+      confirmButtonColor: '#ef4444',
       cancelButtonColor: '#f3f4f6',
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, borrar todo',
       cancelButtonText: 'Cancelar',
       reverseButtons: true,
       allowOutsideClick: true
@@ -126,24 +148,23 @@ export class AdminClientesComponent implements OnInit {
       if (result.isConfirmed) {
         this.clienteService.deleteCliente(cliente.idCliente).subscribe({
           next: () => {
-            // 1. Quitamos al cliente de la lista local
             this.clientes = this.clientes.filter(c => c.idCliente !== cliente.idCliente);
-
-            // 2. Recalculamos filtros y métricas (total deuda, etc)
             this.filtrarClientes();
             this.calcularMetricas();
 
             Swal.fire({
-              title: '¡Eliminado!',
-              text: 'El cliente ha sido borrado correctamente.',
+              title: '¡Cliente Purgado!',
+              text: 'La cuenta y su historial se han limpiado correctamente.',
               icon: 'success',
-              timer: 1500,
+              timer: 2000,
               showConfirmButton: false
             });
           },
           error: (err) => {
             console.error(err);
-            Swal.fire('Error', 'No se pudo eliminar. Si el cliente tiene ventas registradas, no podrás borrarlo por seguridad.', 'error');
+            // Captura nuestro mensaje controlado del backend
+            const mensajeError = err.error || 'No se pudo eliminar al cliente.';
+            Swal.fire('Operación Cancelada', mensajeError, 'error');
           }
         });
       }
@@ -162,8 +183,28 @@ export class AdminClientesComponent implements OnInit {
     this.filtrarClientes();
   }
 
-  verHistorial(cliente: ClienteView): void {
-    // Redirigir a una vista de detalle
-    // this.router.navigate(['/admin/clientes/historial', cliente.idCliente]);
+  @HostListener('document:click', ['$event'])
+  public clickAfueraPC(event: MouseEvent): void {
+    this.evaluarCierreFiltros(event.target);
+  }
+
+  @HostListener('document:touchstart', ['$event'])
+  public toqueAfueraMovil(event: TouchEvent): void {
+    this.evaluarCierreFiltros(event.target);
+  }
+
+  private evaluarCierreFiltros(target: any): void {
+    if (!target) return;
+
+    const targetElement = target as HTMLElement;
+
+    // Buscamos si el clic o toque proviene de alguno de nuestros dos menús desplegables
+    const estaDentroDeFiltros = targetElement.closest('.zona-filtro');
+
+    // Si el usuario tocó en cualquier otro lugar fuera de los selectores, replegamos todo
+    if (!estaDentroDeFiltros) {
+      this.menuTipoAbierto = false;
+      this.menuDeudaAbierto = false;
+    }
   }
 }

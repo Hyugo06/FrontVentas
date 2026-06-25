@@ -46,3 +46,36 @@ div.swal2-top-right {
   animation: logoutArrowMove 1.5s ease-in-out infinite;
 }
 /* Si usas un modal propio, asegúrate que su z-index sea > 50 */
+/* --- TRUCO GLOBAL PARA MODO OSCURO --- */
+html.dark {
+  /* 1. Forzar que todo lo que era fondo blanco pase a un gris oscuro elegante */
+  .bg-white,
+  .bg-slate-50\/50,
+  input[type="text"],
+  input[type="email"],
+  select {
+    background-color: #1e293b !important; /* bg-slate-800 */
+    border-color: #334155 !important;     /* border-slate-700 */
+    color: #f8fafc !important;            /* text-slate-50 */
+  }
+
+  /* 2. Corregir legibilidad de los títulos que se quedaron oscuros */
+  .text-slate-800,
+  .text-slate-700,
+  .text-gray-800,
+  h1, h2, h3 {
+    color: #ffffff !important;
+  }
+
+  /* 3. Corregir subtítulos o textos secundarios */
+  .text-slate-500,
+  .text-gray-500,
+  p {
+    color: #94a3b8 !important; /* text-slate-400 */
+  }
+
+  /* 4. Ajustar los inputs de búsqueda y filtros */
+  .bg-slate-50 {
+    background-color: #0f172a !important; /* bg-slate-900 */
+  }
+}
