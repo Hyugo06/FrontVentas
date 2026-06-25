@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms'; // Necesario para el buscador
 import { Cliente, ClienteService } from '../../../services/cliente';
 import { RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
+import {Auth} from '../../../services/auth';
+
 
 // Extendemos la interfaz para incluir campos de negocio (si tu backend aún no los trae)
 interface ClienteView extends Cliente {
@@ -40,7 +42,8 @@ export class AdminClientesComponent implements OnInit {
 
   constructor(
     private clienteService: ClienteService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private authService: Auth
   ) {}
 
   ngOnInit(): void {
@@ -118,14 +121,26 @@ export class AdminClientesComponent implements OnInit {
   }
 
   eliminarCliente(cliente: ClienteView): void {
+    // 🌟 NUEVA VALIDACIÓN DE SEGURIDAD INTERNA
+    const rolUsuario = this.authService.getRole(); // Captura el rol activo ('ADMIN', 'VENDEDOR', etc.)
+
+    if (rolUsuario !== 'ADMIN') {
+      Swal.fire({
+        title: 'Acceso Denegado',
+        text: 'Por políticas de auditoría, solo los usuarios Administradores pueden purgar cuentas del sistema.',
+        icon: 'error',
+        confirmButtonColor: '#4f46e5'
+      });
+      return;
+    }
     Swal.fire({
-      title: '¿Eliminar cliente?',
-      text: `¿Estás seguro de borrar a ${cliente.nombres}? Esta acción no se puede deshacer.`,
+      title: '¿Purgar historial y cuenta?',
+      text: `¿Estás seguro de eliminar a ${cliente.nombres}? Se borrará de forma permanente todo su historial de abonos y fiados acumulados.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444', // Rojo para peligro
+      confirmButtonColor: '#ef4444',
       cancelButtonColor: '#f3f4f6',
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, borrar todo',
       cancelButtonText: 'Cancelar',
       reverseButtons: true,
       allowOutsideClick: true
@@ -133,24 +148,23 @@ export class AdminClientesComponent implements OnInit {
       if (result.isConfirmed) {
         this.clienteService.deleteCliente(cliente.idCliente).subscribe({
           next: () => {
-            // 1. Quitamos al cliente de la lista local
             this.clientes = this.clientes.filter(c => c.idCliente !== cliente.idCliente);
-
-            // 2. Recalculamos filtros y métricas (total deuda, etc)
             this.filtrarClientes();
             this.calcularMetricas();
 
             Swal.fire({
-              title: '¡Eliminado!',
-              text: 'El cliente ha sido borrado correctamente.',
+              title: '¡Cliente Purgado!',
+              text: 'La cuenta y su historial se han limpiado correctamente.',
               icon: 'success',
-              timer: 1500,
+              timer: 2000,
               showConfirmButton: false
             });
           },
           error: (err) => {
             console.error(err);
-            Swal.fire('Error', 'No se pudo eliminar. Si el cliente tiene ventas registradas, no podrás borrarlo por seguridad.', 'error');
+            // Captura nuestro mensaje controlado del backend
+            const mensajeError = err.error || 'No se pudo eliminar al cliente.';
+            Swal.fire('Operación Cancelada', mensajeError, 'error');
           }
         });
       }

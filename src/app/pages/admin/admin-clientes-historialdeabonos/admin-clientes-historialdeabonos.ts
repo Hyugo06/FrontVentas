@@ -64,13 +64,15 @@ export class AdminClientesHistorialdeabonosComponent implements OnInit {
     }, 0);
   }
 
-  // --- FUNCIÓN PARA REGISTRAR (FIADO O ABONO) CON COMPATIBILIDAD DARK MODE ---
-  // --- FUNCIÓN PARA REGISTRAR (FIADO O ABONO) CON COMPATIBILIDAD DARK MODE ---
   async abrirModalMovimiento(tipo: 'DEUDA' | 'PAGO') {
     const esDeuda = tipo === 'DEUDA';
 
     const titulo = esDeuda ? 'Registrar Fiado (Aumentar Deuda)' : 'Registrar Abono (Pago)';
-    const colorBtn = esDeuda ? '#ef4444' : '#4f46e5';
+
+    // 🌟 NUEVO: Asignamos clases de fondo de Tailwind directamente en lugar de estilos nativos de Swal
+    const claseColorBtn = esDeuda
+      ? 'bg-red-500 hover:bg-red-600 shadow-red-200 dark:shadow-none'
+      : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-none';
 
     const { value: formValues } = await Swal.fire({
       title: titulo,
@@ -85,21 +87,21 @@ export class AdminClientesHistorialdeabonosComponent implements OnInit {
             <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Concepto / Detalle</label>
             <input id="swal-concepto" class="swal2-input m-0 w-full rounded-xl bg-slate-50 border border-slate-200 text-slate-800 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium" placeholder="${esDeuda ? 'Ej: Zapatillas Nike, Casaca' : 'Ej: Pago Yape, Efectivo'}">
           </div>
-          </div>
+        </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
-      confirmButtonColor: colorBtn,
       confirmButtonText: 'Guardar Movimiento',
       cancelButtonText: 'Cancelar',
+      buttonsStyling: false, // 🌟 Mantenemos deshabilitado el estilo nativo para usar Tailwind puro
       customClass: {
         popup: 'rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100',
         title: 'text-lg font-bold text-slate-800 dark:text-white pt-2',
-        actions: 'mt-4 gap-2',
-        confirmButton: 'font-bold text-sm px-5 py-2.5 rounded-xl text-white shadow-md transition-all',
-        cancelButton: 'font-bold text-sm px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all'
+        actions: 'mt-4 gap-3 flex justify-end',
+        // 🌟 AGREGAMOS LA VARIABLE CLASECOLORBTN Y ASEGURAMOS EL COLOR DE TEXTO BLANCO
+        confirmButton: `font-bold text-sm px-5 py-2.5 rounded-xl text-white shadow-md transition-all hover:opacity-95 active:scale-95 cursor-pointer ${claseColorBtn}`,
+        cancelButton: 'font-bold text-sm px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer'
       },
-      buttonsStyling: false,
       preConfirm: () => {
         const monto = (document.getElementById('swal-monto') as HTMLInputElement).value;
         const concepto = (document.getElementById('swal-concepto') as HTMLInputElement).value;
@@ -124,8 +126,6 @@ export class AdminClientesHistorialdeabonosComponent implements OnInit {
 
       const nombreRealCajero = localStorage.getItem('nombreUsuarioReal') || 'Usuario Sistema';
 
-      // 🌟 GENERADOR CORRELATIVO AUTOMÁTICO INDIVIDUAL POR CLIENTE:
-      // Calculamos el número consecutivo sumando 1 a la cantidad de movimientos previos en la lista
       const siguienteCorrelativo = this.movimientos.length + 1;
       const comprobanteAutogenerado = `N° ${String(siguienteCorrelativo).padStart(4, '0')}`;
 
@@ -133,7 +133,7 @@ export class AdminClientesHistorialdeabonosComponent implements OnInit {
         tipo: tipo,
         monto: formValues.monto,
         comentario: formValues.concepto,
-        comprobante: comprobanteAutogenerado, // 👈 Se manda formateado como "N° 0001", "N° 0002"...
+        comprobante: comprobanteAutogenerado,
         registradoPor: nombreRealCajero
       };
 
@@ -145,7 +145,7 @@ export class AdminClientesHistorialdeabonosComponent implements OnInit {
             monto: formValues.monto,
             fecha: new Date().toISOString(),
             comentario: formValues.concepto,
-            comprobante: comprobanteAutogenerado, // 👈 Lo agregamos al historial local de inmediato
+            comprobante: comprobanteAutogenerado,
             registradoPor: nuevoMovimiento.registradoPor || nombreRealCajero
           });
 

@@ -113,40 +113,34 @@
             </div>
           </div>
 
-          <div class="bg-slate-50/80 rounded-xl border border-slate-200 p-5">
-            <div class="flex items-center gap-2 mb-4">
-              <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-              <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Permisos Adicionales</h4>
-            </div>
-
-            @if (usuarioForm.get('rol')?.value === 'ADMIN') {
-              <div class="bg-indigo-50 text-indigo-700 px-4 py-3 rounded-lg text-sm flex items-center mb-2">
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                El rol ADMINISTRADOR tiene acceso total al sistema. No es necesario marcar casillas.
+          @if (usuarioForm.get('rol')?.value === 'MODERADOR') {
+            <div class="bg-slate-50/80 rounded-xl border border-slate-200 p-5 animate-fadeInUp">
+              <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Permisos Adicionales</h4>
               </div>
-            }
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" [class.opacity-50]="usuarioForm.get('rol')?.value === 'ADMIN'">
-              @for (permiso of listaPermisos; track permiso.key) {
-                <label class="flex items-start p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 hover:shadow-sm transition-all group select-none relative">
-                  <div class="flex items-center h-5">
-                    <input type="checkbox"
-                           [value]="permiso.key"
-                           [checked]="usuarioForm.get('permisos')?.value?.includes(permiso.key)"
-                           (change)="onPermisoChange($event, permiso.key)"
-                           [disabled]="usuarioForm.get('rol')?.value === 'ADMIN'"
-                           class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <span class="font-bold text-slate-700 group-hover:text-indigo-700 transition-colors block">
-                      {{ permiso.label }}
-                    </span>
-                    <span class="text-[10px] text-slate-400">Habilita acceso a este módulo.</span>
-                  </div>
-                </label>
-              }
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @for (permiso of listaPermisos; track permiso.key) {
+                  <label class="flex items-start p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 hover:shadow-sm transition-all group select-none relative">
+                    <div class="flex items-center h-5">
+                      <input type="checkbox"
+                             [value]="permiso.key"
+                             [checked]="usuarioForm.get('permisos')?.value?.includes(permiso.key)"
+                             (change)="onPermisoChange($event, permiso.key)"
+                             class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                    </div>
+                    <div class="ml-3 text-sm">
+                      <span class="font-bold text-slate-700 group-hover:text-indigo-700 transition-colors block">
+                        {{ permiso.label }}
+                      </span>
+                      <span class="text-[10px] text-slate-400">Habilita acceso a este módulo.</span>
+                    </div>
+                  </label>
+                }
+              </div>
             </div>
-          </div>
+          }
 
         </section>
       </div>
